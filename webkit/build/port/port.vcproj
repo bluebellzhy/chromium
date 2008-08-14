@@ -863,6 +863,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\FloatPointSkia.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\FloatRectSkia.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\graphics\FontCacheWin.cpp"
 					>
 				</File>
@@ -888,6 +896,10 @@
 				</File>
 				<File
 					RelativePath="..\..\port\platform\graphics\GlyphPageTreeNodeWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\GradientSkia.cpp"
 					>
 				</File>
 				<File
@@ -923,7 +935,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\IntPointSkia.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\graphics\IntPointWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\IntRectSkia.cpp"
 					>
 				</File>
 				<File
@@ -1127,7 +1147,15 @@
 				Name="network"
 				>
 				<File
+					RelativePath="..\..\port\platform\network\AuthenticationChallenge.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\network\CookieJarWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\port\platform\network\ResourceError.h"
 					>
 				</File>
 				<File
@@ -1160,15 +1188,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\port\bridge\JSBridge.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\port\bridge\PageWin.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\port\bridge\PluginsWin.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pending\ScriptController.h"
 				>
 			</File>
 		</Filter>
