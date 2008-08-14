@@ -202,7 +202,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\pending\wtf\Platform.h"
+			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\Platform.h"
 			>
 		</File>
 		<File

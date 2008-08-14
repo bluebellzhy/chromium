@@ -100,6 +100,7 @@ copies = [
     'bindings/npruntime_impl.h',
     'bindings/runtime_object.h',
     'bindings/runtime_root.h',
+    'kjs/collector.h',
     'kjs/JSLock.h',
     'kjs/interpreter.h',
     'wtf/HashCountedSet.h',
@@ -110,10 +111,6 @@ JSCORE_OUT = '$WEBKIT_DIR/scons/WebCore/JavaScriptCore'
 for c in copies:
   i = env.Install(JSCORE_OUT, '$JAVASCRIPTCORE_DIR/' + c)
   env.Alias('webkit', i)
-
-i = env.Install(JSCORE_OUT, '../../pending/kjs/collector.h')
-env.Alias('webkit', i)
-
 
 # Stuff for WTF
 env = env.Clone(
