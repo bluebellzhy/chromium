@@ -56,12 +56,12 @@ bool EventHandler::passMousePressEventToSubframe(MouseEventWithHitTestResults& m
     // really strange (having the whole frame be greyed out), so we deselect the
     // selection.
     IntPoint p = m_frame->view()->windowToContents(mev.event().pos());
-    if (m_frame->selectionController()->contains(p)) {
+    if (m_frame->selection()->contains(p)) {
         VisiblePosition visiblePos(
             mev.targetNode()->renderer()->positionForPoint(mev.localPoint()));
         Selection newSelection(visiblePos);
         if (m_frame->shouldChangeSelection(newSelection))
-            m_frame->selectionController()->setSelection(newSelection);
+            m_frame->selection()->setSelection(newSelection);
     }
 
     subframe->eventHandler()->handleMousePressEvent(mev.event());
@@ -139,11 +139,11 @@ bool EventHandler::eventActivatedView(const PlatformMouseEvent&) const
     return false;
 }
 
-Clipboard* EventHandler::createDraggingClipboard() const
+PassRefPtr<Clipboard> EventHandler::createDraggingClipboard() const
 {
     COMPtr<WCDataObject> dataObject;
     WCDataObject::createInstance(&dataObject);
-    return new ClipboardWin(true, dataObject.get(), ClipboardWritable);
+    return ClipboardWin::create(true, dataObject.get(), ClipboardWritable);
 }
 
 void EventHandler::focusDocumentView()
