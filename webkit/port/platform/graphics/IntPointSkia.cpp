@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Apple Computer, Inc.  All rights reserved.
+ * Copyright (C) 2008 Google, Inc.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,22 +23,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#include "IntRect.h"
-
-#include <windows.h>
+#include "config.h"
+#include "IntPoint.h"
+#include "SkPoint.h"
 
 namespace WebCore {
 
-IntRect::IntRect(const RECT& r)
-    : m_location(IntPoint(r.left, r.top))
-    , m_size(IntSize(r.right-r.left, r.bottom-r.top))
+IntPoint::IntPoint(const SkIPoint& p)
+    : m_x(p.fX)
+    , m_y(p.fY)
 {
 }
 
-IntRect::operator RECT() const
+IntPoint::operator SkIPoint() const
 {
-    RECT rect = { x(), y(), right(), bottom() };
-    return rect;
+    SkIPoint p = { m_x, m_y };
+    return p;
+}
+
+IntPoint::operator SkPoint() const
+{
+    SkPoint p = { SkIntToScalar(m_x), SkIntToScalar(m_y) };
+    return p;
 }
 
 } // namespace WebCore

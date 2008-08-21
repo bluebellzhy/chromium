@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Apple Computer, Inc.  All rights reserved.
+ * Copyright (C) 2008 Google Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,22 +23,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
-#include "IntRect.h"
+#include "config.h"
+#include "Color.h"
 
-#include <windows.h>
+#include "SkColor.h"
+
+#include <wtf/Assertions.h>
 
 namespace WebCore {
 
-IntRect::IntRect(const RECT& r)
-    : m_location(IntPoint(r.left, r.top))
-    , m_size(IntSize(r.right-r.left, r.bottom-r.top))
-{
-}
-
-IntRect::operator RECT() const
-{
-    RECT rect = { x(), y(), right(), bottom() };
-    return rect;
-}
+COMPILE_ASSERT(SK_ColorBLACK == Color::black, SkColorAndColorAreLaidOutTheSame);
 
 } // namespace WebCore

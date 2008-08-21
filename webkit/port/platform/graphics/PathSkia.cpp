@@ -159,16 +159,12 @@ void Path::addArc(const FloatPoint& p, float r, float sa, float ea,
 
 void Path::addRect(const FloatRect& rect)
 {
-    SkRect r;
-    WebCoreRectToSkiaRect(rect, &r);
-    m_path->addRect(r);
+    m_path->addRect(rect);
 }
 
 void Path::addEllipse(const FloatRect& rect)
 {
-    SkRect r;
-    WebCoreRectToSkiaRect(rect, &r);
-    m_path->addOval(r);
+    m_path->addOval(rect);
 }
 
 void Path::clear()
@@ -284,4 +280,4 @@ String Path::debugString() const
     return result;
 }
 
-}
+} // namespace WebCore

@@ -37,9 +37,6 @@
 
 #include "base/gfx/platform_canvas.h"
 #include "SkiaUtils.h"
-#include "SkDashPathEffect.h"
-
-#include "NotImplemented.h"
 
 namespace WebCore {
 

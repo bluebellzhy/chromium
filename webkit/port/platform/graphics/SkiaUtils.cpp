@@ -36,11 +36,6 @@
 #include "SkMatrix.h"
 #include "SkRegion.h"
 
-void WebCorePointToSkiaPoint(const WebCore::IntPoint& src, SkPoint* dst)
-{
-    dst->set(SkIntToScalar(src.x()), SkIntToScalar(src.y()));
-}
-
 void WebCorePointToSkiaPoint(const WebCore::FloatPoint& src, SkPoint* dst)
 {
     dst->set(WebCoreFloatToSkScalar(src.x()), WebCoreFloatToSkScalar(src.y()));
@@ -112,15 +107,6 @@ SkPorterDuff::Mode WebCoreCompositeToSkiaComposite(WebCore::CompositeOperator op
     return SkPorterDuff::kSrcOver_Mode; // fall-back
 }
 
-SkShader::TileMode WebCoreTileToSkiaTile(WebCore::Image::TileRule rule)
-{
-    // StretchTile, RoundTile, RepeatTile
-    // hack!!!! what does stretch and round mean???
-
-    return SkShader::kRepeat_TileMode;
-}
-
-
 static U8CPU InvScaleByte(U8CPU component, uint32_t scale)
 {
     SkASSERT(component == (uint8_t)component);
@@ -144,9 +130,7 @@ static SkColor SkPMColorToColor(SkPMColor pm)
 
 WebCore::Color SkPMColorToWebCoreColor(SkPMColor pm)
 {
-    SkColor c = SkPMColorToColor(pm);
-    
-    return WebCore::Color(SkColorGetR(c), SkColorGetG(c), SkColorGetB(c), SkColorGetA(c));
+    return SkPMColorToColor(pm);
 }
 
 void IntersectRectAndRegion(const SkRegion& region, const SkRect& src_rect,

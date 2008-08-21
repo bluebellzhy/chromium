@@ -33,6 +33,7 @@
 #include "GraphicsContext.h"
 #include "ImageBuffer.h"
 #include "RenderObject.h"
+#include "Pattern.h"
 #include "SVGPatternElement.h"
 #include "SVGPaintServerPattern.h"
 #include "SkiaSupport.h"
@@ -59,13 +60,13 @@ bool SVGPaintServerPattern::setup(GraphicsContext*& context, const RenderObject*
     if (!tile())
         return false;
 
-    SkShader* shader = SkShader::CreateBitmapShader(*tile()->image(), SkShader::kRepeat_TileMode, SkShader::kRepeat_TileMode);
+    AffineTransform transform = patternTransform();
+    transform.translate(patternBoundaries().x(), patternBoundaries().y());
 
-    SkMatrix matrix = patternTransform();
-    matrix.preTranslate(patternBoundaries().x(), patternBoundaries().y());
-
-    shader->setLocalMatrix(matrix);
+    Pattern pattern(tile()->image(), true, true);
+    SkShader* shader = pattern.createPlatformPattern(transform);
     context->platformContext()->setPattern(shader);
+    shader->unref(); // FIXME: We need a SkRefPtr
 
     if ((type & ApplyToFillTargetType) && style->svgStyle()->hasFill()) {
         if (isPaintingText) 

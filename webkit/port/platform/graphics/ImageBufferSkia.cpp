@@ -32,11 +32,6 @@
 
 #include "GraphicsContext.h"
 #include "PlatformContextSkia.h"
-#include <cairo.h>
-
-#include "SkBitmap.h"
-
-#include "NotImplemented.h"
 
 using namespace std;
 
@@ -44,18 +39,7 @@ namespace WebCore {
 
 auto_ptr<ImageBuffer> ImageBuffer::create(const IntSize& size, bool)
 {
-  return auto_ptr<ImageBuffer>(new ImageBuffer(size));
-}
-
-const SkBitmap* ImageBuffer::image() const
-{
-    return m_context.get()->platformContext()->bitmap();
-}
-
-cairo_surface_t* ImageBuffer::surface() const
-{
-    notImplemented();
-    return NULL;
+    return auto_ptr<ImageBuffer>(new ImageBuffer(size));
 }
 
 GraphicsContext* ImageBuffer::context() const

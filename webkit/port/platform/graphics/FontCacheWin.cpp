@@ -450,16 +450,7 @@ static void FillLogFont(const FontDescription& fontDescription, LOGFONT* winfont
         : DEFAULT_QUALITY; // Honor user's desktop settings.
     winfont->lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
     winfont->lfItalic = fontDescription.italic();
-
-    // FIXME: Support weights for real.  Do our own enumeration of the available weights.
-    // We can't rely on Windows here, since we need to follow the CSS2 algorithm for how to fill in
-    // gaps in the weight list.
-    // fontExists() used to hardcod Lucida Grande. According to FIXME comment,
-    // that's because it uses different weights than typical Win32 fonts
-    // (500/600 instead of 400/700). However, createFontPlatformData
-    // didn't. Special-casing Lucida Grande in a refactored function
-    // led to massive webkit test failure. 
-    winfont->lfWeight = fontDescription.bold() ? 700 : 400;
+    winfont->lfWeight = fontDescription.weight();
 }
 
 bool FontCache::fontExists(const FontDescription& fontDescription, const AtomicString& family)
@@ -504,7 +495,7 @@ FontPlatformData* FontCache::createFontPlatformData(const FontDescription& fontD
         // cache.  We want to ignore the existence/absence of the font in the
         // system.
         overrideFontMetrics = FontMetrics::lookup(family,
-                                                  fontDescription.bold(),
+                                                  fontDescription.weight() == FontWeightBold,
                                                   fontDescription.italic());
         if (!overrideFontMetrics) {
             DeleteObject(hfont);
