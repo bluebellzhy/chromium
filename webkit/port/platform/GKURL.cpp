@@ -43,13 +43,6 @@ namespace WebCore {
 
 namespace {
 
-// For getting the UTF-16 wchar_t pointer out of a DeprecatedString, which
-// uses weird character types that happen to be the same as a wchar_t.
-const wchar_t* UnicodeForString(const DeprecatedString& s)
-{
-    return reinterpret_cast<const wchar_t*>(s.unicode());
-}
-
 // Wraps WebKit's text encoding in a character set converter for the
 // canonicalizer.
 class WebCoreCharsetConverter : public url_canon::CharsetConverter {
@@ -63,10 +56,7 @@ public:
     virtual void ConvertFromUTF16(const url_parse::UTF16Char* input,
                                   int input_len,
                                   url_canon::CanonOutput* output) {
-        // When we merge to WebCore > r31089, this call should change into:
-        //   CString encoded = m_encoding.encode(inupt, input_len,
-        //       URLEncodedEntitiesForUnencodables);
-        CString encoded = m_encoding->encode(input, input_len);
+        CString encoded = m_encoding->encode(input, input_len, URLEncodedEntitiesForUnencodables);
         output->Append(encoded.data(), static_cast<int>(encoded.length()));
     }
 
@@ -81,7 +71,6 @@ private:
 KURL::URLString::URLString()
     : m_utf8IsASCII(true)
     , m_stringIsValid(false)
-    , m_deprecatedStringIsValid(false)
 {
 }
 
@@ -104,14 +93,12 @@ void KURL::URLString::setUtf8(const char* data, int data_len)
     
     m_utf8 = CString(data, data_len);
     m_stringIsValid = false;
-    m_deprecatedStringIsValid = false;
 }
 
 void KURL::URLString::setAscii(const char* data, int data_len) {
     m_utf8 = CString(data, data_len);
     m_utf8IsASCII = true;
     m_stringIsValid = false;
-    m_deprecatedStringIsValid = false;
 }
 
 const String& KURL::URLString::string() const
@@ -131,37 +118,7 @@ const String& KURL::URLString::string() const
     return m_string;
 }
 
-const DeprecatedString KURL::URLString::deprecatedString() const
-{
-    if (!m_deprecatedStringIsValid) {
-        // Must special case the NULL case, since constructing the
-        // string like we do below will generate an empty rather than
-        // a NULL string.
-        if (m_utf8.isNull()) {
-            m_deprecatedString = DeprecatedString();
-        } else if (m_utf8IsASCII) {
-            // This is not just an optimization. equalIgnoringCase will
-            // treat two strings as different if their 8/16-bitedness
-            // doesn't match, even if a conversion would make them match.
-            m_deprecatedString = DeprecatedString(m_utf8.data(),
-                                                  m_utf8.length());
-        } else {
-            // DeprecatedString has a fromUTF8 function, but internally
-            // it will convert to a string! We use this opportunity to
-            // re-use the old String conversion or save the new one
-            // to our cache.
-            m_deprecatedString = string().deprecatedString();
-        }
-        m_deprecatedStringIsValid = true;
-    }
-    return m_deprecatedString;
-}
-
 // KURL ------------------------------------------------------------------------
-
-KURL::KURL() : m_isValid(false)
-{
-}
 
 // Creates with NULL-terminated string input representing an absolute URL.
 // WebCore generally calls this only with hardcoded strings, so the input is
@@ -184,7 +141,7 @@ KURL::KURL(const char *url)
 // to a string and then converted back. In this case, the URL is already
 // canonical and in proper escaped form so needs no encoding. We treat it was
 // UTF-8 just in case.
-KURL::KURL(const DeprecatedString& url)
+KURL::KURL(const String& url)
 {
     init(KURL(), url, NULL);
 
@@ -194,13 +151,13 @@ KURL::KURL(const DeprecatedString& url)
         // Bug-for-bug KURL compatibility for WebKit bug:
         // http://bugs.webkit.org/show_bug.cgi?id=16487
         //
-        // URLs created with NULL depricated strings should be changed to be
+        // URLs created with NULL deprecated strings should be changed to be
         // empty rather than NULL. This masks some crashes in WebKit. This
         // special case should be removed when we bring in a WebKit version
         // newer than r31089 which fixes
         // http://bugs.webkit.org/show_bug.cgi?id=16485
         //
-        // This extends to any DeprecatedString, even if it is invalid, and even
+        // This extends to any String, even if it is invalid, and even
         // though KURL(KURL(), <same string>) would give a NULL string. Gaa!
         m_url.setUtf8("", 0);
     }
@@ -208,7 +165,7 @@ KURL::KURL(const DeprecatedString& url)
 
 // Constructs a new URL given a base URL and a possibly relative input URL.
 // This assumes UTF-8 encoding.
-KURL::KURL(const KURL& base, const DeprecatedString& relative)
+KURL::KURL(const KURL& base, const String& relative)
 {
     init(base, relative, NULL);
 }
@@ -216,7 +173,7 @@ KURL::KURL(const KURL& base, const DeprecatedString& relative)
 // Constructs a new URL given a base URL and a possibly relative input URL.
 // Any query portion of the relative URL will be encoded in the given encoding.
 KURL::KURL(const KURL& base,
-           const DeprecatedString& relative,
+           const String& relative,
            const TextEncoding& encoding)
 {
     init(base, relative, &encoding);
@@ -235,10 +192,10 @@ KURL::KURL(const char* canonical_spec, int canonical_spec_len,
         m_url.setAscii(canonical_spec, canonical_spec_len);
 }
 
-DeprecatedString KURL::componentString(const url_parse::Component& comp) const
+String KURL::componentString(const url_parse::Component& comp) const
 {
     if (!m_isValid || comp.len <= 0)
-        return DeprecatedString();
+        return String();
     // begin and len are in terms of bytes which do not match
     // if urlString is UTF-16 and input contains non-ASCII characters.
     // However, the only part in urlString that can contain non-ASCII
@@ -247,19 +204,19 @@ DeprecatedString KURL::componentString(const url_parse::Component& comp) const
     // byte) will be longer than what's needed by 'mid'. However, mid
     // truncates len to avoid go past the end of a string so that we can
     // get away withtout doing anything here.
-    return m_url.deprecatedString().mid(comp.begin, comp.len);
+    return m_url.substring(comp.begin, comp.len);
 }
 
 void KURL::init(const KURL& base,
-                const DeprecatedString& relative,
+                const String& relative,
                 const TextEncoding* query_encoding)
 {
     if (relative.hasFastLatin1()) {
         // Use the UTF-8 version when possible. This probably means that the
         // URL is all ASCII already, so we can run faster.
-        init(base, relative.ascii(), relative.length(), query_encoding);
+        init(base, relative.ascii().data(), relative.length(), query_encoding);
     } else {
-        init(base, reinterpret_cast<const UChar*>(relative.unicode()),
+        init(base, relative.characters(),
              relative.length(), query_encoding);
     }
 }
@@ -355,7 +312,7 @@ bool KURL::hasPath() const
 
 // We handle "parameters" separated be a semicolon, while the old KURL does
 // not, which can lead to different results in some cases.
-DeprecatedString KURL::lastPathComponent() const
+String KURL::lastPathComponent() const
 {
     // When the output ends in a slash, WebKit has different expectations than
     // our library. For "/foo/bar/" the library will return the empty string,
@@ -369,12 +326,12 @@ DeprecatedString KURL::lastPathComponent() const
     return componentString(file);
 }
 
-DeprecatedString KURL::protocol() const
+String KURL::protocol() const
 {
     return componentString(m_parsed.scheme);
 }
 
-DeprecatedString KURL::host() const
+String KURL::host() const
 {
     // Note: WebKit decode_string()s here.
     return componentString(m_parsed.host);
@@ -396,20 +353,20 @@ unsigned short int KURL::port() const
 }
 
 // Returns the empty string if there is no password.
-DeprecatedString KURL::pass() const
+String KURL::pass() const
 {
     // Note: WebKit decode_string()s here.
     return componentString(m_parsed.password);
 }
 
 // Returns the empty string if there is no username.
-DeprecatedString KURL::user() const
+String KURL::user() const
 {
     // Note: WebKit decode_string()s here.
     return componentString(m_parsed.username);
 }
 
-DeprecatedString KURL::ref() const
+String KURL::ref() const
 {
     // Note: WebKit decode_string()s here.
     return componentString(m_parsed.ref);
@@ -422,7 +379,7 @@ bool KURL::hasRef() const
     return m_parsed.ref.len >= 0;
 }
 
-DeprecatedString KURL::query() const
+String KURL::query() const
 {
     if (m_parsed.query.len >= 0) {
         // KURL's query() includes the question mark, even though the reference
@@ -433,48 +390,48 @@ DeprecatedString KURL::query() const
         query_comp.len++;
         return componentString(query_comp);
     }
-    return DeprecatedString();
+    return String();
 }
 
-DeprecatedString KURL::path() const
+String KURL::path() const
 {
     // Note: WebKit decode_string()s here.
     return componentString(m_parsed.path);
 }
 
-void KURL::setProtocol(const DeprecatedString& protocol)
+void KURL::setProtocol(const String& protocol)
 {
     Replacements replacements;
     replacements.SetScheme(
-        reinterpret_cast<const wchar_t*>(protocol.unicode()),
+        reinterpret_cast<const wchar_t*>(protocol.characters()),
         url_parse::Component(0, protocol.length()));
     replaceComponents(replacements);
 }
 
-void KURL::setHost(const DeprecatedString& host)
+void KURL::setHost(const String& host)
 {
     Replacements replacements;
     replacements.SetHost(
-        reinterpret_cast<const wchar_t*>(host.unicode()),
+        reinterpret_cast<const wchar_t*>(host.characters()),
         url_parse::Component(0, host.length()));
     replaceComponents(replacements);
 }
 
 // This function is used only in the KJS build.
-void KURL::setHostAndPort(const DeprecatedString& s) {
-    DeprecatedString newhost = s.left(s.find(":"));
-    DeprecatedString newport = s.mid(s.find(":") + 1);
+void KURL::setHostAndPort(const String& s) {
+    String newhost = s.left(s.find(":"));
+    String newport = s.substring(s.find(":") + 1);
 
     Replacements replacements;
     replacements.SetHost(  // Host can't be removed, so we always set.
-        reinterpret_cast<const wchar_t*>(newhost.unicode()),
+        reinterpret_cast<const wchar_t*>(newhost.characters()),
         url_parse::Component(0, newhost.length()));
 
     if (newport.isEmpty()) {  // Port may be removed, so we support clearing.
         replacements.ClearPort();
     } else {
         replacements.SetPort(
-            reinterpret_cast<const wchar_t*>(newport.unicode()),
+            reinterpret_cast<const wchar_t*>(newport.characters()),
             url_parse::Component(0, newport.length()));
     }
     replaceComponents(replacements);
@@ -483,11 +440,11 @@ void KURL::setHostAndPort(const DeprecatedString& s) {
 void KURL::setPort(unsigned short i)
 {
     Replacements replacements;
-    DeprecatedString portStr;
+    String portStr;
     if (i > 0) {
-        portStr = DeprecatedString::number(static_cast<int>(i));
+        portStr = String::number(static_cast<int>(i));
         replacements.SetPort(
-            reinterpret_cast<const wchar_t*>(portStr.unicode()),
+            reinterpret_cast<const wchar_t*>(portStr.characters()),
             url_parse::Component(0, portStr.length()));
 
     } else {
@@ -497,7 +454,7 @@ void KURL::setPort(unsigned short i)
     replaceComponents(replacements);
 }
 
-void KURL::setUser(const DeprecatedString& user)
+void KURL::setUser(const String& user)
 {
     // This function is commonly called to clear the username, which we
     // normally don't have, so we optimize this case.
@@ -508,12 +465,12 @@ void KURL::setUser(const DeprecatedString& user)
     // don't have to explicitly call ClearUsername() here.
     Replacements replacements;
     replacements.SetUsername(
-        reinterpret_cast<const wchar_t*>(user.unicode()),
+        reinterpret_cast<const wchar_t*>(user.characters()),
         url_parse::Component(0, user.length()));
     replaceComponents(replacements);
 }
 
-void KURL::setPass(const DeprecatedString& pass)
+void KURL::setPass(const String& pass)
 {
     // This function is commonly called to clear the password, which we
     // normally don't have, so we optimize this case.
@@ -524,12 +481,12 @@ void KURL::setPass(const DeprecatedString& pass)
     // don't have to explicitly call ClearUsername() here.
     Replacements replacements;
     replacements.SetPassword(
-        reinterpret_cast<const wchar_t*>(pass.unicode()),
+        reinterpret_cast<const wchar_t*>(pass.characters()),
         url_parse::Component(0, pass.length()));
     replaceComponents(replacements);
 }
 
-void KURL::setRef(const DeprecatedString& ref)
+void KURL::setRef(const String& ref)
 {
     // This function is commonly called to clear the ref, which we
     // normally don't have, so we optimize this case.
@@ -541,13 +498,13 @@ void KURL::setRef(const DeprecatedString& ref)
         replacements.ClearRef();
     } else {
         replacements.SetRef(
-            reinterpret_cast<const wchar_t*>(ref.unicode()),
+            reinterpret_cast<const wchar_t*>(ref.characters()),
             url_parse::Component(0, ref.length()));
     }
     replaceComponents(replacements);
 }
 
-void KURL::setQuery(const DeprecatedString& query)
+void KURL::setQuery(const String& query)
 {
     Replacements replacements;
     if (query.isNull()) {
@@ -557,7 +514,7 @@ void KURL::setQuery(const DeprecatedString& query)
         // WebKit expects the query string to begin with a question mark, but
         // our library doesn't. So we trim off the question mark when setting.
         replacements.SetQuery(
-            reinterpret_cast<const wchar_t*>(query.unicode()),
+            reinterpret_cast<const wchar_t*>(query.characters()),
             url_parse::Component(1, query.length() - 1));
     } else {
         // When set with the empty string or something that doesn't begin with
@@ -566,19 +523,19 @@ void KURL::setQuery(const DeprecatedString& query)
         // string. Old KURL will leave a '?' with nothing following it in the
         // URL, whereas we'll clear it.
         replacements.SetQuery(
-            reinterpret_cast<const wchar_t*>(query.unicode()),
+            reinterpret_cast<const wchar_t*>(query.characters()),
             url_parse::Component(0, query.length()));
     }
     replaceComponents(replacements);
 }
 
-void KURL::setPath(const DeprecatedString& path)
+void KURL::setPath(const String& path)
 {
     // Empty paths will be canonicalized to "/", so we don't have to worry
     // about calling ClearPath().
     Replacements replacements;
     replacements.SetPath(
-        reinterpret_cast<const wchar_t*>(path.unicode()),
+        reinterpret_cast<const wchar_t*>(path.characters()),
         url_parse::Component(0, path.length()));
     replaceComponents(replacements);
 }
@@ -586,11 +543,11 @@ void KURL::setPath(const DeprecatedString& path)
 // On Mac, this just seems to return the same URL, but with "/foo/bar" for
 // file: URLs instead of file:///foo/bar. We don't bother with any of this,
 // at least for now.
-DeprecatedString KURL::prettyURL() const
+String KURL::prettyURL() const
 {
     if (!m_isValid)
-        return DeprecatedString();
-    return m_url.deprecatedString();
+        return String();
+    return m_url;
 }
 
 // In WebKit's implementation, this is called by every component getter.
@@ -605,7 +562,7 @@ DeprecatedString KURL::prettyURL() const
 // IE doesn't unescape %00, forcing you to use \x00 in JS strings, so we do
 // the same. This also eliminates NULL-related problems should a consumer
 // incorrectly call this function for non-JavaScript.
-DeprecatedString KURL::decode_string(const DeprecatedString& urlString)
+String decodeURLEscapeSequences(const String& urlString)
 {
     // First unescape all input. WebKit's implementation seems to assume the
     // input is 8-bit, so we do as well.
@@ -668,15 +625,14 @@ DeprecatedString KURL::decode_string(const DeprecatedString& urlString)
         }
     }
 
-    return DeprecatedString(reinterpret_cast<DeprecatedChar*>(utf16.data()),
+    return String(reinterpret_cast<UChar*>(utf16.data()),
                             utf16.length());
 }
 
 // The encoding parameter to this function is currently never used.
-DeprecatedString KURL::decode_string(const DeprecatedString& urlString,
-                                     const TextEncoding& encoding)
+String decodeURLEscapeSequences(const String& urlString, const TextEncoding& encoding)
 {
-    return decode_string(urlString);
+    return decodeURLEscapeSequences(urlString);
 }
 
 void KURL::replaceComponents(const Replacements& replacements)
@@ -718,11 +674,12 @@ bool KURL::isLocalFile() const
 // ways, and may expect to get a valid URL string. The dangerous thing we want
 // to protect against here is accidentally getting NULLs in a string that is
 // not supposed to have NULLs. Therefore, we escape NULLs here to prevent this.
-DeprecatedString KURL::encode_string(const DeprecatedString& notEncodedString)
+String encodeWithURLEscapeSequences(const String& notEncodedString)
 {
     CString utf8 = UTF8Encoding().encode(
-        reinterpret_cast<const UChar*>(notEncodedString.unicode()),
-        notEncodedString.length());
+        reinterpret_cast<const UChar*>(notEncodedString.characters()),
+        notEncodedString.length(),
+        URLEncodedEntitiesForUnencodables);
     const char* input = utf8.data();
     int input_len = utf8.length();
 
@@ -733,7 +690,7 @@ DeprecatedString KURL::encode_string(const DeprecatedString& notEncodedString)
         else
             buffer.append(input[i]);
     }
-    return DeprecatedString(buffer.data(), buffer.size());
+    return String(buffer.data(), buffer.size());
 }
 
 bool KURL::isHierarchical() const
