@@ -42,14 +42,15 @@ Cursor::Cursor(const Cursor& other)
 
 Cursor::Cursor(Image* img, const IntPoint& hotspot)
 {
-  // If we don't have a valid bitmap, then fallback to the default
-  // cursor (ARROW).
-  NativeImageSkia* bitmap = img->getBitmap();
-  if (bitmap) {
+    // If we don't have a valid bitmap, then fallback to the default
+    // cursor (ARROW).
+    NativeImageSkia* bitmap = img->nativeImageForCurrentFrame();
+    if (bitmap)
+        return;
+
     m_impl.set_type(WebCursor::CUSTOM);
     m_impl.set_hotspot(hotspot.x(), hotspot.y());
     m_impl.set_bitmap(*bitmap);
-  }
 }
 
 Cursor::~Cursor()

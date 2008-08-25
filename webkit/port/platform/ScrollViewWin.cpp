@@ -132,7 +132,7 @@ void ScrollView::ScrollViewPrivate::setHasHorizontalScrollbar(bool hasBar)
 {
     if (Scrollbar::hasPlatformScrollbars()) {
         if (hasBar && !m_hBar) {
-            m_hBar = new PlatformScrollbar(this, HorizontalScrollbar, RegularScrollbar);
+            m_hBar = PlatformScrollbar::create(this, HorizontalScrollbar, RegularScrollbar);
             m_view->addChild(m_hBar.get());
         } else if (!hasBar && m_hBar) {
             m_view->removeChild(m_hBar.get());
@@ -145,7 +145,7 @@ void ScrollView::ScrollViewPrivate::setHasVerticalScrollbar(bool hasBar)
 {
     if (Scrollbar::hasPlatformScrollbars()) {
         if (hasBar && !m_vBar) {
-            m_vBar = new PlatformScrollbar(this, VerticalScrollbar, RegularScrollbar);
+            m_vBar = PlatformScrollbar::create(this, VerticalScrollbar, RegularScrollbar);
             m_view->addChild(m_vBar.get());
         } else if (!hasBar && m_vBar) {
             m_view->removeChild(m_vBar.get());
@@ -314,8 +314,7 @@ void ScrollView::ScrollViewPrivate::highlightMatches(
     // will not be serialized, i.e. composition is done in the renderer and
     // never in the browser.
     // Prepare for drawing the arrows along the scroll bar.
-    gfx::PlatformCanvas* canvas = PlatformContextToPlatformContextSkia(
-        context->platformContext())->canvas();
+    gfx::PlatformCanvas* canvas = context->platformContext()->canvas();
 
     int horz_start = 0;
     int horz_end   = m_view->width();
@@ -421,12 +420,7 @@ void ScrollView::ScrollViewPrivate::highlightInspectedNode(
 
     // TODO(ojan): http://b/1143975 Draw the padding/border/margin boxes in
     // different colors.
-    SkRect destRect;
-    WebCoreRectToSkiaRect(inspected_node->getRect(), &destRect);
-
-    PlatformContextSkia* skia = PlatformContextToPlatformContextSkia(
-        context->platformContext());
-    skia->paintSkPaint(destRect, paint);
+    context->platformContext()->paintSkPaint(inspected_node->getRect(), paint);
 }
 
 void ScrollView::ScrollViewPrivate::highlightRange(HDC hdc, HDC mem_dc,
