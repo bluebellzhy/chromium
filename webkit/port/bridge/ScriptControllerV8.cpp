@@ -150,7 +150,7 @@ bool V8Bridge::wasRunByUserGesture() {
     return true;
 
   V8Proxy* active_proxy =
-      static_cast<V8Bridge*>(active_frame->scriptBridge())->proxy();
+      static_cast<V8Bridge*>(active_frame->script())->proxy();
 
   v8::HandleScope handle_scope;
   v8::Handle<v8::Context> context = V8Proxy::GetContext(active_frame);

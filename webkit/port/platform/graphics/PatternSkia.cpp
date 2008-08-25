@@ -30,6 +30,9 @@
 #include "Pattern.h"
 
 #include "AffineTransform.h"
+#include "Image.h"
+#include "NativeImageSkia.h"
+
 #include "SkShader.h"
 
 namespace WebCore {
@@ -43,7 +46,7 @@ static inline SkShader::TileMode shaderRule(bool shouldRepeat)
 
 PlatformPatternPtr Pattern::createPlatformPattern(const AffineTransform& patternTransform) const
 {
-    SkBitmap* bm = m_tile->nativeImageForCurrentFrame();
+    SkBitmap* bm = m_tileImage->nativeImageForCurrentFrame();
     SkShader* shader = SkShader::CreateBitmapShader(*bm,
                                                     shaderRule(m_repeatX),
                                                     shaderRule(m_repeatY));
