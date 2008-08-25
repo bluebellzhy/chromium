@@ -125,11 +125,11 @@
 			Name="page"
 			>
 			<File
-				RelativePath="..\..\pending\AccessibilityObject.cpp"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityObject.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\AccessibilityObject.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityObject.h"
 				>
 			</File>
 			<File
@@ -245,7 +245,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\Frame.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\Frame.h"
 				>
 			</File>
 			<File
@@ -253,7 +253,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\FramePrivate.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\FramePrivate.h"
 				>
 			</File>
 			<File
@@ -577,15 +577,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\Arena.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\ArrayImpl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\ArrayImpl.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\Arena.h"
 				>
 			</File>
 			<File
@@ -617,14 +609,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedCString.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedCString.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedPtrList.h"
 				>
 			</File>
@@ -638,22 +622,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedPtrQueue.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pending\DeprecatedString.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedString.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedStringList.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DeprecatedStringList.h"
 				>
 			</File>
 			<File
@@ -1068,6 +1036,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\Pattern.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\Pattern.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\Pen.cpp"
 					>
 				</File>
@@ -1252,7 +1228,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\pending\String.cpp"
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\text\String.cpp"
 					>
 				</File>
 				<File
@@ -1637,14 +1613,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSTransformValue.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSTransformValue.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSUnicodeRangeValue.cpp"
 				>
 			</File>
@@ -1806,6 +1774,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\css\tokenizer.flex"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\WebKitCSSTransformValue.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\WebKitCSSTransformValue.h"
 				>
 			</File>
 		</Filter>
@@ -2185,7 +2161,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\styler\RenderStyle.cpp"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.cpp"
 				>
 			</File>
 			<File
@@ -3769,7 +3745,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\HTMLCanvasElement.cpp"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\html\HTMLCanvasElement.cpp"
 				>
 			</File>
 			<File

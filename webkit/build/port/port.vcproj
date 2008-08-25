@@ -863,11 +863,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\FloatPointSkia.cpp"
+					RelativePath="..\..\port\platform\graphics\ColorSkia.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\FloatRectSkia.cpp"
+					RelativePath="..\..\port\platform\graphics\FloatPointSkia.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\port\platform\graphics\FloatRectSkia.cpp"
 					>
 				</File>
 				<File
@@ -899,7 +903,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\GradientSkia.cpp"
+					RelativePath="..\..\port\platform\graphics\GradientSkia.cpp"
 					>
 				</File>
 				<File
@@ -935,7 +939,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\IntPointSkia.cpp"
+					RelativePath="..\..\port\platform\graphics\IntPointSkia.cpp"
 					>
 				</File>
 				<File
@@ -943,7 +947,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\IntRectSkia.cpp"
+					RelativePath="..\..\port\platform\graphics\IntRectSkia.cpp"
 					>
 				</File>
 				<File
@@ -964,6 +968,10 @@
 				</File>
 				<File
 					RelativePath="..\..\port\platform\graphics\PathSkia.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\port\platform\graphics\PatternSkia.cpp"
 					>
 				</File>
 				<File
