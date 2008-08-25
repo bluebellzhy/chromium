@@ -99,7 +99,7 @@ void IconDatabase::readIconForPageURLFromDisk(const String&)
 
 }
 
-Image* IconDatabase::iconForPageURL(const String& pageURL, const IntSize& size)
+Image* IconDatabase::iconForPageURL(const String& pageURL, const IntSize& size, bool cache)
 {
     return defaultIcon(size);
 }

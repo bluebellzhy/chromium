@@ -179,7 +179,7 @@ RenderStyle* RenderTextControl::createInnerBlockStyle(RenderStyle* startStyle)
 RenderStyle* RenderTextControl::createInnerTextStyle(RenderStyle* startStyle)
 {
     RenderStyle* textBlockStyle = new (renderArena()) RenderStyle();
-    HTMLFormControlElement* element = static_cast<HTMLFormControlElement*>(node());
+    HTMLGenericFormElement* element = static_cast<HTMLGenericFormElement*>(node());
 
     textBlockStyle->inheritFrom(startStyle);
     // The inner block, if present, always has its direction set to LTR,
@@ -196,8 +196,8 @@ RenderStyle* RenderTextControl::createInnerTextStyle(RenderStyle* startStyle)
         textBlockStyle->setOverflowX(OVISIBLE);
         textBlockStyle->setOverflowY(OVISIBLE);
 
-        // Set word wrap property based on wrap attribute.
-        if (!static_cast<HTMLTextAreaElement*>(element)->shouldWrapText()) {
+        // Set word wrap property based on wrap attribute
+        if (static_cast<HTMLTextAreaElement*>(element)->wrap() == HTMLTextAreaElement::ta_NoWrap) {
             textBlockStyle->setWhiteSpace(PRE);
             textBlockStyle->setWordWrap(NormalWordWrap);
         } else {
@@ -392,7 +392,7 @@ void RenderTextControl::createSubtreeIfNeeded()
 
 void RenderTextControl::updateFromElement()
 {
-    HTMLFormControlElement* element = static_cast<HTMLFormControlElement*>(node());
+    HTMLGenericFormElement* element = static_cast<HTMLGenericFormElement*>(node());
 
     createSubtreeIfNeeded();
 
@@ -432,18 +432,12 @@ void RenderTextControl::updateFromElement()
         m_searchPopup->updateFromElement();
 }
 
-void RenderTextControl::setUserEdited(bool isUserEdited)
-{
-    m_userEdited = isUserEdited;
-    document()->setIgnoreAutofocus(isUserEdited);
-}
-
 int RenderTextControl::selectionStart()
 {
     Frame* frame = document()->frame();
     if (!frame)
         return 0;
-    return indexForVisiblePosition(frame->selection()->start());
+    return indexForVisiblePosition(frame->selectionController()->start());
 }
 
 int RenderTextControl::selectionEnd()
@@ -451,7 +445,7 @@ int RenderTextControl::selectionEnd()
     Frame* frame = document()->frame();
     if (!frame)
         return 0;
-    return indexForVisiblePosition(frame->selection()->end());
+    return indexForVisiblePosition(frame->selectionController()->end());
 }
 
 void RenderTextControl::setSelectionStart(int start)
@@ -496,7 +490,7 @@ void RenderTextControl::setSelectionRange(int start, int end)
     Selection newSelection = Selection(startPosition, endPosition);
 
     if (Frame* frame = document()->frame())
-        frame->selection()->setSelection(newSelection);
+        frame->selectionController()->setSelection(newSelection);
 
     // FIXME: Granularity is stored separately on the frame, but also in the selection controller.
     // The granularity in the selection controller should be used, and then this line of code would not be needed.
@@ -515,7 +509,7 @@ VisiblePosition RenderTextControl::visiblePositionForIndex(int index)
     if (index <= 0)
         return VisiblePosition(m_innerText.get(), 0, DOWNSTREAM);
     ExceptionCode ec = 0;
-    RefPtr<Range> range = Range::create(document());
+    RefPtr<Range> range = new Range(document());
     range->selectNodeContents(m_innerText.get(), ec);
     CharacterIterator it(range.get());
     it.advance(index - 1);
@@ -528,7 +522,7 @@ int RenderTextControl::indexForVisiblePosition(const VisiblePosition& pos)
     if (!indexPosition.node() || indexPosition.node()->rootEditableElement() != m_innerText)
         return 0;
     ExceptionCode ec = 0;
-    RefPtr<Range> range = Range::create(document());
+    RefPtr<Range> range = new Range(document());
     range->setStart(m_innerText.get(), 0, ec);
     range->setEnd(indexPosition.node(), indexPosition.offset(), ec);
     return TextIterator::rangeLength(range.get());
@@ -549,7 +543,7 @@ void RenderTextControl::subtreeHasChanged()
     bool wasDirty = m_dirty;
     m_dirty = true;
     m_userEdited = true;
-    HTMLFormControlElement* element = static_cast<HTMLFormControlElement*>(node());
+    HTMLGenericFormElement* element = static_cast<HTMLGenericFormElement*>(node());
     if (m_multiLine) {
         element->setValueMatchesRenderer(false);
         if (element->focused())
@@ -578,26 +572,15 @@ void RenderTextControl::subtreeHasChanged()
 
 String RenderTextControl::finishText(Vector<UChar>& result) const
 {
-    // Remove one trailing newline; there's always one that's collapsed out by rendering.
-    size_t size = result.size();
-    if (size && result[size - 1] == '\n')
-        result.shrink(--size);
-
-    // Convert backslash to currency symbol.
     UChar symbol = backslashAsCurrencySymbol();
     if (symbol != '\\') {
-        for (size_t i = 0; i < size; ++i) {
+        size_t size = result.size();
+        for (size_t i = 0; i < size; ++i)
             if (result[i] == '\\')
                 result[i] = symbol;
-        }
     }
 
     return String::adopt(result);
-}
-
-HTMLElement* RenderTextControl::innerTextElement() const
-{
-    return m_innerText.get();
 }
 
 String RenderTextControl::text()
@@ -659,7 +642,7 @@ String RenderTextControl::textWithHardLineBreaks()
     if (!renderer)
         return "";
 
-    InlineBox* box = renderer->isText() ? static_cast<RenderText*>(renderer)->firstTextBox() : renderer->inlineBoxWrapper();
+    InlineBox* box = renderer->inlineBox(0, DOWNSTREAM);
     if (!box)
         return "";
 
@@ -752,7 +735,7 @@ void RenderTextControl::calcHeight()
     RenderBlock::calcHeight();
 }
 
-int RenderTextControl::baselinePosition(bool b, bool isRootLineBox) const
+short RenderTextControl::baselinePosition(bool b, bool isRootLineBox) const
 {
     if (m_multiLine)
         return height() + marginTop() + marginBottom();
@@ -971,13 +954,13 @@ void RenderTextControl::forwardEvent(Event* evt)
 
 void RenderTextControl::selectionChanged(bool userTriggered)
 {
-    HTMLFormControlElement* element = static_cast<HTMLFormControlElement*>(node());
+    HTMLGenericFormElement* element = static_cast<HTMLGenericFormElement*>(node());
     if (m_multiLine)
         static_cast<HTMLTextAreaElement*>(element)->cacheSelection(selectionStart(), selectionEnd());
     else
         static_cast<HTMLInputElement*>(element)->cacheSelection(selectionStart(), selectionEnd());
     if (Frame* frame = document()->frame())
-        if (frame->selection()->isRange() && userTriggered)
+        if (frame->selectionController()->isRange() && userTriggered)
             element->dispatchHTMLEvent(selectEvent, true, false);
 }
 
@@ -1300,7 +1283,7 @@ void RenderTextControl::capsLockStateMayHaveChanged()
         if (Document* d = document())
             if (Frame* f = d->frame())
                 shouldDrawCapsLockIndicator = !m_multiLine && static_cast<HTMLInputElement*>(n)->inputType() == HTMLInputElement::PASSWORD && 
-                                               f->selection()->isFocusedAndActive() && d->focusedNode() == n && PlatformKeyboardEvent::currentCapsLockState();
+                                               f->selectionController()->isFocusedAndActive() && d->focusedNode() == n && PlatformKeyboardEvent::currentCapsLockState();
 
     if (shouldDrawCapsLockIndicator != m_shouldDrawCapsLockIndicator) {
         m_shouldDrawCapsLockIndicator = shouldDrawCapsLockIndicator;

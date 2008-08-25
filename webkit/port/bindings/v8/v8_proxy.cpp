@@ -38,6 +38,7 @@
 #include "v8_binding.h"
 #include "v8_custom.h"
 #include "v8_nodefilter.h"
+#include "V8Bridge.h"
 
 #include "RefCounted.h"  // for Peerable
 
@@ -1293,7 +1294,7 @@ V8Proxy* V8Proxy::retrieve() {
 
 V8Proxy* V8Proxy::retrieve(Frame* frame) {
   if (!frame) return 0;
-  V8Bridge* bridge = static_cast<V8Bridge*>(frame->script());
+  V8Bridge* bridge = static_cast<V8Bridge*>(frame->scriptBridge());
   return bridge->isEnabled() ? bridge->proxy() : 0;
 }
 

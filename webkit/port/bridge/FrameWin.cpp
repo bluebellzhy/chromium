@@ -28,32 +28,57 @@
 
 #pragma warning(push, 0)
 #include "Document.h"
+#include "EditorClient.h"
+#include "FrameLoader.h"
+#include "FrameLoaderClient.h"
+#include "FrameLoadRequest.h"
 #include "FramePrivate.h"
 #include "FrameView.h"
+#include "Frame.h"
 #include "FrameWin.h"
-#include "RenderFrame.h"
+#include "NotImplemented.h"
 #include "RenderView.h"
-#include "ScriptController.h"
 
 #if USE(JAVASCRIPTCORE_BINDINGS)
+#include "JSLock.h"
 #include "kjs_proxy.h"
+#include "kjs_window.h"
 #include "NP_jsobject.h"
+#include "NotImplemented.h"
 #include "bindings/npruntime.h"
-#include "runtime_root.h"
-#include "runtime.h"
 #endif
 #if USE(V8_BINDING)
 #include "v8_npobject.h"
 #include "npruntime_priv.h"
 #endif
+#include "Page.h"
+#include "RenderFrame.h"
+#include "ResourceHandle.h"
+#if USE(JAVASCRIPTCORE_BINDINGS)
+#include "runtime_root.h"
+#include "runtime.h"
+#endif
 
+#include "Settings.h"
+#include "TextResourceDecoder.h"
 #include "webkit/glue/webplugin_impl.h"
 #pragma warning(pop)
 
+// So we can twiddle event member vars
+#define private public
+#include "PlatformKeyboardEvent.h"
+#undef private
+
+#include "webkit/glue/cache_manager.h"
+
 namespace WebCore {
 
+void Frame::clearPlatformScriptObjects()
+{
+}
+
 #if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
-JSInstance ScriptController::createScriptInstanceForWidget(Widget* widget)
+JSInstance Frame::createScriptInstanceForWidget(Widget* widget)
 {
     ASSERT(widget != 0);
 
@@ -74,8 +99,9 @@ JSInstance ScriptController::createScriptInstanceForWidget(Widget* widget)
 #if USE(JAVASCRIPTCORE_BINDINGS)
     // Register 'widget' with the frame so that we can teardown
     // subobjects when the container goes away.
-    RefPtr<KJS::Bindings::RootObject> root = script()->createRootObject(widget);
-    KJS::Bindings::Instance* instance = 
+    RefPtr<KJS::Bindings::RootObject> root = 
+        createRootObject(widget, scriptProxy()->globalObject());
+    KJS::Bindings::Instance *instance = 
         KJS::Bindings::Instance::createBindingForLanguageInstance(
             KJS::Bindings::Instance::CLanguage, npObject,
             root.release());
@@ -174,10 +200,14 @@ void computePageRectsForFrame(WebCore::Frame* frame, const WebCore::IntRect& pri
 
 DragImageRef Frame::dragImageForSelection()
 {    
-    if (selection()->isRange())
+    if (selectionController()->isRange())
         return 0;  // TODO(pkasting): http://b/119669 Implement me!
 
     return 0;
+}
+
+void Frame::dashboardRegionsChanged()
+{
 }
 
 } // namespace WebCore

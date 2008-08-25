@@ -127,17 +127,6 @@ String homeDirectoryPath()
     return "";
 }
 
-String pathGetFileName(const String& path)
-{
-    return String(::PathFindFileName(String(path).charactersWithNullTermination()));
-}
-
-String directoryName(const String& path)
-{
-    notImplemented();
-    return String();
-}
-
 #if PLATFORM(CF)
 static String bundleName()
 {
@@ -192,51 +181,25 @@ static String cachedStorageDirectory(DWORD pathIdentifier)
     return directory;
 }
 
-CString openTemporaryFile(const char*, PlatformFileHandle& handle)
-{
-    handle = INVALID_HANDLE_VALUE;
 
+CString openTemporaryFile(const char* prefix, PlatformFileHandle& handle)
+{
     char tempPath[MAX_PATH];
     int tempPathLength = ::GetTempPathA(_countof(tempPath), tempPath);
     if (tempPathLength <= 0 || tempPathLength > _countof(tempPath))
         return 0;
 
-    HCRYPTPROV hCryptProv = 0;
-    if (!CryptAcquireContext(&hCryptProv, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
-        return 0;
+    char tempFile[MAX_PATH];
+    if (::GetTempFileNameA(tempPath, prefix, 0, tempFile) > 0) {
+        HANDLE tempHandle = ::CreateFileA(tempFile, GENERIC_READ | GENERIC_WRITE, 0, 0, 
+            CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    char proposedPath[MAX_PATH];
-    while (1) {
-        char tempFile[] = "XXXXXXXX.tmp"; // Use 8.3 style name (more characters aren't helpful due to 8.3 short file names)
-        const int randomPartLength = 8;
-        if (!CryptGenRandom(hCryptProv, randomPartLength, reinterpret_cast<BYTE*>(tempFile)))
-            break;
-
-        // Limit to valid filesystem characters, also excluding others that could be problematic, like punctuation.
-        // don't include both upper and lowercase since Windows file systems are typically not case sensitive.
-        const char validChars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-        for (int i = 0; i < randomPartLength; ++i)
-            tempFile[i] = validChars[tempFile[i] % (sizeof(validChars) - 1)];
-
-        ASSERT(strlen(tempFile) == sizeof(tempFile) - 1);
-
-        if (!PathCombineA(proposedPath, tempPath, tempFile))
-            break;
- 
-        // use CREATE_NEW to avoid overwriting an existing file with the same name
-        handle = CreateFileA(proposedPath, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, 0);
-        if (!isHandleValid(handle) && GetLastError() == ERROR_ALREADY_EXISTS)
-            continue;
-
-        break;
+        if (isHandleValid(tempHandle)) {
+            handle = tempHandle;
+            return tempFile;
+        }
     }
-
-    CryptReleaseContext(hCryptProv, 0);
-
-    if (!isHandleValid(handle))
-        return 0;
-
-    return proposedPath;
+    return 0;
 }
 
 void closeFile(PlatformFileHandle& handle)
@@ -258,11 +221,6 @@ int writeToFile(PlatformFileHandle handle, const char* data, int length)
     if (!success)
         return -1;
     return static_cast<int>(bytesWritten);
-}
-
-bool unloadModule(PlatformModule module)
-{
-    return ::FreeLibrary(module);
 }
 
 String localUserSpecificStorageDirectory()
@@ -306,12 +264,5 @@ bool safeCreateFile(const String& path, CFDataRef data)
     return true;
 }
 #endif
-
-Vector<String> listDirectory(const String& path, const String& filter)
-{
-    Vector<String> entries;
-    notImplemented();
-    return entries;
-}
 
 } // namespace WebCore

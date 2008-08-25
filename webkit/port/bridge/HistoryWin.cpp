@@ -27,6 +27,7 @@
 #include "History.h"
 
 #include "CString.h"
+#include "DeprecatedString.h"
 #include "Document.h"
 #include "PlatformString.h"
 #include "SecurityOrigin.h"

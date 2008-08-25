@@ -29,13 +29,15 @@
 #include "config.h"
 #include "CachedScript.h"
 
+#include "Cache.h"
 #include "CachedResourceClient.h"
 #include "CachedResourceClientWalker.h"
+#include "loader.h"
 #include <wtf/Vector.h>
 
 namespace WebCore {
 
-CachedScript::CachedScript(const String& url, const String& charset)
+CachedScript::CachedScript(DocLoader* dl, const String& url, const String& charset)
     : CachedResource(url, Script)
     , m_encoding(charset)
 {
@@ -43,6 +45,9 @@ CachedScript::CachedScript(const String& url, const String& charset)
     // But some websites think their scripts are <some wrong mimetype here>
     // and refuse to serve them if we only accept application/x-javascript.
     setAccept("*/*");
+    // load the file
+    cache()->loader()->load(dl, this, false);
+    m_loading = true;
     if (!m_encoding.isValid())
         m_encoding = Latin1Encoding();
 }
@@ -51,9 +56,9 @@ CachedScript::~CachedScript()
 {
 }
 
-void CachedScript::addClient(CachedResourceClient* c)
+void CachedScript::ref(CachedResourceClient* c)
 {
-    CachedResource::addClient(c);
+    CachedResource::ref(c);
     if (!m_loading)
         c->notifyFinished(this);
 }

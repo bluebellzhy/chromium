@@ -39,6 +39,7 @@
 #include "v8_helpers.h"
 #include "v8_np_utils.h"
 #include "v8_proxy.h"
+#include "V8Bridge.h"
 #include "DOMWindow.h"
 
 using WebCore::V8ClassIndex;

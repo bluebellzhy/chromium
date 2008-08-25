@@ -33,8 +33,6 @@
 #include "Event.h"
 #include "EventHandler.h"
 #include "EventNames.h"
-#include "File.h"
-#include "FileList.h"
 #include "FocusController.h"
 #include "FormDataList.h"
 #include "Frame.h"
@@ -48,10 +46,10 @@
 #include "RenderButton.h"
 #include "RenderFileUploadControl.h"
 #include "RenderImage.h"
-#include "RenderSlider.h"
 #include "RenderText.h"
 #include "RenderTextControl.h"
 #include "RenderTheme.h"
+#include "RenderSlider.h"
 #include "SelectionController.h"
 #include "TextBreakIterator.h"
 #include "TextEvent.h"
@@ -130,7 +128,7 @@ void HTMLInputElement::init()
 
     m_haveType = false;
     m_activeSubmit = false;
-    m_autocomplete = Uninitialized;
+    m_autocomplete = true;
     m_inited = false;
     m_autofilled = false;
 
@@ -141,11 +139,14 @@ void HTMLInputElement::init()
     cachedSelEnd = -1;
 
     m_maxResults = -1;
+
+    if (form())
+        m_autocomplete = form()->autoComplete();
 }
 
 HTMLInputElement::~HTMLInputElement()
 {
-    if (needsCacheCallback())
+    if (inputType() == PASSWORD)
         document()->unregisterForCacheCallbacks(this);
 
     document()->checkedRadioButtons().removeButton(this);
@@ -159,20 +160,6 @@ const AtomicString& HTMLInputElement::name() const
 {
     return m_name.isNull() ? emptyAtom : m_name;
 }
-
-bool HTMLInputElement::autoComplete() const
-{
-    if (m_autocomplete != Uninitialized)
-        return m_autocomplete == On;
-    
-    // Assuming we're still in a Form, respect the Form's setting
-    if (HTMLFormElement* form = this->form())
-        return form->autoComplete();
-    
-    // The default is true
-    return true;
-}
-
 
 static inline HTMLFormElement::CheckedRadioButtons& checkedRadioButtons(const HTMLInputElement *element)
 {
@@ -318,10 +305,7 @@ void HTMLInputElement::setInputType(const String& t)
         else {
             checkedRadioButtons(this).removeButton(this);
 
-            if (newType == FILE && !m_fileList)
-                m_fileList = FileList::create();
-
-            bool wasAttached = attached();
+            bool wasAttached = m_attached;
             if (wasAttached)
                 detach();
 
@@ -343,9 +327,9 @@ void HTMLInputElement::setInputType(const String& t)
                 recheckValue();
 
             if (wasPasswordField && !isPasswordField)
-                unregisterForCacheCallbackIfNeeded();
+                document()->unregisterForCacheCallbacks(this);
             else if (!wasPasswordField && isPasswordField)
-                registerForCacheCallbackIfNeeded();
+                document()->registerForCacheCallbacks(this);
 
             if (didRespectHeightAndWidth != willRespectHeightAndWidth) {
                 NamedMappedAttrMap* map = mappedAttributes();
@@ -357,11 +341,8 @@ void HTMLInputElement::setInputType(const String& t)
                     attributeChanged(align, false);
             }
 
-            if (wasAttached) {
+            if (wasAttached)
                 attach();
-                if (document()->focusedNode() == this)
-                    updateFocusAppearance(true);
-            }
 
             checkedRadioButtons(this).addButton(this);
         }
@@ -432,9 +413,6 @@ const AtomicString& HTMLInputElement::type() const
 
 bool HTMLInputElement::saveState(String& result) const
 {
-    if (!autoComplete())
-        return false;
-
     switch (inputType()) {
         case BUTTON:
         case FILE:
@@ -609,17 +587,7 @@ void HTMLInputElement::parseMappedAttribute(MappedAttribute *attr)
         m_name = attr->value();
         checkedRadioButtons(this).addButton(this);
     } else if (attr->name() == autocompleteAttr) {
-        if (equalIgnoringCase(attr->value(), "off")) {
-            m_autocomplete = Off;
-            registerForCacheCallbackIfNeeded();
-        } else {
-            if (m_autocomplete == Off)
-                unregisterForCacheCallbackIfNeeded();
-            if (attr->isEmpty())
-                m_autocomplete = Uninitialized;
-            else
-                m_autocomplete = On;
-        }
+        m_autocomplete = !equalIgnoringCase(attr->value(), "off");
     } else if (attr->name() == typeAttr) {
         setInputType(attr->value());
     } else if (attr->name() == valueAttr) {
@@ -656,20 +624,20 @@ void HTMLInputElement::parseMappedAttribute(MappedAttribute *attr)
                attr->name() == accesskeyAttr) {
         // FIXME: ignore for the moment
     } else if (attr->name() == vspaceAttr) {
-        addCSSLength(attr, CSSPropertyMarginTop, attr->value());
-        addCSSLength(attr, CSSPropertyMarginBottom, attr->value());
+        addCSSLength(attr, CSS_PROP_MARGIN_TOP, attr->value());
+        addCSSLength(attr, CSS_PROP_MARGIN_BOTTOM, attr->value());
     } else if (attr->name() == hspaceAttr) {
-        addCSSLength(attr, CSSPropertyMarginLeft, attr->value());
-        addCSSLength(attr, CSSPropertyMarginRight, attr->value());
+        addCSSLength(attr, CSS_PROP_MARGIN_LEFT, attr->value());
+        addCSSLength(attr, CSS_PROP_MARGIN_RIGHT, attr->value());
     } else if (attr->name() == alignAttr) {
         if (inputType() == IMAGE)
             addHTMLAlignment(attr);
     } else if (attr->name() == widthAttr) {
         if (respectHeightAndWidthAttrs())
-            addCSSLength(attr, CSSPropertyWidth, attr->value());
+            addCSSLength(attr, CSS_PROP_WIDTH, attr->value());
     } else if (attr->name() == heightAttr) {
         if (respectHeightAndWidthAttrs())
-            addCSSLength(attr, CSSPropertyHeight, attr->value());
+            addCSSLength(attr, CSS_PROP_HEIGHT, attr->value());
     } else if (attr->name() == onfocusAttr) {
         setHTMLEventListener(focusEvent, attr);
     } else if (attr->name() == onblurAttr) {
@@ -877,12 +845,12 @@ bool HTMLInputElement::appendFormData(FormDataList& encoding, bool multipart)
 
             // If no filename at all is entered, return successful but empty.
             // Null would be more logical, but Netscape posts an empty file. Argh.
-            if (m_fileList->isEmpty()) {
+            if (value().isEmpty()) {
                 encoding.appendData(name(), String(""));
                 return true;
             }
 
-            encoding.appendFile(name(), m_fileList->item(0)->path());
+            encoding.appendFile(name(), value());
             return true;
     }
     return false;
@@ -949,20 +917,17 @@ void HTMLInputElement::copyNonAttributeProperties(const Element *source)
 
 String HTMLInputElement::value() const
 {
-    if (inputType() == FILE) {
-        if (!m_fileList->isEmpty())
-            return m_fileList->item(0)->fileName();
-        return String();
-    }
-
     String value = m_value;
-    if (value.isNull()) {
+
+    // It's important *not* to fall back to the value attribute for file inputs,
+    // because that would allow a malicious web page to upload files by setting the
+    // value attribute in markup.
+    if (value.isNull() && inputType() != FILE)
         value = constrainValue(getAttribute(valueAttr));
 
-        // If no attribute exists, then just use "on" or "" based off the checked() state of the control.
-        if (value.isNull() && (inputType() == CHECKBOX || inputType() == RADIO))
-            return checked() ? "on" : "";
-    }
+    // If no attribute exists, then just use "on" or "" based off the checked() state of the control.
+    if (value.isNull() && (inputType() == CHECKBOX || inputType() == RADIO))
+        return checked() ? "on" : "";
 
     return value;
 }
@@ -1003,13 +968,9 @@ void HTMLInputElement::setValue(const String& value)
 
     setValueMatchesRenderer(false);
     if (storesValueSeparateFromAttribute()) {
-        if (inputType() == FILE)
-            m_fileList->clear();
-        else {
-            m_value = constrainValue(value);
-            if (isTextField() && inDocument())
-                document()->updateRendering();
-        }
+        m_value = constrainValue(value);
+        if (isTextField() && inDocument())
+            document()->updateRendering();
         if (renderer())
             renderer()->updateFromElement();
         setChanged();
@@ -1032,18 +993,13 @@ void HTMLInputElement::setValueFromRenderer(const String& value)
     // Renderer and our event handler are responsible for constraining values.
     ASSERT(value == constrainValue(value) || constrainValue(value).isEmpty());
 
-    if (inputType() == FILE) {
-        m_fileList->clear();
-        m_fileList->append(File::create(value));
-    } else {
-        // Workaround for bug where trailing \n is included in the result of textContent.
-        // The assert macro above may also be simplified to:  value == constrainValue(value)
-        // http://bugs.webkit.org/show_bug.cgi?id=9661
-        if (value == "\n")
-            m_value = "";
-        else
-            m_value = value;
-    }
+    // Workaround for bug where trailing \n is included in the result of textContent.
+    // The assert macro above may also be simplified to:  value == constrainValue(value)
+    // http://bugs.webkit.org/show_bug.cgi?id=9661
+    if (value == "\n")
+        m_value = "";
+    else
+        m_value = value;
 
     setValueMatchesRenderer();
 
@@ -1393,7 +1349,7 @@ void HTMLInputElement::defaultEventHandler(Event* evt)
         // Make sure that the text to be inserted will not violate the maxLength.
         int oldLen = numGraphemeClusters(value().impl());
         ASSERT(oldLen <= maxLength());
-        int selectionLen = numGraphemeClusters(plainText(document()->frame()->selection()->selection().toRange().get()).impl());
+        int selectionLen = numGraphemeClusters(plainText(document()->frame()->selectionController()->selection().toRange().get()).impl());
         ASSERT(oldLen >= selectionLen);
         int maxNewLen = maxLength() - (oldLen - selectionLen);
 
@@ -1499,7 +1455,7 @@ void HTMLInputElement::setSize(unsigned _size)
     setAttribute(sizeAttr, String::number(_size));
 }
 
-KURL HTMLInputElement::src() const
+String HTMLInputElement::src() const
 {
     return document()->completeURL(getAttribute(srcAttr));
 }
@@ -1519,13 +1475,6 @@ void HTMLInputElement::setUseMap(const String &value)
     setAttribute(usemapAttr, value);
 }
 
-FileList* HTMLInputElement::files()
-{
-    if (inputType() != FILE)
-        return 0;
-    return m_fileList.get();
-}
-
 String HTMLInputElement::constrainValue(const String& proposedValue) const
 {
     return constrainValue(proposedValue, m_maxLen);
@@ -1537,23 +1486,6 @@ void HTMLInputElement::recheckValue()
     String newValue = constrainValue(oldValue);
     if (newValue != oldValue)
         setValue(newValue);
-}
-
-bool HTMLInputElement::needsCacheCallback()
-{
-    return inputType() == PASSWORD || m_autocomplete == Off;
-}
-
-void HTMLInputElement::registerForCacheCallbackIfNeeded()
-{
-    if (needsCacheCallback())
-        document()->registerForCacheCallbacks(this);
-}
-
-void HTMLInputElement::unregisterForCacheCallbackIfNeeded()
-{
-    if (!needsCacheCallback())
-        document()->unregisterForCacheCallbacks(this);
 }
 
 String HTMLInputElement::constrainValue(const String& proposedValue, int maxLen) const
@@ -1598,14 +1530,13 @@ Selection HTMLInputElement::selection() const
 
 void HTMLInputElement::didRestoreFromCache()
 {
-    ASSERT(needsCacheCallback());
+    ASSERT(inputType() == PASSWORD);
     reset();
 }
 
 void HTMLInputElement::willMoveToNewOwnerDocument()
 {
-    // Always unregister for cache callbacks when leaving a document, even if we would otherwise like to be registered
-    if (needsCacheCallback())
+    if (inputType() == PASSWORD)
         document()->unregisterForCacheCallbacks(this);
         
     document()->checkedRadioButtons().removeButton(this);
@@ -1615,20 +1546,10 @@ void HTMLInputElement::willMoveToNewOwnerDocument()
 
 void HTMLInputElement::didMoveToNewOwnerDocument()
 {
-    registerForCacheCallbackIfNeeded();
+    if (inputType() == PASSWORD)
+        document()->registerForCacheCallbacks(this);
         
     HTMLFormControlElementWithState::didMoveToNewOwnerDocument();
 }
     
-void HTMLInputElement::getSubresourceAttributeStrings(Vector<String>& urls) const
-{
-    urls.append(src().string());  
-}
-
-bool HTMLInputElement::willValidate() const
-{
-    // FIXME: This shall check for new WF2 input types too
-    return HTMLFormControlElementWithState::willValidate() && inputType() != HIDDEN &&
-           inputType() != BUTTON && inputType() != RESET;
-}
 } // namespace

@@ -321,8 +321,7 @@ RenderStyle* RenderMenuList::itemStyle(unsigned listIndex) const
     HTMLSelectElement* select = static_cast<HTMLSelectElement*>(node());
     HTMLElement* element = select->listItems()[listIndex];
     
-    RenderStyle* style = element->renderStyle() ? element->renderStyle() : element->computedStyle();
-    return style ? style : clientStyle();
+    return element->renderStyle() ? element->renderStyle() : clientStyle();
 }
 
 Color RenderMenuList::itemBackgroundColor(unsigned listIndex) const

@@ -75,6 +75,7 @@
 #include "xmlhttprequest.h"
 #include "XMLSerializer.h"
 #include "KURL.h"
+#include "DeprecatedString.h"
 #include "HTMLDocument.h"
 #include "HTMLNames.h"
 #include "HTMLBodyElement.h"
@@ -105,6 +106,7 @@
 #include "JSXPathNSResolver.h"
 #include "XPathResult.h"
 #include "XSLTProcessor.h"
+#include "V8Bridge.h"
 
 #if ENABLE(SVG)
 #include "V8SVGPODTypeWrapper.h"
@@ -912,7 +914,7 @@ static bool allowPopUp() {
   Frame* frame = V8Proxy::retrieveActiveFrame();
 
   ASSERT(frame);
-  if (frame->script()->wasRunByUserGesture()) return true;
+  if (frame->scriptBridge()->wasRunByUserGesture()) return true;
   Settings* settings = frame->settings();
   return settings && settings->JavaScriptCanOpenWindowsAutomatically();
 }
@@ -996,11 +998,11 @@ static Frame* createWindow(Frame* opener_frame,
       JSBridge::isSafeScript(new_frame)) {
     String completed_url =
         url.isEmpty() ? url : active_frame->document()->completeURL(url);
-    bool user_gesture = active_frame->script()->wasRunByUserGesture();
+    bool user_gesture = active_frame->scriptBridge()->wasRunByUserGesture();
 
     if (created) {
       new_frame->loader()->changeLocation(
-          KURL(completed_url),
+          KURL(completed_url.deprecatedString()),
           active_frame->loader()->outgoingReferrer(),
           false,
           user_gesture);
@@ -1170,7 +1172,7 @@ CALLBACK_FUNC_DECL(DOMWindowOpen) {
     if (!completed_url.isEmpty() &&
         (!parseURL(url_string).startsWith("javascript:", false) ||
          JSBridge::isSafeScript(frame))) {
-      bool user_gesture = active_frame->script()->wasRunByUserGesture();
+      bool user_gesture = active_frame->scriptBridge()->wasRunByUserGesture();
       frame->loader()->scheduleLocationChange(
           completed_url,
           active_frame->loader()->outgoingReferrer(),
@@ -1617,7 +1619,7 @@ INDEXED_PROPERTY_SETTER(HTMLSelectElementCollection) {
 // and the pixel_or_pos_prefix out parameter is used to indicate whether or
 // not the property name was prefixed with 'pos-' or 'pixel-'.
 static String CSSPropertyName(const String &p, bool *pixel_or_pos_prefix = 0) {
-  String prop = p;
+  DeprecatedString prop = p.deprecatedString();
 
   int i = prop.length();
   while (--i > 0) {
@@ -2874,7 +2876,7 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOpen) {
   String urlstring = ToWebCoreString(args[1]);
   V8Proxy* proxy = V8Proxy::retrieve();
   KURL url =
-    proxy->frame()->document()->completeURL(urlstring);
+    proxy->frame()->document()->completeURL(urlstring).deprecatedString();
 
   bool async = (args.Length() < 3) ? true : args[2]->BooleanValue();
 
