@@ -24,7 +24,7 @@
 #ifndef HTMLInputElement_h
 #define HTMLInputElement_h
 
-#include "HTMLGenericFormElement.h"
+#include "HTMLFormControlElement.h"
 #include <wtf/OwnPtr.h>
 
 // TODO(mmentovai): When the dependencies work on the Mac, get rid of the
@@ -36,7 +36,9 @@
 
 namespace WebCore {
 
+class FileList;
 class HTMLImageLoader;
+class KURL;
 class Selection;
 
 class HTMLInputElement : public HTMLFormControlElementWithState {
@@ -55,6 +57,12 @@ public:
         BUTTON,
         SEARCH,
         RANGE
+    };
+    
+    enum AutoCompleteSetting {
+        Uninitialized,
+        On,
+        Off
     };
 
     HTMLInputElement(Document*, HTMLFormElement* = 0);
@@ -75,7 +83,7 @@ public:
 
     virtual const AtomicString& name() const;
 
-    bool autoComplete() const { return m_autocomplete; }
+    bool autoComplete() const;
 
     // isChecked is used by the rendering tree/CSS while checked() is used by JS to determine checked state
     virtual bool isChecked() const { return checked() && (inputType() == CHECKBOX || inputType() == RADIO); }
@@ -83,11 +91,14 @@ public:
     
     bool readOnly() const { return isReadOnlyControl(); }
 
+    virtual bool isTextControl() const { return isTextField(); }
+
     bool isTextButton() const { return m_type == SUBMIT || m_type == RESET || m_type == BUTTON; }
     virtual bool isRadioButton() const { return m_type == RADIO; }
     bool isTextField() const { return m_type == TEXT || m_type == PASSWORD || m_type == SEARCH || m_type == ISINDEX; }
     bool isSearchField() const { return m_type == SEARCH; }
     virtual bool isInputTypeHidden() const { return m_type == HIDDEN; }
+    virtual bool isPasswordField() const { return m_type == PASSWORD; }
 
     bool checked() const { return m_checked; }
     void setChecked(bool, bool sendChangeEvent = false);
@@ -173,7 +184,7 @@ public:
 
     void setSize(unsigned);
 
-    String src() const;
+    KURL src() const;
     void setSrc(const String&);
 
     void setMaxLength(int);
@@ -183,7 +194,9 @@ public:
 
     bool autofilled() const { return m_autofilled; }
     void setAutofilled(bool b = true) { m_autofilled = b; }
-    
+
+    FileList* files();
+
     void cacheSelection(int s, int e) { cachedSelStart = s; cachedSelEnd = e; };
     void addSearchResult();
     void onSearch();
@@ -193,7 +206,11 @@ public:
     String constrainValue(const String& proposedValue) const;
 
     virtual void didRestoreFromCache();
+
+    virtual void getSubresourceAttributeStrings(Vector<String>&) const;
     
+    virtual bool willValidate() const;
+
 protected:
     virtual void willMoveToNewOwnerDocument();
     virtual void didMoveToNewOwnerDocument();
@@ -205,6 +222,10 @@ private:
     bool storesValueSeparateFromAttribute() const;
     String constrainValue(const String& proposedValue, int maxLen) const;
     void recheckValue();
+    
+    bool needsCacheCallback();
+    void registerForCacheCallbackIfNeeded();
+    void unregisterForCacheCallbackIfNeeded();
 
 #ifndef GOOGLE_WEBKIT_WITHOUT_GLUE_DEPENDENCY
     StateTrackingString m_value;
@@ -221,6 +242,8 @@ private:
 
     OwnPtr<HTMLImageLoader> m_imageLoader;
 
+    RefPtr<FileList> m_fileList;
+
     unsigned m_type : 4; // InputType 
     bool m_checked : 1;
     bool m_defaultChecked : 1;
@@ -228,7 +251,7 @@ private:
     bool m_indeterminate : 1;
     bool m_haveType : 1;
     bool m_activeSubmit : 1;
-    bool m_autocomplete : 1;
+    AutoCompleteSetting m_autocomplete : 2;
     bool m_autofilled : 1;
     bool m_inited : 1;
     

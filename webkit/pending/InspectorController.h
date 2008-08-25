@@ -41,18 +41,16 @@
 // KJS build. We unfortunately can't just use a different header file for
 // each build because a bunch of different files pull in this header file.
 
-// TODO(ojan): Comment in when we do the next full webkit merge.
-// Commented out from the head version of InspectorController.h
-// #include "JavaScriptDebugListener.h"
+#include "JavaScriptDebugListener.h"
 
-#include "Chrome.h"
-// TODO(ojan): Comment in when we do the next full webkit merge.
-// Commented out from the head version of InspectorController.h
-// #include "Console.h"
+#include "Console.h"
+#include "PlatformString.h"
+#include "StringHash.h"
 #include "DomWindow.h"
 #include <wtf/RefCounted.h>
 #if USE(JAVASCRIPTCORE_BINDINGS)
 #include <JavaScriptCore/JSContextRef.h>
+#include <profiler/Profiler.h>
 #elif USE(V8_BINDING)
 #include <v8.h>
 #endif
@@ -62,6 +60,7 @@
 
 #if USE(JAVASCRIPTCORE_BINDINGS)
 namespace KJS {
+    class Profile;
     class UString;
 }
 #endif
@@ -72,6 +71,7 @@ class Database;
 class DocumentLoader;
 class GraphicsContext;
 class InspectorClient;
+class JavaScriptCallFrame;
 class Node;
 class Page;
 class ResourceResponse;
@@ -95,7 +95,6 @@ public:
     typedef HashSet<RefPtr<InspectorDatabaseResource> > DatabaseResourcesSet;
 
     typedef enum {
-        FocusedNodeDocumentPanel,
         ConsolePanel,
         TimelinePanel
     } SpecialPanels;
@@ -342,14 +341,19 @@ public:
     typedef HashSet<RefPtr<InspectorDatabaseResource> > DatabaseResourcesSet;
 
     typedef enum {
-        FocusedNodeDocumentPanel,
+        CurrentPanel,
         ConsolePanel,
-        TimelinePanel
+        DatabasesPanel,
+        ElementsPanel,
+        ProfilesPanel,
+        ResourcesPanel,
+        ScriptsPanel
     } SpecialPanels;
 
     InspectorController(Page*, InspectorClient*);
     ~InspectorController();
 
+    void inspectedPageDestroyed();
     void pageDestroyed() { m_page = 0; }
     void inspectedPageDestroyed();
 
@@ -364,29 +368,45 @@ public:
     void hideHighlight();
 
     void show();
-    void showConsole();
-    void showTimeline();
+    void showPanel(SpecialPanels);
     void close();
 
-    bool windowVisible();
-    void setWindowVisible(bool visible = true);
+    bool isRecordingUserInitiatedProfile() const { return m_recordingUserInitiatedProfile; }
+    void startUserInitiatedProfiling();
+    void stopUserInitiatedProfiling();
+    void finishedProfiling(PassRefPtr<KJS::Profile>);
 
+    bool windowVisible();
+    void setWindowVisible(bool visible = true, bool attached = false);
+
+    void addMessageToConsole(MessageSource, MessageLevel, KJS::ExecState*, const KJS::ArgList& arguments, unsigned lineNumber, const String& sourceID);
     void addMessageToConsole(MessageSource, MessageLevel, const String& message, unsigned lineNumber, const String& sourceID);
+    void clearConsoleMessages();
+    void toggleRecordButton(bool);
+
+    void addProfile(PassRefPtr<KJS::Profile>);
+    void addProfileMessageToConsole(PassRefPtr<KJS::Profile> prpProfile);
+    void addScriptProfile(KJS::Profile* profile);
+    const Vector<RefPtr<KJS::Profile> >& profiles() const { return m_profiles; }
 
     void attachWindow();
     void detachWindow();
+
+    void setAttachedWindow(bool);
+    void setAttachedWindowHeight(unsigned height);
 
 #if USE(JAVASCRIPTCORE_BINDINGS)
     JSContextRef scriptContext() const { return m_scriptContext; };
     void setScriptContext(JSContextRef context) { m_scriptContext = context; };
 #endif
 
+    void inspectedWindowScriptObjectCleared(Frame*);
     void windowScriptObjectAvailable();
 
     void scriptObjectReady();
 
-    void populateScriptResources();
-    void clearScriptResources();
+    void populateScriptObjects();
+    void resetScriptObjects();
 
     void didCommitLoad(DocumentLoader*);
     void frameDetachedFromParent(Frame*);
@@ -399,6 +419,7 @@ public:
     void didReceiveContentLength(DocumentLoader*, unsigned long identifier, int lengthReceived);
     void didFinishLoading(DocumentLoader*, unsigned long identifier);
     void didFailLoading(DocumentLoader*, unsigned long identifier, const ResourceError&);
+    void resourceRetrievedByXMLHttpRequest(unsigned long identifier, KJS::UString& sourceString);
 
 #if ENABLE(DATABASE)
     void didOpenDatabase(Database*, const String& domain, const String& name, const String& version);
@@ -407,8 +428,34 @@ public:
     const ResourcesMap& resources() const { return m_resources; }
 
     void moveWindowBy(float x, float y) const;
+    void closeWindow();
+
+    void startDebuggingAndReloadInspectedPage();
+    void stopDebugging();
+    bool debuggerAttached() const { return m_debuggerAttached; }
+
+    JavaScriptCallFrame* currentCallFrame() const;
+
+    void addBreakpoint(int sourceID, unsigned lineNumber);
+    void removeBreakpoint(int sourceID, unsigned lineNumber);
+
+    bool pauseOnExceptions();
+    void setPauseOnExceptions(bool pause);
+
+    void pauseInDebugger();
+    void resumeDebugger();
+
+    void stepOverStatementInDebugger();
+    void stepIntoStatementInDebugger();
+    void stepOutOfFunctionInDebugger();
 
     void drawNodeHighlight(GraphicsContext&) const;
+    
+    void startTiming(const KJS::UString& title);
+    bool stopTiming(const KJS::UString& title, double& elapsed);
+
+    void startGroup(MessageSource source, KJS::ExecState* exec, const KJS::ArgList& arguments, unsigned lineNumber, const String& sourceURL);
+    void endGroup(MessageSource source, unsigned lineNumber, const String& sourceURL);
 #if USE(V8_BINDING)
     // InspectorController.idl
     void addSourceToFrame(unsigned long identifier, Node* frame);
@@ -428,8 +475,8 @@ public:
 private:
     void focusNode();
 
+    void addConsoleMessage(ConsoleMessage*);
     void addScriptConsoleMessage(const ConsoleMessage*);
-    void clearScriptConsoleMessages();
 
 #if USE(V8_BINDING)
     void setScriptObject(v8::Handle<v8::Object> newScriptObject)
@@ -443,9 +490,6 @@ private:
             m_scriptObject = v8::Persistent<v8::Object>::New(newScriptObject);
     }
 #endif
-
-    void clearNetworkTimeline();
-    void clearDatabaseScriptResources();
 
     void addResource(InspectorResource*);
     void removeResource(InspectorResource*);
@@ -464,6 +508,7 @@ private:
 #endif
     void updateScriptResourceRequest(InspectorResource*);
     void updateScriptResourceResponse(InspectorResource*);
+    void updateScriptResourceType(InspectorResource*);
     void updateScriptResource(InspectorResource*, int length);
     void updateScriptResource(InspectorResource*, bool finished, bool failed = false);
     void updateScriptResource(InspectorResource*, double startTime, double responseReceivedTime, double endTime);
@@ -486,14 +531,29 @@ private:
     void removeDatabaseScriptResource(InspectorDatabaseResource*);
 #endif
 
+    JSValueRef callSimpleFunction(JSContextRef, JSObjectRef thisObject, const char* functionName) const;
+    JSValueRef callFunction(JSContextRef, JSObjectRef thisObject, const char* functionName, size_t argumentCount, const JSValueRef arguments[], JSValueRef& exception) const;
+
+    bool handleException(JSContextRef, JSValueRef exception, unsigned lineNumber) const;
+
+    void showWindow();
+    void closeWindow();
+
+    virtual void didParseSource(KJS::ExecState*, const KJS::SourceProvider& source, int startingLineNumber, const KJS::UString& sourceURL, int sourceID);
+    virtual void failedToParseSource(KJS::ExecState*, const KJS::SourceProvider& source, int startingLineNumber, const KJS::UString& sourceURL, int errorLine, const KJS::UString& errorMessage);
+    virtual void didPause();
+
     Page* m_inspectedPage;
     InspectorClient* m_client;
     Page* m_page;
     RefPtr<Node> m_nodeToFocus;
     RefPtr<InspectorResource> m_mainResource;
     ResourcesMap m_resources;
+    HashSet<String> m_knownResources;
     FrameResourcesMap m_frameResources;
     Vector<ConsoleMessage*> m_consoleMessages;
+    Vector<RefPtr<KJS::Profile> > m_profiles;
+    HashMap<String, double> m_times;
 #if ENABLE(DATABASE)
     DatabaseResourcesSet m_databaseResources;
 #endif
@@ -505,10 +565,14 @@ private:
     v8::Persistent<v8::Object> m_scriptObject;
 #endif
     bool m_windowVisible;
+    bool m_debuggerAttached;
+    bool m_attachDebuggerWhenShown;
+    bool m_recordingUserInitiatedProfile;
     SpecialPanels m_showAfterVisible;
     // TODO(ojan): Come up with a solution for this that avoids collisions.
     unsigned long m_nextIdentifier;
     RefPtr<Node> m_highlightedNode;
+    unsigned m_groupLevel;
 };
 
 } // namespace WebCore
