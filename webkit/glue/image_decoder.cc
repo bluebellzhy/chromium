@@ -52,7 +52,7 @@ ImageDecoder::~ImageDecoder() {
 
 SkBitmap ImageDecoder::Decode(const unsigned char* data, size_t size) {
   WebCore::ImageSourceSkia source;
-  WTF::RefPtr<WebCore::SharedBuffer> buffer(new WebCore::SharedBuffer(
+  WTF::RefPtr<WebCore::SharedBuffer> buffer(WebCore::SharedBuffer::create(
       data, static_cast<int>(size)));
   source.setData(buffer.get(), true,
                  WebCore::IntSize(desired_icon_size_.width(),

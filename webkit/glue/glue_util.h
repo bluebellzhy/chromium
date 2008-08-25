@@ -36,7 +36,6 @@
 
 namespace WebCore {
   class CString;
-  class DeprecatedString;
   class KURL;
   class String;
 }
@@ -48,9 +47,6 @@ namespace webkit_glue {
 
   WebCore::String StdWStringToString(const std::wstring& str);
   WebCore::String StdStringToString(const std::string& str);
-  
-  WebCore::DeprecatedString StdWStringToDeprecatedString(const std::wstring& str);
-  std::wstring DeprecatedStringToStdWString(const WebCore::DeprecatedString& dep);
 
   GURL KURLToGURL(const WebCore::KURL& url);
   WebCore::KURL GURLToKURL(const GURL& url);

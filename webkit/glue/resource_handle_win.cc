@@ -51,7 +51,9 @@
 
 #pragma warning(push, 0)
 #include "CString.h"
+#include "Console.h"
 #include "DocLoader.h"
+#include "DOMWindow.h"
 #include "FormData.h"
 #include "FrameLoader.h"
 #include "LogWin.h"
@@ -372,7 +374,7 @@ bool ResourceHandleInternal::Start(
     // WinInet dies if blank headers are set.  TODO(darin): Is this still an
     // issue now that we are using WinHTTP?
     if ((*it).first.isEmpty()) {
-      webframe->frame()->page()->chrome()->addMessageToConsole(
+      webframe->frame()->domWindow()->console()->addMessage(
         JSMessageSource,
         ErrorMessageLevel,
         "Refused to set blank header",

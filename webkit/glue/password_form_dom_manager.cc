@@ -207,10 +207,10 @@ void PasswordFormDomManager::FindPasswordFormFields(
   DCHECK(form && fields);
   int first_password_index = 0;
   // First, find the password fields and activated submit button
-  const WTF::Vector<WebCore::HTMLGenericFormElement*>& form_elements =
+  const WTF::Vector<WebCore::HTMLFormControlElement*>& form_elements =
       form->formElements;
   for (size_t i = 0; i < form_elements.size(); i++) {
-    WebCore::HTMLGenericFormElement* form_element = form_elements[i];
+    WebCore::HTMLFormControlElement* form_element = form_elements[i];
     if (form_element->isActivatedSubmit())
       fields->submit = form_element;
 
@@ -234,7 +234,7 @@ void PasswordFormDomManager::FindPasswordFormFields(
   if (!fields->passwords.empty()) {
     // Then, search backwards for the username field
     for (int i = first_password_index - 1; i >= 0; i--) {
-      WebCore::HTMLGenericFormElement* form_element = form_elements[i];
+      WebCore::HTMLFormControlElement* form_element = form_elements[i];
       if (!form_element->hasLocalName(WebCore::HTMLNames::inputTag))
         continue;
 
@@ -256,7 +256,7 @@ void PasswordFormDomManager::FindPasswordFormFields(
 PasswordForm* PasswordFormDomManager::AssemblePasswordFormResult(
     const GURL& full_origin, 
     const GURL& full_action,
-    WebCore::HTMLGenericFormElement* submit,
+    WebCore::HTMLFormControlElement* submit,
     WebCore::HTMLInputElement* username,
     WebCore::HTMLInputElement* old_password,
     WebCore::HTMLInputElement* password) {

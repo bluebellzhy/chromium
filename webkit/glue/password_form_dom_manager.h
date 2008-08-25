@@ -39,7 +39,7 @@
 namespace WebCore {
 class HTMLFormElement;
 class HTMLInputElement;
-class HTMLGenericFormElement;
+class HTMLFormControlElement;
 }
 
 class GURL;
@@ -86,7 +86,7 @@ class PasswordFormDomManager {
   struct PasswordFormFields {
     WebCore::HTMLInputElement* username;
     std::vector<WebCore::HTMLInputElement*> passwords;
-    WebCore::HTMLGenericFormElement* submit;
+    WebCore::HTMLFormControlElement* submit;
     PasswordFormFields() : username(NULL), submit(NULL) { 
     }
   };
@@ -146,7 +146,7 @@ class PasswordFormDomManager {
   static PasswordForm* AssemblePasswordFormResult(
       const GURL& full_origin, 
       const GURL& full_action,
-      WebCore::HTMLGenericFormElement* submit,
+      WebCore::HTMLFormControlElement* submit,
       WebCore::HTMLInputElement* username,
       WebCore::HTMLInputElement* old_password,
       WebCore::HTMLInputElement* password);

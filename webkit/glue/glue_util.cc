@@ -35,7 +35,6 @@
 
 #pragma warning(push, 0)
 #include "CString.h"
-#include "DeprecatedString.h"
 #include "PlatformString.h"
 #pragma warning(pop)
 
@@ -67,19 +66,6 @@ WebCore::String StdStringToString(const std::string& str) {
   return WebCore::String(str.data(), static_cast<unsigned>(str.length()));
 }
 
-WebCore::DeprecatedString StdWStringToDeprecatedString(
-    const std::wstring& str) {
-  return WebCore::DeprecatedString(
-      reinterpret_cast<const WebCore::DeprecatedChar*>(str.c_str()),
-      static_cast<int>(str.size()));
-}
-
-std::wstring DeprecatedStringToStdWString(
-    const WebCore::DeprecatedString& dep) {
-  return std::wstring(reinterpret_cast<const wchar_t*>(dep.unicode()),
-                      dep.length());
-}
-
 // URL conversions -------------------------------------------------------------
 
 GURL KURLToGURL(const WebCore::KURL& url) {
@@ -89,7 +75,7 @@ GURL KURLToGURL(const WebCore::KURL& url) {
     return GURL();
   return GURL(spec.data(), spec.length(), url.parsed(), url.isValid());
 #else
-  return GURL(WideToUTF8(DeprecatedStringToStdWString(spec))); 
+  return GURL(WideToUTF8(StringToStdWString(spec))); 
 #endif
 }
 
@@ -100,7 +86,7 @@ WebCore::KURL GURLToKURL(const GURL& url) {
   return WebCore::KURL(spec.c_str(), static_cast<int>(spec.length()),
                        url.parsed_for_possibly_invalid_spec(), url.is_valid());
 #else
-  return WebCore::KURL(StdWStringToDeprecatedString(UTF8ToWide(spec)));
+  return WebCore::KURL(StdWStringToString(UTF8ToWide(spec)));
 #endif
 }
 

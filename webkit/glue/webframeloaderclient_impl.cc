@@ -859,6 +859,7 @@ void WebFrameLoaderClient::dispatchDecidePolicyForNewWindowAction(
     WebCore::FramePolicyFunction function,
     const WebCore::NavigationAction& action,
     const WebCore::ResourceRequest& request,
+    PassRefPtr<WebCore::FormState> form_state,
     const WebCore::String& frame_name) {
   WindowOpenDisposition disposition;
   if (!ActionSpecifiesDisposition(action, &disposition))
@@ -902,7 +903,8 @@ static WebNavigationType NavigationTypeToWebNavigationType(
 void WebFrameLoaderClient::dispatchDecidePolicyForNavigationAction(
     WebCore::FramePolicyFunction function,
     const WebCore::NavigationAction& action,
-    const WebCore::ResourceRequest& request) {
+    const WebCore::ResourceRequest& request,
+    PassRefPtr<WebCore::FormState> form_state) {
   PolicyAction policy_action = PolicyUse;
 
   WebViewImpl* wv = webframe_->webview_impl();
@@ -1088,11 +1090,7 @@ void WebFrameLoaderClient::finalSetupForReplace(DocumentLoader*) {
   // FIXME
 }
 
-void WebFrameLoaderClient::updateGlobalHistoryForStandardLoad(const KURL& kurl) {
-}
-
-void WebFrameLoaderClient::updateGlobalHistoryForReload(const KURL&) {
-  // FIXME: this is for updating the visit time.
+void WebFrameLoaderClient::updateGlobalHistory(const KURL& kurl) {
 }
 
 bool WebFrameLoaderClient::shouldGoToHistoryItem(HistoryItem*) const {

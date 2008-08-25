@@ -46,7 +46,7 @@ WebDataSourceImpl::WebDataSourceImpl(WebFrameImpl* frame,
                                      WebDocumentLoaderImpl* loader) :
   frame_(frame),
   loader_(loader),
-  initial_request_(loader->initialRequest()),
+  initial_request_(loader->originalRequest()),
   request_(loader->request()) {
 }
 
@@ -68,7 +68,7 @@ const WebRequest& WebDataSourceImpl::GetInitialRequest() const {
   // WebKit may change the frame load request as it sees fit, so we must sync
   // our request object.
   initial_request_.set_frame_load_request(
-      WebCore::FrameLoadRequest(loader_->initialRequest()));
+      WebCore::FrameLoadRequest(loader_->originalRequest()));
   return initial_request_;
 }
 

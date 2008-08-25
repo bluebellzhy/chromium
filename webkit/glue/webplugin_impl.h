@@ -51,7 +51,6 @@ class WebPluginDelegate;
 class WebPluginImpl;
 
 namespace WebCore {
-  class DeprecatedString;
   class Element;
   class Event;
   class Frame;

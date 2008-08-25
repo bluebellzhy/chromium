@@ -44,12 +44,10 @@
 #include "Page.h"
 #include "PlatformString.h"
 #include "RenderTreeAsText.h"
+#include "RenderView.h"
+#include "ScriptController.h"
 #include "SharedBuffer.h"
 #pragma warning(pop)
-
-#if USE(V8_BINDING) || USE(JAVASCRIPTCORE_BINDINGS)
-#include "JSBridge.h"  // for set flags
-#endif
 
 #undef LOG
 #undef notImplemented
@@ -78,7 +76,7 @@ void SetJavaScriptFlags(const std::wstring& str) {
 
 void SetRecordPlaybackMode(bool value) {
 #if USE(V8_BINDING) || USE(JAVASCRIPTCORE_BINDINGS)
-  WebCore::JSBridge::setRecordPlaybackMode(value);
+  WebCore::ScriptController::setRecordPlaybackMode(value);
 #endif
 }
 
@@ -174,8 +172,8 @@ std::wstring DumpRenderer(WebFrame* web_frame) {
   WebFrameImpl* webFrameImpl = static_cast<WebFrameImpl*>(web_frame);
   WebCore::Frame* frame = webFrameImpl->frame();
 
-  // This implicitly converts from a DeprecatedString.
-  return StringToStdWString(WebCore::externalRepresentation(frame->renderer()));
+  String frameText = WebCore::externalRepresentation(frame->contentRenderer());
+  return StringToStdWString(frameText);
 }
 
 std::wstring DumpFrameScrollPosition(WebFrame* web_frame, bool recursive) {
@@ -283,8 +281,8 @@ void ResetBeforeTestRun(WebView* view) {
 
   // This is papering over b/850700.  But it passes a few more tests, so we'll
   // keep it for now.
-  if (frame && frame->scriptBridge())
-    frame->scriptBridge()->setEventHandlerLineno(0);
+  if (frame && frame->script())
+    frame->script()->setEventHandlerLineno(0);
 
   // Reset the last click information so the clicks generated from previous
   // test aren't inherited (otherwise can mistake single/double/triple clicks)
@@ -310,8 +308,8 @@ void CheckForLeaks() {
 
 bool DecodeImage(const std::string& image_data, SkBitmap* image) {
    RefPtr<WebCore::SharedBuffer> buffer(
-       new WebCore::SharedBuffer(image_data.data(),
-                                 static_cast<int>(image_data.length())));
+       WebCore::SharedBuffer::create(image_data.data(),
+                                     static_cast<int>(image_data.length())));
   WebCore::ImageSource image_source;
   image_source.setData(buffer.get(), true);
 

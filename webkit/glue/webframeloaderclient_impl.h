@@ -113,8 +113,8 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
   virtual void dispatchShow();
 
   virtual void dispatchDecidePolicyForMIMEType(WebCore::FramePolicyFunction function, const WebCore::String& mime_type, const WebCore::ResourceRequest&);
-  virtual void dispatchDecidePolicyForNewWindowAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, const WebCore::String& frame_name);
-  virtual void dispatchDecidePolicyForNavigationAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request);
+  virtual void dispatchDecidePolicyForNewWindowAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState> form_state, const WebCore::String& frame_name);
+  virtual void dispatchDecidePolicyForNavigationAction(WebCore::FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState> form_state);
   virtual void cancelPolicyCheck();
 
   virtual void dispatchUnableToImplementPolicy(const WebCore::ResourceError&);
@@ -144,8 +144,7 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
   virtual void finishedLoading(WebCore::DocumentLoader*);
   virtual void finalSetupForReplace(WebCore::DocumentLoader*);
 
-  virtual void updateGlobalHistoryForStandardLoad(const WebCore::KURL&);
-  virtual void updateGlobalHistoryForReload(const WebCore::KURL&);
+  virtual void updateGlobalHistory(const WebCore::KURL&);
   virtual bool shouldGoToHistoryItem(WebCore::HistoryItem*) const;
 
   virtual WebCore::ResourceError blockedError(const WebCore::ResourceRequest&);

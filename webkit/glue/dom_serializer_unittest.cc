@@ -137,7 +137,7 @@ class DomSerializerTests : public TestShellTest,
       ASSERT_TRUE(web_frame != NULL);
       int len = static_cast<int>(contents.size());
       RefPtr<WebCore::SharedBuffer> buf(
-          new WebCore::SharedBuffer(contents.data(), len));
+          WebCore::SharedBuffer::create(contents.data(), len));
 
       WebCore::SubstituteData subst_data(
           buf, WebCore::String("text/html"), encoding_info, WebCore::KURL());
@@ -532,7 +532,7 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithEntitiesInText) {
   ASSERT_TRUE(body_ele != NULL);
   WebCore::Node* text_node = body_ele->firstChild();
   ASSERT_TRUE(text_node->isTextNode());
-  ASSERT_TRUE(text_node->toString() == WebCore::String("&<>\"\'"));
+  ASSERT_TRUE(createMarkup(text_node) == "&<>\"\'");
   // Do serialization.
   SerializeDomForURL(page_url, false);
   // Compare the serialized contents with original contents.
@@ -632,12 +632,12 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithBaseTag) {
           webkit_glue::GetSubResourceLinkFromElement(element);
       if (!value && element->hasTagName(WebCore::HTMLNames::aTag)) {
         value = &element->getAttribute(WebCore::HTMLNames::hrefAttr);
-        if (value->domString().isEmpty())
+        if (value->isEmpty())
           value = NULL;
       }
       // Each link is relative link.
       if (value) {
-        GURL link(webkit_glue::StringToStdWString(value->domString()).c_str());
+        GURL link(webkit_glue::StringToStdWString(value->string()).c_str());
         ASSERT_TRUE(link.scheme().empty());
       }
     }
@@ -646,7 +646,7 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithBaseTag) {
   // Make sure in original document, the base URL is not equal with the
   // |path_dir_url|.
   GURL original_base_url(
-      webkit_glue::DeprecatedStringToStdWString(doc->baseURL()).c_str());
+      webkit_glue::StringToStdWString(doc->baseURL()).c_str());
   ASSERT_TRUE(original_base_url != path_dir_url);
 
   // Do serialization.
@@ -683,12 +683,12 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithBaseTag) {
           webkit_glue::GetSubResourceLinkFromElement(element);
       if (!value && element->hasTagName(WebCore::HTMLNames::aTag)) {
         value = &element->getAttribute(WebCore::HTMLNames::hrefAttr);
-        if (value->domString().isEmpty())
+        if (value->isEmpty())
           value = NULL;
       }
       // Each link is absolute link.
       if (value) {
-        GURL link(webkit_glue::StringToStdWString(value->domString()).c_str());
+        GURL link(webkit_glue::StringToStdWString(value->string()).c_str());
         ASSERT_FALSE(link.scheme().empty());
       }
     }
@@ -697,6 +697,6 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithBaseTag) {
   ASSERT_TRUE(new_base_tag_count == original_base_tag_count + 1);
   // Make sure in new document, the base URL is equal with the |path_dir_url|.
   GURL new_base_url(
-    webkit_glue::DeprecatedStringToStdWString(doc->baseURL()).c_str());
+    webkit_glue::StringToStdWString(doc->baseURL()).c_str());
   ASSERT_TRUE(new_base_url == path_dir_url);
 }

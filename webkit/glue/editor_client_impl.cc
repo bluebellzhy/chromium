@@ -185,7 +185,7 @@ bool EditorClientImpl::shouldInsertNode(WebCore::Node* node,
   return true;
 }
 
-bool EditorClientImpl::shouldInsertText(WebCore::String text,
+bool EditorClientImpl::shouldInsertText(const WebCore::String& text,
                                         WebCore::Range* range,
                                         WebCore::EditorInsertAction action) {
   if (use_editor_delegate_) {
