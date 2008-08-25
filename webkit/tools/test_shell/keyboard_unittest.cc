@@ -74,7 +74,8 @@ static inline const char* InterpretCtrlKeyPress(char key_code) {
 static const int no_modifiers = 0;
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlReturn) {
-  WebCore::EventNames::init(); // FIXME: This should be in a SETUP call using TEST_F
+  // TODO(eseidel): This should be in a SETUP call using TEST_F
+  WebCore::EventNames::init();
 
   EXPECT_STREQ(InterpretCtrlKeyPress(0xD), "InsertNewline");
 }
@@ -149,6 +150,7 @@ TEST(KeyboardUnitTestKeyPress, TestInsertNewline3) {
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertNewline4) {
-  const char* result = InterpretNewLine(WebInputEvent::ALT_KEY | WebInputEvent::SHIFT_KEY);
+  int modifiers = WebInputEvent::ALT_KEY | WebInputEvent::SHIFT_KEY;
+  const char* result = InterpretNewLine(modifiers);
   EXPECT_STREQ(result, "InsertNewline");
 }
