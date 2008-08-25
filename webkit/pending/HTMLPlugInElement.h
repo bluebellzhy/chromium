@@ -1,9 +1,7 @@
 /*
- * This file is part of the DOM implementation for KDE.
- *
  * Copyright (C) 1999 Lars Knoll (knoll@kde.org)
  *           (C) 1999 Antti Koivisto (koivisto@kde.org)
- * Copyright (C) 2004, 2006 Apple Computer, Inc.
+ * Copyright (C) 2004, 2006, 2007, 2008 Apple Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -31,11 +29,13 @@
 #include "JSBridge.h"
 #endif
 
-#if USE(NPOBJECT)
-#include <bindings/npruntime.h>
+#if ENABLE(NETSCAPE_PLUGIN_API)
+struct NPObject;
 #endif
 
 namespace WebCore {
+
+class RenderWidget;
 
 class HTMLPlugInElement : public HTMLFrameOwnerElement {
 public:
@@ -62,29 +62,26 @@ public:
     String width() const;
     void setWidth(const String&);
 
-    virtual void detach();
+    virtual void defaultEventHandler(Event*);
 
 #if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
-    virtual JSInstance getInstance() const = 0;
-#endif
-#if USE(NPOBJECT)
-    virtual NPObject* getNPObject();
+    virtual void detach();
+    virtual RenderWidget* renderWidgetForJSBindings() const = 0;
+    JSInstance getInstance() const;
 #endif
 
-    virtual void defaultEventHandler(Event*);
-private:
-#if USE(NPOBJECT)
-    NPObject* createNPObject();
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    virtual NPObject* getNPObject();
 #endif
 
 protected:
     static void updateWidgetCallback(Node*);
 
-    String oldNameAttr;
+    AtomicString m_name;
 #if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
     mutable JSInstanceHolder m_instance;
 #endif
-#if USE(NPOBJECT)
+#if ENABLE(NETSCAPE_PLUGIN_API)
     NPObject* m_NPObject;
 #endif
 };

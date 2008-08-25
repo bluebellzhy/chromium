@@ -30,26 +30,25 @@
 #include "HTMLInputElement.h"
 #include "HTMLNames.h"
 #include "HitTestResult.h"
-#include "InspectorController.h"
+#include "JSDOMWindow.h"
 #include "Page.h"
+#include "PageGroup.h"
 #include "PausedTimeouts.h"
 #include "ResourceHandle.h"
+#include "SecurityOrigin.h"
 #include "Settings.h"
 #include "WindowFeatures.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefPtr.h>
 #include <wtf/Vector.h>
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
-#include "kjs_window.h"
+#if ENABLE(DOM_STORAGE)
+#include "SessionStorage.h"
 #endif
 
 namespace WebCore {
 
 using namespace HTMLNames;
-#if USE(JAVASCRIPTCORE_BINDINGS)
-using namespace KJS;
-#endif
 using namespace std;
 
 class PageGroupLoadDeferrer : Noncopyable {
@@ -117,7 +116,15 @@ void Chrome::takeFocus(FocusDirection direction) const
     
 Page* Chrome::createWindow(Frame* frame, const FrameLoadRequest& request, const WindowFeatures& features) const
 {
-    return m_client->createWindow(frame, request, features);
+    Page* newPage = m_client->createWindow(frame, request, features);
+#if ENABLE(DOM_STORAGE)
+    
+    if (newPage) {
+        if (SessionStorage* oldSessionStorage = m_page->sessionStorage(false))
+                newPage->setSessionStorage(oldSessionStorage->copy(newPage));
+    }
+#endif
+    return newPage;
 }
 
 void Chrome::show() const
@@ -194,14 +201,6 @@ bool Chrome::menubarVisible() const
 void Chrome::setResizable(bool b) const
 {
     m_client->setResizable(b);
-}
-
-void Chrome::addMessageToConsole(MessageSource source, MessageLevel level, const String& message, unsigned lineNumber, const String& sourceID)
-{
-    if (source == JSMessageSource)
-        m_client->addMessageToConsole(message, lineNumber, sourceID);
-
-    m_page->inspectorController()->addMessageToConsole(source, level, message, lineNumber, sourceID);
 }
 
 bool Chrome::canRunBeforeUnloadConfirmPanel()
@@ -347,15 +346,76 @@ void Chrome::print(Frame* frame)
     m_client->print(frame);
 }
 
+void Chrome::disableSuddenTermination()
+{
+    m_client->disableSuddenTermination();
+}
+
+void Chrome::enableSuddenTermination()
+{
+    m_client->enableSuddenTermination();
+}
+
+// --------
+
+#if ENABLE(DASHBOARD_SUPPORT)
+void ChromeClient::dashboardRegionsChanged()
+{
+}
+#endif
+
+void ChromeClient::populateVisitedLinks()
+{
+}
+
+FloatRect ChromeClient::customHighlightRect(Node*, const AtomicString&, const FloatRect&)
+{
+    return FloatRect();
+}
+
+void ChromeClient::paintCustomHighlight(Node*, const AtomicString&, const FloatRect&, const FloatRect&, bool, bool)
+{
+}
+
+bool ChromeClient::shouldReplaceWithGeneratedFileForUpload(const String&, String&)
+{
+    return false;
+}
+
+String ChromeClient::generateReplacementFile(const String&)
+{
+    ASSERT_NOT_REACHED();
+    return String(); 
+}
+
+void ChromeClient::disableSuddenTermination()
+{
+}
+
+void ChromeClient::enableSuddenTermination()
+{
+}
+
+bool ChromeClient::paintCustomScrollbar(GraphicsContext*, const FloatRect&, ScrollbarControlSize, 
+                                        ScrollbarControlState, ScrollbarPart, bool vertical,
+                                        float value, float proportion, ScrollbarControlPartMask)
+{
+    return false;
+}
+
+bool ChromeClient::paintCustomScrollCorner(GraphicsContext*, const FloatRect&)
+{
+    return false;
+}
+
+// --------
+
 PageGroupLoadDeferrer::PageGroupLoadDeferrer(Page* page, bool deferSelf)
 {
-    const HashSet<Page*>* group = page->frameNamespace();
+    const HashSet<Page*>& pages = page->group().pages();
 
-    if (!group)
-        return;
-
-    HashSet<Page*>::const_iterator end = group->end();
-    for (HashSet<Page*>::const_iterator it = group->begin(); it != end; ++it) {
+    HashSet<Page*>::const_iterator end = pages.end();
+    for (HashSet<Page*>::const_iterator it = pages.begin(); it != end; ++it) {
         Page* otherPage = *it;
         if ((deferSelf || otherPage != page)) {
             if (!otherPage->defersLoading())
