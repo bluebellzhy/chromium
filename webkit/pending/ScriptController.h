@@ -30,8 +30,8 @@
 // An interface to abstract implementation differences
 // for various Javascript engines.
 
-#ifndef JSBridge_h
-#define JSBridge_h
+#ifndef ScriptController_h
+#define ScriptController_h
 
 #include "bindings/npruntime.h"
 #if USE(JAVASCRIPTCORE_BINDINGS)
@@ -151,72 +151,66 @@ typedef v8::Local<v8::Value> JSException;
 typedef v8::Persistent<v8::Value> JSResult;
 #endif
 
-class JSBridge {
+class ScriptController {
  public:
-  virtual ~JSBridge() { }
+   ~ScriptController() { }
 
-  // Disconnects the proxy from its owner frame.
-  virtual void disconnectFrame() = 0;
+   void disconnectFrame();
 
-  virtual bool wasRunByUserGesture() = 0;
+   bool wasRunByUserGesture();
 
   
   // Evaluate a script file in the environment of this proxy.
   // If succeeded, 'succ' is set to true and result is returned
   // as a string.
-  virtual String evaluate(const String& filename, int baseLine,
-                          const String& code, Node*, bool* succ) = 0;
+   String evaluate(const String& filename, int baseLine,
+                          const String& code, Node*, bool* succ);
 
   // Second API function for evaluating a JS code.
   // It returns a JSResult which must be disposed by calling
   // disposeJSResult. If the result is not disposed, it can cause
   // serious memory leak. The caller determines whether the evaluation
   // is successful by checking the value of JSResult.
-  virtual JSResult evaluate(const String& filename, int baseLine,
-                            const String& code, Node*) = 0;
-  virtual void disposeJSResult(JSResult result) = 0;
+   JSResult evaluate(const String& filename, int baseLine,
+                            const String& code, Node*);
+   void disposeJSResult(JSResult result);
 
-  virtual EventListener* createHTMLEventHandler(const String& functionName,
-                                        const String& code, Node* node) = 0;
+   EventListener* createHTMLEventHandler(const String& functionName,
+                                        const String& code, Node* node);
 
 #if ENABLE(SVG)
-  virtual EventListener* createSVGEventHandler(const String& functionName,
-                                        const String& code, Node* node) = 0;
+   EventListener* createSVGEventHandler(const String& functionName,
+                                        const String& code, Node* node);
 #endif
   
-  virtual void setEventHandlerLineno(int lineno) = 0;
-  virtual void finishedWithEvent(Event*) = 0;
+   void setEventHandlerLineno(int lineno);
+   void finishedWithEvent(Event*);
 
-  virtual void clear() = 0;
+   void clear();
 
   // Get the Root object
-  // virtual JSRootObject* getRootObject() = 0;
+  //  JSRootObject* getRootObject();
   // Creates a property of the global object of a frame.
-  virtual void BindToWindowObject(Frame* frame, const String& key, NPObject* object) = 0;
+   void BindToWindowObject(Frame* frame, const String& key, NPObject* object);
 
-  // Provides access to the NPRuntime functions.
-  virtual NPRuntimeFunctions *functions() = 0;
+   NPRuntimeFunctions* functions();
 
   // Create an NPObject for the window object.
-  virtual NPObject *CreateScriptObject(Frame*) = 0;
+   NPObject* createScriptObject(Frame*);
 
-  // Create an NPObject for an HTMLPluginElement
-  virtual NPObject *CreateScriptObject(Frame*, HTMLPlugInElement*) = 0;
-  
-  // Create a "NoScript" object (used when JS is unavailable or disabled)
-  virtual NPObject *CreateNoScriptObject() = 0;
+   NPObject* createScriptObject(Frame*, HTMLPlugInElement*);
 
   // Check if the javascript engine has been initialized.
-  virtual bool haveInterpreter() const = 0;
+   bool haveInterpreter() const;
 
-  virtual bool isEnabled() const = 0;
+   bool isEnabled() const;
 
-  virtual void clearDocumentWrapper() = 0;
+   void clearDocumentWrapper();
 
-  virtual void CollectGarbage() = 0;
+   void CollectGarbage();
 
   // Create a NPObject wrapper for a JSObject
-  //virtual NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
+  // NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
   //                           JSRootObject* originRootObject,
   //                           JSRootObject* rootObject);
 
@@ -235,14 +229,14 @@ class JSBridge {
   static bool isSafeScript(Frame* target);
 
   // Tell the proxy that document.domain is set.
-  static void setDomain(Frame* target, const String& new_domain);
+  static void setDomain(Frame* target, const String& newDomain);
 
   // Pass flags to the JS engine
   static void setFlags(const char* str, int length);
 
   // Protect and unprotect the JS wrapper from garbage collected.
-  static void gcProtectJSWrapper(void* dom_object);
-  static void gcUnprotectJSWrapper(void* dom_Object);
+  static void gcProtectJSWrapper(void* object);
+  static void gcUnprotectJSWrapper(void* object);
 
   // Returns a non-exception code object.
   static JSException NoException();
@@ -290,4 +284,4 @@ class JSInstanceHolder {
 
 }  // namespace WebCore
 
-#endif  // JSBridge_h
+#endif  // ScriptController_h
