@@ -204,21 +204,14 @@ String KURL::componentString(const url_parse::Component& comp) const
     // byte) will be longer than what's needed by 'mid'. However, mid
     // truncates len to avoid go past the end of a string so that we can
     // get away withtout doing anything here.
-    return m_url.substring(comp.begin, comp.len);
+    return m_url.string().substring(comp.begin, comp.len);
 }
 
 void KURL::init(const KURL& base,
                 const String& relative,
                 const TextEncoding* query_encoding)
 {
-    if (relative.hasFastLatin1()) {
-        // Use the UTF-8 version when possible. This probably means that the
-        // URL is all ASCII already, so we can run faster.
-        init(base, relative.ascii().data(), relative.length(), query_encoding);
-    } else {
-        init(base, relative.characters(),
-             relative.length(), query_encoding);
-    }
+    init(base, relative.characters(), relative.length(), query_encoding);
 }
 
 // Note: code mostly duplicated below.
@@ -417,7 +410,7 @@ void KURL::setHost(const String& host)
     replaceComponents(replacements);
 }
 
-// This function is used only in the KJS build.
+// This function is used only in the JSC build.
 void KURL::setHostAndPort(const String& s) {
     String newhost = s.left(s.find(":"));
     String newport = s.substring(s.find(":") + 1);
@@ -547,7 +540,7 @@ String KURL::prettyURL() const
 {
     if (!m_isValid)
         return String();
-    return m_url;
+    return m_url.string();
 }
 
 // In WebKit's implementation, this is called by every component getter.
@@ -562,14 +555,23 @@ String KURL::prettyURL() const
 // IE doesn't unescape %00, forcing you to use \x00 in JS strings, so we do
 // the same. This also eliminates NULL-related problems should a consumer
 // incorrectly call this function for non-JavaScript.
-String decodeURLEscapeSequences(const String& urlString)
-{
-    // First unescape all input. WebKit's implementation seems to assume the
-    // input is 8-bit, so we do as well.
-    ASSERT(urlString.isAllLatin1());
+//
+// TODO(brettw) these should be merged to the regular KURL implementation.
+String decodeURLEscapeSequences(const String& str, const TextEncoding& encoding) {
+    // TODO(brettw) We can probably use KURL's version of this function
+    // without modification. However, I'm concerned about
+    // https://bugs.webkit.org/show_bug.cgi?id=20559 so am keeping this old
+    // custom code for now. Using their version will also fix the bug that
+    // we ignore the encoding.
+    //
+    // TODO(brettw) bug 1350291: This does not get called very often. We just
+    // convert first to 8-bit UTF-8, then unescape, then back to 16-bit. This
+    // kind of sucks, and we don't use the encoding properly, which will make
+    // some obscure anchor navigations fail.
+    CString cstr = str.utf8();
 
-    const char* input = urlString.latin1();
-    int input_length = urlString.length();
+    const char* input = cstr.data();
+    int input_length = cstr.length();
     url_canon::RawCanonOutputT<char> unescaped;
     for (int i = 0; i < input_length; i++) {
         if (input[i] == '%') {
@@ -588,7 +590,7 @@ String decodeURLEscapeSequences(const String& urlString)
                 unescaped.push_back('%');
             }
         } else {
-            // Regular non-escaped character.
+            // Regular non-escaped 8-bit character.
             unescaped.push_back(input[i]);
         }
     }
@@ -627,12 +629,6 @@ String decodeURLEscapeSequences(const String& urlString)
 
     return String(reinterpret_cast<UChar*>(utf16.data()),
                             utf16.length());
-}
-
-// The encoding parameter to this function is currently never used.
-String decodeURLEscapeSequences(const String& urlString, const TextEncoding& encoding)
-{
-    return decodeURLEscapeSequences(urlString);
 }
 
 void KURL::replaceComponents(const Replacements& replacements)
@@ -709,11 +705,6 @@ void KURL::print() const
     printf("%s\n", m_url.utf8String().data());
 }
 #endif
-
-bool operator==(const KURL &a, const KURL &b)
-{
-    return a.m_url.utf8String() == b.m_url.utf8String();
-}
 
 // Equal up to reference fragments, if any.
 bool equalIgnoringRef(const KURL& a, const KURL& b)

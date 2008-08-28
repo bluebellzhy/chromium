@@ -349,10 +349,26 @@ String encodeWithURLEscapeSequences(const String&);
 
 // Inlines.
 
+#ifdef USE_GOOGLE_URL_LIBRARY
+
+inline bool operator==(const KURL& a, const KURL& b)
+{
+    return a.utf8String() == b.utf8String();
+}
+
+inline bool operator!=(const KURL& a, const KURL& b)
+{
+    return a.utf8String() != b.utf8String();
+}
+
+#else
+
 inline bool operator==(const KURL& a, const KURL& b)
 {
     return a.string() == b.string();
 }
+
+#endif
 
 inline bool operator==(const KURL& a, const String& b)
 {
@@ -364,10 +380,14 @@ inline bool operator==(const String& a, const KURL& b)
     return a == b.string();
 }
 
+#ifndef USE_GOOGLE_URL_LIBRARY
+
 inline bool operator!=(const KURL& a, const KURL& b)
 {
     return a.string() != b.string();
 }
+
+#endif
 
 inline bool operator!=(const KURL& a, const String& b)
 {
