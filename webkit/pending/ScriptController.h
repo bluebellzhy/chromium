@@ -254,10 +254,8 @@ class ScriptController {
       m_recordPlaybackMode = value;
   }
 
-  // Pause timeouts for a frame.
-  static PausedTimeouts* pauseTimeouts(Frame* frame);
-  // Resume timeouts for a frame.
-  static void resumeTimeouts(Frame* frame, PausedTimeouts* timeouts);
+  void pauseTimeouts(OwnPtr<PausedTimeouts>&);
+  void resumeTimeouts(OwnPtr<PausedTimeouts>&);
 
  private:
   static bool m_recordPlaybackMode;

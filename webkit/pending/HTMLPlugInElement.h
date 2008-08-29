@@ -26,7 +26,7 @@
 #include "HTMLFrameOwnerElement.h"
 
 #if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
-#include "JSBridge.h"
+#include "ScriptController.h"
 #endif
 
 #if ENABLE(NETSCAPE_PLUGIN_API)

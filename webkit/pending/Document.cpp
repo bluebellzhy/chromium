@@ -4428,7 +4428,7 @@ void Document::initDNSPrefetchEnabled()
     m_isDNSPrefetchEnabled = (securityOrigin()->protocol() == "http");
 
     // Inherit DNS prefetch opt-out from parent frame    
-    if (Document *parent = parentDocument())
+    if (Document* parent = parentDocument())
         if (!parent->isDNSPrefetchEnabled())
             m_isDNSPrefetchEnabled = false;
 }

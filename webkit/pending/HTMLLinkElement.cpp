@@ -112,6 +112,14 @@ void HTMLLinkElement::parseMappedAttribute(MappedAttribute *attr)
 {
     if (attr->name() == relAttr) {
         tokenizeRelAttribute(attr->value(), m_isStyleSheet, m_alternate, m_isIcon);
+        // TODO(eseidel): We should probably move these to tokenizeRelAttribute
+        // when we upstream this change, then the PreloadScanner can prefetch
+        // tokenizeRelAttribute is static, so to add these there would require
+        // forking 3 files (this one, the header, and PreloadScanner.cpp)
+        if (equalIgnoringCase(attr->value(), "prefetch"))
+            m_isPrefetch = true;
+        else if (equalIgnoringCase(attr->value(), "dns-prefetch"))
+            m_isDnsPrefetch = true;
         process();
     } else if (attr->name() == hrefAttr) {
         m_url = document()->completeURL(parseURL(attr->value())).string();
@@ -143,10 +151,6 @@ void HTMLLinkElement::tokenizeRelAttribute(const AtomicString& rel, bool& styleS
     else if (equalIgnoringCase(rel, "alternate stylesheet") || equalIgnoringCase(rel, "stylesheet alternate")) {
         styleSheet = true;
         alternate = true;
-    } else if (equalIgnoringCase(rel, "prefetch"))
-        m_isPrefetch = true;
-    else if (equalIgnoringCase(rel, "dns-prefetch"))
-        m_isDnsPrefetch = true;
     } else {
         // Tokenize the rel attribute and set bits based on specific keywords that we find.
         String relString = rel.string();

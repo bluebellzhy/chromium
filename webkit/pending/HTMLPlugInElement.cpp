@@ -40,7 +40,7 @@
 #include "runtime.h"
 #endif
 
-#if ENABLE(NETSCAPE_PLUGIN_API)
+#if ENABLE(NETSCAPE_PLUGIN_API) && USE(JAVASCRIPTCORE_BINDINGS)
 #include "JSNode.h"
 #include "NP_jsobject.h"
 #include "npruntime_impl.h"
