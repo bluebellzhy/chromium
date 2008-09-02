@@ -89,8 +89,10 @@ FloatRect strokeBoundingBox(const Path& path, RenderStyle* style, const RenderOb
      GraphicsContext* scratch = scratchContext();
 
      scratch->save();
+     scratch->beginPath();
+     scratch->addPath(path);
      applyStrokeStyleToContext(scratch, style, object);
-     FloatRect bbox = scratch->getPathBoundingBox(path);
+     FloatRect bbox = scratch->getBoundingBoxForCurrentPath(true);
      scratch->restore();
 
      return bbox;

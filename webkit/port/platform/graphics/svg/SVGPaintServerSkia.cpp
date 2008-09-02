@@ -51,22 +51,17 @@ void SVGPaintServer::draw(GraphicsContext*& context, const RenderObject* object,
 
 void SVGPaintServer::teardown(GraphicsContext*& context, const RenderObject*, SVGPaintTargetType, bool isPaintingText) const
 {
-    context->beginPath();
-    context->platformContext()->setGradient(NULL);
-    context->platformContext()->setPattern(NULL);
 }
 
 void SVGPaintServer::renderPath(GraphicsContext*& context, const RenderObject* object, SVGPaintTargetType type) const
 {
     RenderStyle* renderStyle = object ? object->style() : NULL;
 
-    SkPath* path = context->currentPath();
-
     if ((type & ApplyToFillTargetType) && (!renderStyle || renderStyle->svgStyle()->hasFill()))
-        context->fillPath(path, NULL, NULL);
+        context->fillPath();
 
     if ((type & ApplyToStrokeTargetType) && (!renderStyle || renderStyle->svgStyle()->hasStroke()))
-        context->strokePath(path, NULL, NULL);
+        context->strokePath();
 }
 
 } // namespace WebCore

@@ -47,7 +47,6 @@ Path::Path()
 Path::Path(const Path& other)
 {
     m_path = new SkPath(*other.m_path);
-    m_rule = other.m_rule;
 }
 
 Path::~Path()

@@ -19,9 +19,8 @@
 
 #include "config.h"
 
-#include "GraphicsContextPrivate.h"
-
 #include "GraphicsContext.h"
+#include "GraphicsContextPlatformPrivate.h"
 #include "PlatformContextSkia.h"
 
 namespace WebCore {

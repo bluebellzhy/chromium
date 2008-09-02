@@ -30,9 +30,7 @@ public:
     GraphicsContextPlatformPrivate(PlatformContextSkia* pgc);
     ~GraphicsContextPlatformPrivate();
 
-    PlatformContextSkia* platformContext() {
-        return m_context;
-    }
+    PlatformContextSkia* platformContext() { return m_context; }
 
     void setShouldDelete(bool should_delete) {
         m_should_delete = should_delete;

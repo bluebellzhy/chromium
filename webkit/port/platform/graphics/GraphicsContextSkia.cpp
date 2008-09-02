@@ -18,6 +18,7 @@
 
 #include "config.h"
 #include "GraphicsContext.h"
+#include "GraphicsContextPlatformPrivate.h"
 #include "GraphicsContextPrivate.h"
 #include "wtf/MathExtras.h"
 
@@ -458,52 +459,64 @@ void GraphicsContext::drawConvexPolygon(size_t numPoints, const FloatPoint* poin
     }
 }
 
-static void check_set_shader(SkPaint* paint, SkShader* s0, SkShader* s1)
-{
-    if (s0)
-        paint->setShader(s0);
-    else if (s1)
-        paint->setShader(s1);
-}
-
-void GraphicsContext::fillPath(PlatformPath* path, PlatformGradient* grad, PlatformPattern* pat)
+void GraphicsContext::fillPath()
 {
     if (paintingDisabled())
         return;
-    if (!IsPathReasonable(getCTM(), *path))
+    const SkPath& path = *m_data->currentPath();
+    if (!IsPathReasonable(getCTM(), path))
       return;
 
-    SkPaint paint;
+    const GraphicsContextState& state = m_common->state;
+    ColorSpace colorSpace = state.fillColorSpace;
 
+    if (colorSpace == SolidColorSpace && !fillColor().alpha())
+        return;
+
+    SkPaint paint;
     m_data->setup_paint_fill(&paint);
-    check_set_shader(&paint, grad, pat);
 
-    m_data->canvas()->drawPath(*path, paint);
+    if (colorSpace == PatternColorSpace) {
+        SkShader* pat = state.fillPattern->createPlatformPattern(getCTM());
+        paint.setShader(pat);
+        pat->unref();
+    } else if (colorSpace == GradientColorSpace)
+        paint.setShader(state.fillGradient->platformGradient());
+
+    m_data->canvas()->drawPath(path, paint);
 }
 
-void GraphicsContext::strokePath(PlatformPath* path, PlatformGradient* grad, PlatformPattern* pat)
+void GraphicsContext::strokePath()
 {
     if (paintingDisabled())
         return;
-    if (!IsPathReasonable(getCTM(), *path))
+    const SkPath& path = *m_data->currentPath();
+    if (!IsPathReasonable(getCTM(), path))
       return;
 
-    SkPaint paint;
+    const GraphicsContextState& state = m_common->state;
+    ColorSpace colorSpace = state.strokeColorSpace;
 
+    if (colorSpace == SolidColorSpace && !strokeColor().alpha())
+        return;
+
+    SkPaint paint;
     m_data->setup_paint_stroke(&paint, NULL, 0);
-    check_set_shader(&paint, grad, pat);
 
-    m_data->canvas()->drawPath(*path, paint);
+    if (colorSpace == PatternColorSpace) {
+        SkShader* pat = state.strokePattern->createPlatformPattern(getCTM());
+        paint.setShader(pat);
+        pat->unref();
+    } else if (colorSpace == GradientColorSpace)
+        paint.setShader(state.strokeGradient->platformGradient());
+
+    m_data->canvas()->drawPath(path, paint);
 }
 
-void GraphicsContext::fillRect(const FloatRect& rect, PlatformGradient* grad, PlatformPattern* pat)
+void GraphicsContext::fillRect(const FloatRect& rect)
 {
     if (paintingDisabled())
         return;
-
-    SkPaint paint;
-    m_data->setup_paint_fill(&paint);
-    check_set_shader(&paint, grad, pat);
 
     SkRect r = rect;
     if (!IsRectReasonable(getCTM(), r)) {
@@ -511,21 +524,48 @@ void GraphicsContext::fillRect(const FloatRect& rect, PlatformGradient* grad, Pl
         ClipRectToCanvas(*m_data->canvas(), r, &r);
     }
 
+    const GraphicsContextState& state = m_common->state;
+    ColorSpace colorSpace = state.fillColorSpace;
+
+    if (colorSpace == SolidColorSpace && !fillColor().alpha())
+        return;
+
+    SkPaint paint;
+    m_data->setup_paint_fill(&paint);
+
+    if (colorSpace == PatternColorSpace) {
+        SkShader* pat = state.fillPattern->createPlatformPattern(getCTM());
+        paint.setShader(pat);
+        pat->unref();
+    } else if (colorSpace == GradientColorSpace)
+        paint.setShader(state.fillGradient->platformGradient());
+
     m_data->canvas()->drawRect(r, paint);
 }
 
-void GraphicsContext::strokeRect(const FloatRect& rect, float lineWidth, PlatformGradient* grad, PlatformPattern* pat)
+void GraphicsContext::strokeRect(const FloatRect& rect, float lineWidth)
 {
     if (paintingDisabled())
+        return;
+    if (!IsRectReasonable(getCTM(), rect))
+        return;
+
+    const GraphicsContextState& state = m_common->state;
+    ColorSpace colorSpace = state.strokeColorSpace;
+
+    if (colorSpace == SolidColorSpace && !strokeColor().alpha())
         return;
 
     SkPaint paint;
     m_data->setup_paint_stroke(&paint, NULL, 0);
     paint.setStrokeWidth(WebCoreFloatToSkScalar(lineWidth));
-    check_set_shader(&paint, grad, pat);
 
-    if (!IsRectReasonable(getCTM(), rect))
-        return;
+    if (colorSpace == PatternColorSpace) {
+        SkShader* pat = state.strokePattern->createPlatformPattern(getCTM());
+        paint.setShader(pat);
+        pat->unref();
+    } else if (colorSpace == GradientColorSpace)
+        paint.setShader(state.strokeGradient->platformGradient());
 
     m_data->canvas()->drawRect(rect, paint);
 }
@@ -557,7 +597,7 @@ void GraphicsContext::drawOffscreenContext(GraphicsContext* ctx, const FloatRect
     SkIRect src;
     if (srcRect) {
         src = enclosingIntRect(*srcRect);
-        if (!IsRectReasonable(m_data->getCtm(), srcRect))
+        if (!IsRectReasonable(getCTM(), *srcRect))
             return;
     }
     SkRect dst = dstRect;
@@ -583,13 +623,16 @@ FloatRect GraphicsContext::getClipLocalBounds() const
     return r;
 }
 
-FloatRect GraphicsContext::getPathBoundingBox(const Path& path) const
+FloatRect GraphicsContext::getBoundingBoxForCurrentPath(bool includeStroke) const
 {
-    SkPaint paint;
-    m_data->setup_paint_stroke(&paint, NULL, 0);
-
     SkPath boundingPath;
-    paint.getFillPath(*path.platformPath(), &boundingPath);
+
+    if (includeStroke) {
+        SkPaint paint;
+        m_data->setup_paint_stroke(&paint, NULL, 0);
+        paint.getFillPath(*m_data->currentPath(), &boundingPath);
+    } else
+        boundingPath = *m_data->currentPath();
 
     SkRect r;
     boundingPath.computeBounds(&r, SkPath::kExact_BoundsType);
@@ -609,15 +652,13 @@ bool GraphicsContext::strokeContains(const Path& path, const FloatPoint& point) 
     return SkPathContainsPoint(&strokePath, point, SkPath::kWinding_FillType);
 }
 
-void GraphicsContext::fillRect(const IntRect& rect, const Color& color)
+void GraphicsContext::fillRect(const FloatRect& rect, const Color& color)
 {
     if (paintingDisabled())
         return;
 
     if (color.rgb() & 0xFF000000) {
-        SkRect r(rect);
-
-        static const float kMaxCoord = 32767;
+        SkRect  r = rect;
         if (!IsRectReasonable(getCTM(), r)) {
             // Special case when the rectangle overflows fixed point. This is a
             // workaround to fix bug 1212844. When the input rectangle is very
@@ -629,25 +670,6 @@ void GraphicsContext::fillRect(const IntRect& rect, const Color& color)
             // will prevent overflow. The rectangle will be transformed to the
             // canvas' coordinate space before it is converted to fixed point
             // so we are guaranteed not to overflow after doing this.
-            ClipRectToCanvas(*m_data->canvas(), r, &r);
-        }
-
-        SkPaint paint;
-        m_data->setup_paint_common(&paint);
-        paint.setColor(color.rgb());
-        m_data->canvas()->drawRect(r, paint);
-    }
-}
-
-void GraphicsContext::fillRect(const FloatRect& rect, const Color& color)
-{
-    if (paintingDisabled())
-        return;
-
-    if (color.rgb() & 0xFF000000) {
-        SkRect  r = rect;
-        if (!IsRectReasonable(getCTM(), r)) {
-            // See other fillRect() above.
             ClipRectToCanvas(*m_data->canvas(), r, &r);
         }
 
@@ -888,21 +910,6 @@ void GraphicsContext::clearRect(const FloatRect& rect)
     m_data->canvas()->drawRect(r, paint);
 }
 
-void GraphicsContext::strokeRect(const FloatRect& rect, float lineWidth)
-{
-    if (paintingDisabled())
-        return;
-
-    SkRect  r = rect;
-    if (!IsRectReasonable(getCTM(), r))
-        return;
-
-    SkPaint paint;
-    m_data->setup_paint_fill(&paint);
-    paint.setStrokeWidth(WebCoreFloatToSkScalar(lineWidth));
-    m_data->canvas()->drawRect(r, paint);
-}
-
 void GraphicsContext::setLineCap(LineCap cap)
 {
     switch (cap) {
@@ -985,15 +992,16 @@ AffineTransform GraphicsContext::getCTM() const
     return m_data->canvas()->getTotalMatrix();
 }
 
-
-HDC GraphicsContext::getWindowsContext(bool supportAlphaBlend, const IntRect*) {
+HDC GraphicsContext::getWindowsContext(const IntRect&, bool supportAlphaBlend, bool mayCreateBitmap)
+{
     if (paintingDisabled())
         return 0;
     // No need to ever call endPlatformPaint() since it is a noop.
     return m_data->canvas()->beginPlatformPaint();
 }
 
-void GraphicsContext::releaseWindowsContext(HDC hdc, bool supportAlphaBlend, const IntRect*) {
+void GraphicsContext::releaseWindowsContext(HDC hdc, const IntRect&, bool supportAlphaBlend, bool mayCreateBitmap)
+{
     // noop, the DC will be lazily freed by the bitmap when no longer needed
 }
 
@@ -1088,11 +1096,6 @@ void GraphicsContext::setShouldDelete(bool should_delete)
 {
     if (m_data)
         m_data->setShouldDelete(should_delete);
-}
-
-PlatformPath* GraphicsContext::currentPath()
-{
-    return m_data->currentPath();
 }
 
 }

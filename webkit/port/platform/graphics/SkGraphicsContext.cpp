@@ -35,7 +35,7 @@
 #include "base/gfx/native_theme.h"
 #include "base/gfx/platform_canvas.h"
 #include "base/gfx/skia_utils.h"
-#include "GraphicsContextPrivate.h"
+#include "GraphicsContextPlatformPrivate.h"
 #include "NativeImageSkia.h"
 #include "SkBitmap.h"
 

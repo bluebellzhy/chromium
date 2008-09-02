@@ -159,8 +159,7 @@ bool SVGPaintServerGradient::setup(GraphicsContext*& context,
     // Calculate a matrix to transform a gradient to fit the bounding box
     if (boundingBoxMode()) {
         matrix.reset();
-        SkRect rc;
-        context->currentPath()->computeBounds(&rc, SkPath::kExact_BoundsType);
+        SkRect rc = context->getBoundingBoxForCurrentPath(true);
 
         matrix.preTranslate(rc.fLeft, rc.fTop);
         matrix.preScale(rc.width(), rc.height());

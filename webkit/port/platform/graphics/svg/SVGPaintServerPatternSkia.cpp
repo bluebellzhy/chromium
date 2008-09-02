@@ -63,17 +63,16 @@ bool SVGPaintServerPattern::setup(GraphicsContext*& context, const RenderObject*
     AffineTransform transform = patternTransform();
     transform.translate(patternBoundaries().x(), patternBoundaries().y());
 
-    Pattern pattern(tile()->image(), true, true);
-    SkShader* shader = pattern.createPlatformPattern(transform);
-    context->platformContext()->setPattern(shader);
-    shader->unref(); // FIXME: We need a SkRefPtr
+    RefPtr<Pattern> pattern(Pattern::create(tile()->image(), true, true));
 
     if ((type & ApplyToFillTargetType) && style->svgStyle()->hasFill()) {
+        context->setFillPattern(pattern);
         if (isPaintingText) 
             context->setTextDrawingMode(cTextFill);
     }
 
     if ((type & ApplyToStrokeTargetType) && style->svgStyle()->hasStroke()) {
+        context->setStrokePattern(pattern);
         applyStrokeStyleToContext(context, style, object);
         if (isPaintingText) 
             context->setTextDrawingMode(cTextStroke);
