@@ -46,6 +46,8 @@
 // This evil preprocessor hack allows us to run both the original KURL and our
 // KURL code at the same time regardless of build options.
 
+#define KURL_DECORATE_GLOBALS
+
 // Old KURL
 #undef USE_GOOGLE_URL_LIBRARY
 #define KURL WebKitKURL
@@ -169,7 +171,7 @@ TEST(GKURL, DifferentGetters) {
       // We can't compare cases[i].ref and gurl.ref() directly
       // because operator==(const char*, const DeprecatedString&) invoked 
       // in CmpHelperEQ does not treat 'char *' as UTF-8. 
-      EXPECT_STREQ(cases[i].ref, gurl.ref().utf8());
+      EXPECT_STREQ(cases[i].ref, gurl.ref().utf8().data());
     }
   }
 }
@@ -278,7 +280,7 @@ TEST(GKURL, Decode) {
 
   // Our decode should not decode %00
   WebCore::String zero = WebCore::GoogleKURL::decodeURLEscapeSequences("%00");
-  EXPECT_STREQ("%00", zero.ascii());
+  EXPECT_STREQ("%00", zero.utf8().data());
 
   // Test the error behavior for invalid UTF-8 (we differ from WebKit here).
   WebCore::String invalid = WebCore::GoogleKURL::decodeURLEscapeSequences(
@@ -304,7 +306,7 @@ TEST(GKURL, Encode) {
       "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f", 16);
   WebCore::String reference(
       "%00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f", 18);
-  WebCore::String output = WebCore::GoogleKURL::encode_string(input);
+  WebCore::String output = WebCore::GoogleKURL::encodeWithURLEscapeSequences(input);
   EXPECT_EQ(reference, output);
 }
 
@@ -316,7 +318,7 @@ TEST(GKURL, ResolveEmpty) {
   const char abs[] = "http://www.google.com/";
   WebCore::GoogleKURL resolve_abs(empty_base, abs);
   EXPECT_TRUE(resolve_abs.isValid());
-  EXPECT_STREQ(abs, resolve_abs.ascii());
+  EXPECT_STREQ(abs, resolve_abs.string().utf8().data());
 
   // Resolving a non-relative URL agains the empty one should still error.
   const char rel[] = "foo.html";
@@ -332,7 +334,7 @@ TEST(GKURL, ReplaceInvalid) {
 
   EXPECT_EQ(kurl.isValid(), gurl.isValid());
   EXPECT_EQ(kurl.isEmpty(), gurl.isEmpty());
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
   
   gurl.setProtocol("http");
   kurl.setProtocol("http");
@@ -344,27 +346,27 @@ TEST(GKURL, ReplaceInvalid) {
   // differently if there is only a scheme. We check the results here to make
   // it more obvious what is going on, but it shouldn't be a big deal if these
   // change.
-  EXPECT_STREQ("http:", gurl.utf8().data());
-  EXPECT_STREQ("http:/", kurl.utf8().data());
+  EXPECT_STREQ("http:", gurl.string().utf8().data());
+  EXPECT_STREQ("http:/", kurl.string().utf8().data());
 
   gurl.setHost("www.google.com");
   kurl.setHost("www.google.com");
   EXPECT_EQ(kurl.isValid(), gurl.isValid());
   EXPECT_EQ(kurl.isEmpty(), gurl.isEmpty());
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 
   gurl.setPort(8000);
   kurl.setPort(8000);
   EXPECT_EQ(kurl.isValid(), gurl.isValid());
   EXPECT_EQ(kurl.isEmpty(), gurl.isEmpty());
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 
   gurl.setPath("/favicon.ico");
   kurl.setPath("/favicon.ico");
   EXPECT_EQ(kurl.isValid(), gurl.isValid());
   EXPECT_EQ(kurl.isEmpty(), gurl.isEmpty());
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
-  EXPECT_STREQ("http://www.google.com:8000/favicon.ico", gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
+  EXPECT_STREQ("http://www.google.com:8000/favicon.ico", gurl.string().utf8().data());
 
   // Now let's test that giving an invalid replacement still fails.
   gurl.setProtocol("f/sj#@");
@@ -381,8 +383,8 @@ TEST(GKURL, Path) {
   EXPECT_TRUE(null_string.isNull());
   gurl.setPath(null_string);
   kurl.setPath(null_string);
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
-  EXPECT_STREQ("http://www.google.com/", gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
+  EXPECT_STREQ("http://www.google.com/", gurl.string().utf8().data());
 }
 
 // Test that setting the query to different things works. Thq query is handled
@@ -397,7 +399,7 @@ TEST(GKURL, Query) {
   EXPECT_TRUE(null_string.isNull());
   gurl.setQuery(null_string);
   kurl.setQuery(null_string);
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 
   // Clear by setting an empty string.
   gurl = WebCore::GoogleKURL(initial);
@@ -406,19 +408,19 @@ TEST(GKURL, Query) {
   EXPECT_FALSE(empty_string.isNull());
   gurl.setQuery(empty_string);
   kurl.setQuery(empty_string);
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 
   // Set with something that begins in a question mark.
   const char question[] = "?foo=bar";
   gurl.setQuery(question);
   kurl.setQuery(question);
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 
   // Set with something that doesn't begin in a question mark.
   const char query[] = "foo=bar";
   gurl.setQuery(query);
   kurl.setQuery(query);
-  EXPECT_STREQ(kurl.utf8().data(), gurl.utf8().data());
+  EXPECT_STREQ(kurl.string().utf8().data(), gurl.string().utf8().data());
 }
 
 TEST(GKURL, Ref) {
@@ -427,26 +429,26 @@ TEST(GKURL, Ref) {
   // Basic ref setting.
   WebCore::GoogleKURL cur("http://foo/bar");
   cur.setRef("asdf");
-  EXPECT_STREQ(cur.utf8().data(), "http://foo/bar#asdf");
+  EXPECT_STREQ("http://foo/bar#asdf", cur.string().utf8().data());
   cur = gurl;
   cur.setRef("asdf");
-  EXPECT_STREQ(cur.utf8().data(), "http://foo/bar#asdf");
+  EXPECT_STREQ("http://foo/bar#asdf", cur.string().utf8().data());
   
   // Setting a ref to the empty string will set it to "#".
   cur = WebCore::GoogleKURL("http://foo/bar");
   cur.setRef("");
-  EXPECT_STREQ("http://foo/bar#", cur.utf8().data());
+  EXPECT_STREQ("http://foo/bar#", cur.string().utf8().data());
   cur = gurl;
   cur.setRef("");
-  EXPECT_STREQ("http://foo/bar#", cur.utf8().data());
+  EXPECT_STREQ("http://foo/bar#", cur.string().utf8().data());
 
   // Setting the ref to the null string will clear it altogether.
   cur = WebCore::GoogleKURL("http://foo/bar");
   cur.setRef(WebCore::String());
-  EXPECT_STREQ("http://foo/bar", cur.utf8().data());
+  EXPECT_STREQ("http://foo/bar", cur.string().utf8().data());
   cur = gurl;
   cur.setRef(WebCore::String());
-  EXPECT_STREQ("http://foo/bar", cur.utf8().data());
+  EXPECT_STREQ("http://foo/bar", cur.string().utf8().data());
 }
 
 TEST(GKURL, Empty) {
@@ -479,8 +481,8 @@ TEST(GKURL, Empty) {
 
   // Test for weird isNull string input,
   // see: http://bugs.webkit.org/show_bug.cgi?id=16487
-  WebCore::GoogleKURL gurl4(gurl.deprecatedString());
-  WebCore::WebKitKURL kurl4(kurl.deprecatedString());
+  WebCore::GoogleKURL gurl4(gurl.string());
+  WebCore::WebKitKURL kurl4(kurl.string());
   EXPECT_EQ(kurl4.isEmpty(), gurl4.isEmpty());
   EXPECT_EQ(kurl4.isValid(), gurl4.isValid());
   EXPECT_EQ(kurl4.string().isNull(), gurl4.string().isNull());

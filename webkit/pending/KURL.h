@@ -170,6 +170,8 @@ public:
 
     friend bool protocolHostAndPortAreEqual(const KURL&, const KURL&);
 
+    static bool protocolIs(const String&, const char*);
+
 #ifdef USE_GOOGLE_URL_LIBRARY
     operator const String&() const { return m_url.string(); }
     operator KJS::UString() const { return m_url.string(); }
@@ -288,16 +290,7 @@ private:
 
 #else
     void init(const KURL&, const String&, const TextEncoding&);
-    static bool protocolIs(const String&, const char*);
     void copyToBuffer(Vector<char, 512>& buffer) const;
-    
-    // Parses the given URL. The originalString parameter allows for an
-    // optimization: When the source is the same as the fixed-up string,
-    // it will use the passed-in string instead of allocating a new one.
-    void parse(const String&);
-    void parse(const char* url, const String* originalString);
-
-    String m_string;
     
     // Parses the given URL. The originalString parameter allows for an
     // optimization: When the source is the same as the fixed-up string,
@@ -318,6 +311,17 @@ private:
     int m_queryEnd;
     int m_fragmentEnd;
 #endif
+
+// See the following "#infdef KURL_DECORATE_GLOBALS" for an explanation.
+#ifdef KURL_DECORATE_GLOBALS
+  public:
+    static const KURL& blankURL();
+    // Note: protocolIs() is already defined, so omit it.
+    static String mimeTypeFromDataURL(const String& url);
+    static String decodeURLEscapeSequences(const String&);
+    static String decodeURLEscapeSequences(const String&, const TextEncoding&);
+    static String encodeWithURLEscapeSequences(const String&);
+#endif // ifdef KURL_DECORATE_GLOBALS
 };
 
 bool operator==(const KURL&, const KURL&);
@@ -329,7 +333,13 @@ bool operator!=(const String&, const KURL&);
 
 bool equalIgnoringRef(const KURL&, const KURL&);
 bool protocolHostAndPortAreEqual(const KURL&, const KURL&);
-    
+
+// GKURL_unittest.cpp includes both KURL.cpp and GKURL.cpp.
+// For that to work, global functions need to be avoided.
+// (the other globals are okay since they include KURL in parameter list).
+// The workaround is to move the globals into KURL's class namespace.
+#ifndef KURL_DECORATE_GLOBALS
+
 const KURL& blankURL();
 
 // Functions to do URL operations on strings.
@@ -346,6 +356,8 @@ String decodeURLEscapeSequences(const String&);
 String decodeURLEscapeSequences(const String&, const TextEncoding&);
 
 String encodeWithURLEscapeSequences(const String&);
+
+#endif // ifndef KURL_DECORATE_GLOBALS
 
 // Inlines.
 

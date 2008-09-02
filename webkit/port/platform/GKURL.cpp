@@ -557,7 +557,12 @@ String KURL::prettyURL() const
 // incorrectly call this function for non-JavaScript.
 //
 // TODO(brettw) these should be merged to the regular KURL implementation.
-String decodeURLEscapeSequences(const String& str, const TextEncoding& encoding) {
+#ifdef KURL_DECORATE_GLOBALS
+String KURL::decodeURLEscapeSequences(const String& str, const TextEncoding& encoding)
+#else
+String decodeURLEscapeSequences(const String& str, const TextEncoding& encoding)
+#endif
+{
     // TODO(brettw) We can probably use KURL's version of this function
     // without modification. However, I'm concerned about
     // https://bugs.webkit.org/show_bug.cgi?id=20559 so am keeping this old
@@ -670,7 +675,11 @@ bool KURL::isLocalFile() const
 // ways, and may expect to get a valid URL string. The dangerous thing we want
 // to protect against here is accidentally getting NULLs in a string that is
 // not supposed to have NULLs. Therefore, we escape NULLs here to prevent this.
+#ifdef KURL_DECORATE_GLOBALS
+String KURL::encodeWithURLEscapeSequences(const String& notEncodedString)
+#else
 String encodeWithURLEscapeSequences(const String& notEncodedString)
+#endif
 {
     CString utf8 = UTF8Encoding().encode(
         reinterpret_cast<const UChar*>(notEncodedString.characters()),
@@ -722,6 +731,16 @@ bool equalIgnoringRef(const KURL& a, const KURL& b)
 
     return a_len == b_len &&
         strncmp(a.m_url.utf8String().data(), b.m_url.utf8String().data(), a_len) == 0;
+}
+
+#ifdef KURL_DECORATE_GLOBALS
+const KURL& KURL::blankURL()
+#else
+const KURL& blankURL()
+#endif
+{
+    static KURL staticBlankURL("about:blank");
+    return staticBlankURL;
 }
 
 }  // namespace WebCore
