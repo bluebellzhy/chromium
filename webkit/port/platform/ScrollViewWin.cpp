@@ -337,7 +337,8 @@ void ScrollView::ScrollViewPrivate::highlightMatches(
         vert_end   -= PlatformScrollbar::horizontalScrollbarHeight() + 1;
     }
 
-    HDC hdc = context->getWindowsContext();
+    IntRect view_rect(IntPoint(), m_view->size());
+    HDC hdc = context->getWindowsContext(view_rect);
 
     // We create a memory DC, copy the bits we want to highlight to the DC and
     // then MERGE_COPY pieces of it back with a yellow brush selected (which
@@ -390,7 +391,7 @@ void ScrollView::ScrollViewPrivate::highlightMatches(
 
     DeleteDC(mem_dc);
 
-    context->releaseWindowsContext(hdc);
+    context->releaseWindowsContext(hdc, view_rect);
     context->restore();
 }
 

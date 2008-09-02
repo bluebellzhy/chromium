@@ -141,11 +141,6 @@ bool WebFrameLoaderClient::hasFrameView() const {
   return webframe_->webview_impl() != NULL;
 }
 
-bool WebFrameLoaderClient::privateBrowsingEnabled() const {
-  // FIXME
-  return false;
-}
-
 void WebFrameLoaderClient::makeDocumentView() {
   webframe_->CreateFrameView();
 }
@@ -154,9 +149,6 @@ void WebFrameLoaderClient::makeRepresentation(DocumentLoader*) {
   has_representation_ = true;
 }
 
-void WebFrameLoaderClient::setDocumentViewFromCachedPage(CachedPage*) {
-  // FIXME
-}
 void WebFrameLoaderClient::forceLayout() {
   // FIXME
 }
@@ -179,10 +171,6 @@ void WebFrameLoaderClient::detachedFromParent4() {
   // Called during the last part of frame detaching, to indicate that we should
   // destroy various objects (including the FrameWin).
   webframe_->Closing();
-}
-
-void WebFrameLoaderClient::loadedFromCachedPage() {
-  // FIXME
 }
 
 // This function is responsible for associating the |identifier| with a given
@@ -996,10 +984,6 @@ void WebFrameLoaderClient::setMainDocumentError(DocumentLoader*,
   }
 }
 
-void WebFrameLoaderClient::clearUnarchivingState(DocumentLoader*) {
-  // FIXME
-}
-
 void WebFrameLoaderClient::postProgressStartedNotification() {
   if (hasWebView()) {
     WebViewDelegate* d = webframe_->webview_impl()->delegate();
@@ -1086,10 +1070,6 @@ void WebFrameLoaderClient::finishedLoading(DocumentLoader* dl) {
   }
 }
 
-void WebFrameLoaderClient::finalSetupForReplace(DocumentLoader*) {
-  // FIXME
-}
-
 void WebFrameLoaderClient::updateGlobalHistory(const KURL& kurl) {
 }
 
@@ -1127,6 +1107,11 @@ ResourceError WebFrameLoaderClient::fileDoesNotExistError(const ResourceResponse
   return ResourceError();
 }
 
+ResourceError pluginWillHandleLoadError(const WebCore::ResourceResponse&) {
+  // FIXME
+  return ResourceError();
+}
+
 bool WebFrameLoaderClient::shouldFallBack(const ResourceError& error) {
   // This method is called when we fail to load the URL for an <object> tag
   // that has fallback content (child elements) and is being loaded as a frame.
@@ -1135,25 +1120,6 @@ bool WebFrameLoaderClient::shouldFallBack(const ResourceError& error) {
   // request.
   // Note: The mac version also has a case for "WebKitErrorPluginWillHandleLoad"
   return error.errorCode() != net::ERR_ABORTED;
-}
-
-void WebFrameLoaderClient::setDefersLoading(bool) {
-  // FIXME
-}
-
-bool WebFrameLoaderClient::willUseArchive(ResourceLoader*, const ResourceRequest&, const KURL& originalURL) const {
-  // FIXME
-  return false;
-}
-bool WebFrameLoaderClient::isArchiveLoadPending(ResourceLoader*) const {
-  // FIXME
-  return false;
-}
-void WebFrameLoaderClient::cancelPendingArchiveLoad(ResourceLoader*) {
-  // FIXME
-}
-void WebFrameLoaderClient::clearArchivedResources() {
-  // FIXME
 }
 
 bool WebFrameLoaderClient::canHandleRequest(const ResourceRequest&) const {

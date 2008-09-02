@@ -66,11 +66,7 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
   virtual bool hasWebView() const; // mainly for assertions
   virtual bool hasFrameView() const; // ditto
 
-  virtual bool privateBrowsingEnabled() const;
-
-  virtual void makeDocumentView();
   virtual void makeRepresentation(WebCore::DocumentLoader*);
-  virtual void setDocumentViewFromCachedPage(WebCore::CachedPage*);
   virtual void forceLayout();
   virtual void forceLayoutForNonHTML();
 
@@ -79,8 +75,6 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
   virtual void detachedFromParent2();
   virtual void detachedFromParent3();
   virtual void detachedFromParent4();
-
-  virtual void loadedFromCachedPage();
 
   virtual void assignIdentifierToInitialRequest(unsigned long identifier, WebCore::DocumentLoader*, const WebCore::ResourceRequest&);
 
@@ -124,7 +118,6 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
   virtual void dispatchDidLoadMainResource(WebCore::DocumentLoader*);
   virtual void revertToProvisionalState(WebCore::DocumentLoader*);
   virtual void setMainDocumentError(WebCore::DocumentLoader*, const WebCore::ResourceError&);
-  virtual void clearUnarchivingState(WebCore::DocumentLoader*);
 
   // Maybe these should go into a ProgressTrackerClient some day
   virtual void willChangeEstimatedProgress() { }
@@ -142,7 +135,6 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
 
   virtual void committedLoad(WebCore::DocumentLoader*, const char*, int);
   virtual void finishedLoading(WebCore::DocumentLoader*);
-  virtual void finalSetupForReplace(WebCore::DocumentLoader*);
 
   virtual void updateGlobalHistory(const WebCore::KURL&);
   virtual bool shouldGoToHistoryItem(WebCore::HistoryItem*) const;
@@ -154,15 +146,9 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
 
   virtual WebCore::ResourceError cannotShowMIMETypeError(const WebCore::ResourceResponse&);
   virtual WebCore::ResourceError fileDoesNotExistError(const WebCore::ResourceResponse&);
+  virtual WebCore::ResourceError pluginWillHandleLoadError(const WebCore::ResourceResponse&);
 
   virtual bool shouldFallBack(const WebCore::ResourceError&);
-
-  virtual void setDefersLoading(bool);
-
-  virtual bool willUseArchive(WebCore::ResourceLoader*, const WebCore::ResourceRequest&, const WebCore::KURL& originalURL) const;
-  virtual bool isArchiveLoadPending(WebCore::ResourceLoader*) const;
-  virtual void cancelPendingArchiveLoad(WebCore::ResourceLoader*);
-  virtual void clearArchivedResources();
 
   virtual bool canHandleRequest(const WebCore::ResourceRequest&) const;
   virtual bool canShowMIMEType(const WebCore::String& MIMEType) const;
@@ -236,6 +222,8 @@ class WebFrameLoaderClient : public WebCore::FrameLoaderClient {
                           const std::string& html);
 
  private:
+  void makeDocumentView();
+
   // Given a NavigationAction, determine the associated window opening
   // disposition.  For example, a middle click means "open in background tab".
   static bool ActionSpecifiesDisposition(
