@@ -907,11 +907,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\port\platform\graphics\GraphicsContextPrivate.cpp"
+					RelativePath="..\..\port\platform\graphics\GraphicsContextPlatformPrivate.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\port\platform\graphics\GraphicsContextPrivate.h"
+					RelativePath="..\..\port\platform\graphics\GraphicsContextPlatformPrivate.h"
 					>
 				</File>
 				<File

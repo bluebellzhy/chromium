@@ -157,7 +157,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\Chrome.cpp"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\Chrome.cpp"
 				>
 			</File>
 			<File
@@ -433,6 +433,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pending\EmptyClients.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\loader\FormState.cpp"
 				>
 			</File>
@@ -601,7 +605,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\Cursor.h"
+				RelativePath="..\..\port\platform\Cursor.h"
 				>
 			</File>
 			<File
@@ -964,7 +968,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\GraphicsContext.h"
+					RelativePath="..\..\pending\GraphicsContext.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\GraphicsContextPrivate.h"
 					>
 				</File>
 				<File
@@ -2161,14 +2169,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\RenderSVGBlock.cpp"
 				>
 			</File>
@@ -2456,6 +2456,54 @@
 				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\TableLayout.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\TextControlInnerElements.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\TextControlInnerElements.h"
+				>
+			</File>
+			<Filter
+				Name="style"
+				>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\NinePieceImage.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\NinePieceImage.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\StyleCachedImage.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\StyleCachedImage.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\StyleGeneratedImage.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\StyleGeneratedImage.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\StyleImage.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="xml"
@@ -4249,14 +4297,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\html\HTMLTextFieldInnerElement.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\html\HTMLTextFieldInnerElement.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\html\HTMLTitleElement.cpp"
 				>
 			</File>
@@ -5365,10 +5405,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\svg\graphics\SVGImage.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\pending\SVGImageEmptyClients.h"
 					>
 				</File>
 				<File

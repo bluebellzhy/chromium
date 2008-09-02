@@ -2163,7 +2163,7 @@
 				RelativePath="$(IntDir)\SharedSources\PausedTimeouts.h"
 				>
 			</File>
-                </Filter>
+		</Filter>
 		<Filter
 			Name="c_binding"
 			>
@@ -2249,6 +2249,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\port\bridge\ScriptControllerV8.cpp"
+			>
+		</File>
+		<File
 			RelativePath="..\..\port\bindings\v8\v8_binding.h"
 			>
 		</File>
@@ -2302,14 +2306,6 @@
 		</File>
 		<File
 			RelativePath="..\..\port\bindings\v8\v8_vectornodelist.h"
-			>
-		</File>
-		<File
-			RelativePath="..\..\port\bridge\V8Bridge.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\..\port\bridge\V8Bridge.h"
 			>
 		</File>
 	</Files>
