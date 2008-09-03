@@ -37,21 +37,13 @@ class FontMetrics;
 class FontPlatformData
 {
 public:
-    class Deleted {};
-
     // Used for deleted values in the font cache's hash tables. The hash table
     // will create us with this structure, and it will compare other values
     // to this "Deleted" one. It expects the Deleted one to be differentiable
     // from the NULL one (created with the empty constructor), so we can't just
     // set everything to NULL.
-    //
-    // NOTE: On WebKit trunk now, this is changed to the new value 
-    // WTF::HashTableDeletedValue (declared in RefPtr.h). When we merge to a
-    // version with that, we should use it and remove our "Deleted" version.
-    // We would just assign the magic WTF::HashTableDeletedValue to our
-    // m_font RefPtr.
-    FontPlatformData(Deleted)
-    : m_font(RefCountedHFONT::createDeleted())
+    FontPlatformData(WTF::HashTableDeletedValueType)
+    : m_font(hashTableDeletedFontValue())
     , m_size(-1)
     , m_overrideFontMetrics(0)
     , m_isMLangFont(false)
@@ -68,6 +60,8 @@ public:
                      const FontMetrics* overrideFontMetrics,
                      bool isMLangFont);
     FontPlatformData(float size, bool bold, bool oblique);
+
+    bool isHashTableDeletedValue() const { return m_font == hashTableDeletedFontValue(); }
 
     ~FontPlatformData();
 
@@ -92,8 +86,10 @@ private:
     // don't really want to re-create the HFONT.
     class RefCountedHFONT : public RefCounted<RefCountedHFONT> {
     public:
-        static PassRefPtr<RefCountedHFONT> create(HFONT hfont) { return adoptRef(new RefCountedHFONT(hfont)); }
-        static PassRefPtr<RefCountedHFONT> createDeleted() { return adoptRef(new RefCountedHFONT(reinterpret_cast<HFONT>(-1))); }
+        static PassRefPtr<RefCountedHFONT> create(HFONT hfont)
+        {
+            return adoptRef(new RefCountedHFONT(hfont));
+        }
 
         ~RefCountedHFONT();
 
@@ -107,13 +103,14 @@ private:
         // The create() function assumes there is already a refcount of one 
         // so it can do adoptRef.
         RefCountedHFONT(HFONT hfont)
-            : RefCounted<RefCountedHFONT>(1)
-            , m_hfont(hfont)
+            : m_hfont(hfont)
         {
         }
 
         HFONT m_hfont;
     };
+
+    static RefCountedHFONT* hashTableDeletedFontValue() { return reinterpret_cast<RefCountedHFONT*>(-1); }
 
     RefPtr<RefCountedHFONT> m_font;
     float m_size;  // Point size of the font in pixels.

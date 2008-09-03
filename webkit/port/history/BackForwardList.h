@@ -26,9 +26,10 @@
 #ifndef BackForwardList_h
 #define BackForwardList_h
 
-#include <wtf/RefCounted.h>
 #include <wtf/Forward.h>
 #include <wtf/HashSet.h>
+#include <wtf/PassRefPtr.h>
+#include <wtf/RefCounted.h>
 #include <wtf/Vector.h>
 
 namespace WebCore {
@@ -67,7 +68,10 @@ public:
 
 class BackForwardList : public RefCounted<BackForwardList> {
 public: 
-    BackForwardList(Page*);
+    static PassRefPtr<BackForwardList> create(Page* page)
+    {
+        return adoptRef(new BackForwardList(page));
+    }
     ~BackForwardList();
     
     Page* page() { return m_page; }
@@ -118,6 +122,8 @@ public:
     bool isPreviousItemFake() const { return m_previousItemFake; }
     
 private:
+    BackForwardList(Page*);
+
     // Sets m_previousItemFake to the value of m_currentItemFake and
     // m_currentItemFake to false. This is called internally at various points
     // when m_currenItem is being updated.
