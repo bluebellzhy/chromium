@@ -40,7 +40,6 @@
 
 #if USE(V8_BINDING)
 #include "v8.h"
-//namespace v8 { class Object; }
 #endif
 
 // JavaScript implementations which expose NPObject will need to implement
@@ -118,10 +117,13 @@ typedef struct _NPRuntimeFunctions {
 } NPRuntimeFunctions;
 
 #if USE(JAVASCRIPTCORE_BINDINGS)
-namespace KJS { namespace Bindings { class RootObject;  class Instance; } 
+namespace KJS {
+    namespace Bindings {
+        class RootObject;
+        class Instance;
+    } 
 }
 #endif
-
 
 namespace WebCore {
 class Document;
@@ -132,6 +134,7 @@ class EventListener;
 class Event;
 class HTMLPlugInElement;
 class PausedTimeouts;
+class Widget;
 
 // JSString is the string class used for XMLHttpRequest's
 // m_responseText field.
@@ -152,132 +155,138 @@ typedef v8::Persistent<v8::Value> JSResult;
 #endif
 
 class ScriptController {
- public:
+public:
    ~ScriptController() { }
 
    void disconnectFrame();
 
    bool wasRunByUserGesture();
-
   
   // Evaluate a script file in the environment of this proxy.
   // If succeeded, 'succ' is set to true and result is returned
   // as a string.
-   String evaluate(const String& filename, int baseLine,
-                          const String& code, Node*, bool* succ);
+   String evaluate(const String& filename, int baseLine, const String& code, Node*, bool* succ);
 
   // Second API function for evaluating a JS code.
   // It returns a JSResult which must be disposed by calling
   // disposeJSResult. If the result is not disposed, it can cause
   // serious memory leak. The caller determines whether the evaluation
   // is successful by checking the value of JSResult.
-   JSResult evaluate(const String& filename, int baseLine,
-                            const String& code, Node*);
+   JSResult evaluate(const String& filename, int baseLine, const String& code, Node*);
    void disposeJSResult(JSResult result);
 
    EventListener* createHTMLEventHandler(const String& functionName,
-                                        const String& code, Node* node);
+                                         const String& code, Node*);
 
 #if ENABLE(SVG)
    EventListener* createSVGEventHandler(const String& functionName,
-                                        const String& code, Node* node);
+                                        const String& code, Node*);
 #endif
   
-   void setEventHandlerLineno(int lineno);
-   void finishedWithEvent(Event*);
+    void setEventHandlerLineno(int lineno);
+    void finishedWithEvent(Event*);
 
-   void clear();
+    void clear();
 
-  // Get the Root object
-  //  JSRootObject* getRootObject();
-  // Creates a property of the global object of a frame.
-   void BindToWindowObject(Frame* frame, const String& key, NPObject* object);
+    // Get the Root object
+    //  JSRootObject* getRootObject();
+    // Creates a property of the global object of a frame.
+    void BindToWindowObject(Frame*, const String& key, NPObject*);
 
-   NPRuntimeFunctions* functions();
+    NPRuntimeFunctions* functions();
 
-  // Create an NPObject for the window object.
-   NPObject* createScriptObject(Frame*);
+    // Create an NPObject for the window object.
+    NPObject* createScriptObject(Frame*);
 
-   NPObject* createScriptObject(Frame*, HTMLPlugInElement*);
+    NPObject* createScriptObject(Frame*, HTMLPlugInElement*);
 
-  // Check if the javascript engine has been initialized.
-   bool haveInterpreter() const;
+    JSInstance createScriptInstanceForWidget(Widget*);
 
-   bool isEnabled() const;
+    // Check if the javascript engine has been initialized.
+    bool haveInterpreter() const;
 
-   void clearDocumentWrapper();
+    bool isEnabled() const;
 
-   void CollectGarbage();
+    void clearDocumentWrapper();
 
-  // Create a NPObject wrapper for a JSObject
-  // NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
-  //                           JSRootObject* originRootObject,
-  //                           JSRootObject* rootObject);
+    void CollectGarbage();
 
-  // --- Static methods assume we are running VM in single thread, ---
-  // --- and there is only one VM instance.                        ---
+    // Create a NPObject wrapper for a JSObject
+    // NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
+    //                           JSRootObject* originRootObject,
+    //                           JSRootObject* rootObject);
 
-  // Returns the frame of the calling code is in.
-  // Not necessary the frame of this proxy.
-  // For example, JS code in frame A calls windowB.open(...).
-  // Window::open method has the frame pointer of B, but
-  // the execution context is in frame A, so it needs
-  // frame A's loader to complete URL.
-  static Frame* retrieveActiveFrame();
+    // --- Static methods assume we are running VM in single thread, ---
+    // --- and there is only one VM instance.                        ---
 
-  // Check whether it is safe to access a frame in another domain.
-  static bool isSafeScript(Frame* target);
+    // Returns the frame of the calling code is in.
+    // Not necessary the frame of this proxy.
+    // For example, JS code in frame A calls windowB.open(...).
+    // Window::open method has the frame pointer of B, but
+    // the execution context is in frame A, so it needs
+    // frame A's loader to complete URL.
+    static Frame* retrieveActiveFrame();
 
-  // Tell the proxy that document.domain is set.
-  static void setDomain(Frame* target, const String& newDomain);
+    // Check whether it is safe to access a frame in another domain.
+    static bool isSafeScript(Frame* target);
 
-  // Pass flags to the JS engine
-  static void setFlags(const char* str, int length);
+    // Tell the proxy that document.domain is set.
+    static void setDomain(Frame* target, const String& newDomain);
 
-  // Protect and unprotect the JS wrapper from garbage collected.
-  static void gcProtectJSWrapper(void* object);
-  static void gcUnprotectJSWrapper(void* object);
+    // Pass flags to the JS engine
+    static void setFlags(const char* str, int length);
 
-  // Returns a non-exception code object.
-  static JSException NoException();
-  // Returns true if the parameter is a JS exception object.
-  static bool IsException(JSException exception);
+    // Protect and unprotect the JS wrapper from garbage collected.
+    static void gcProtectJSWrapper(void* object);
+    static void gcUnprotectJSWrapper(void* object);
 
-  // Get/Set RecordPlaybackMode flag.
-  // This is a special mode where JS helps the browser implement
-  // playback/record mode.  Generally, in this mode, some functions
-  // of client-side randomness are removed.  For example, in
-  // this mode Math.random() and Date.getTime() may not return
-  // values which vary.
-  static bool RecordPlaybackMode() { return m_recordPlaybackMode; }
-  static void setRecordPlaybackMode(bool value) {
-      m_recordPlaybackMode = value;
-  }
+    // Returns a non-exception code object.
+    static JSException NoException();
+    // Returns true if the parameter is a JS exception object.
+    static bool IsException(JSException);
 
-  void pauseTimeouts(OwnPtr<PausedTimeouts>&);
-  void resumeTimeouts(OwnPtr<PausedTimeouts>&);
+    // Get/Set RecordPlaybackMode flag.
+    // This is a special mode where JS helps the browser implement
+    // playback/record mode.  Generally, in this mode, some functions
+    // of client-side randomness are removed.  For example, in
+    // this mode Math.random() and Date.getTime() may not return
+    // values which vary.
+    static bool RecordPlaybackMode() { return m_recordPlaybackMode; }
+    static void setRecordPlaybackMode(bool value) { m_recordPlaybackMode = value; }
 
- private:
-  static bool m_recordPlaybackMode;
+    void pauseTimeouts(OwnPtr<PausedTimeouts>&);
+    void resumeTimeouts(OwnPtr<PausedTimeouts>&);
+
+    void clearScriptObjects();
+    void cleanupScriptObjectsForPlugin(void*);
+
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    NPObject* createScriptObjectForPluginElement(HTMLPlugInElement*);
+    NPObject* windowScriptNPObject();
+#endif
+
+private:
+    static bool m_recordPlaybackMode;
 };
 
-// JSInstance is an abstraction for a wrapped C class.  KJS and V8
+// JSInstance is an abstraction for a wrapped C class.  JSC and V8
 // have very different implementations.
 class JSInstanceHolder {
- public:
-   JSInstanceHolder();
-   JSInstanceHolder(JSInstance instance);
-   ~JSInstanceHolder();
-   // Returns true if the holder is empty.
-   bool IsEmpty();
-   // Get the contained JSInstance.
-   JSInstance Get();
-   // Clear the contained JSInstance.
-   void Clear();
-   JSInstanceHolder& operator=(JSInstance instance);
-   static JSInstance EmptyInstance();
- private:
-   JSPersistentInstance m_instance;
+public:
+    JSInstanceHolder();
+    JSInstanceHolder(JSInstance);
+    ~JSInstanceHolder();
+    // Returns true if the holder is empty.
+    bool IsEmpty();
+    // Get the contained JSInstance.
+    JSInstance Get();
+    // Clear the contained JSInstance.
+    void Clear();
+    JSInstanceHolder& operator=(JSInstance);
+    static JSInstance EmptyInstance();
+
+private:
+    JSPersistentInstance m_instance;
 };
 
 }  // namespace WebCore
