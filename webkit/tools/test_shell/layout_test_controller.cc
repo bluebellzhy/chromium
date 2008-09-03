@@ -474,10 +474,7 @@ void LayoutTestController::execCommand(
 
 void LayoutTestController::setUseDashboardCompatibilityMode(
     const CppArgumentList& args, CppVariant* result) {
-  if (args.size() > 0 && args[0].isBool()) {
-    shell_->delegate()->SetDashboardCompatibilityMode(args[0].value.boolValue);
-  }
-
+  // We have no need to support Dashboard Compatibility Mode (mac-only)
   result->SetNull();
 }
 
