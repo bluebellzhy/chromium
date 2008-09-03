@@ -4073,7 +4073,7 @@ void CSSStyleSelector::applyProperty(int id, CSSValue *value)
             m_style->setLineHeight(RenderStyle::initialLineHeight());
             m_lineHeightValue = 0;
             FontDescription fontDescription;
-            theme()->systemFont(primitiveValue->getIdent(), document, fontDescription);
+            theme()->systemFont(primitiveValue->getIdent(), m_checker.m_document, fontDescription);
             // Double-check and see if the theme did anything.  If not, don't bother updating the font.
             if (fontDescription.isAbsoluteSize()) {
                 // Handle the zoom factor.
