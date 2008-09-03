@@ -27,368 +27,392 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define max max  // windef.h overrides this, and it breaks us.
 #include "config.h"
-#include "V8Bridge.h"
-#include "v8_proxy.h"
-#include "v8_binding.h"
+#include "ScriptController.h"
+
 #include "CString.h"
+#include "Document.h"
+#include "DOMWindow.h"
 #include "Event.h"
 #include "EventNames.h"
 #include "Frame.h"
 #include "Node.h"
-#include "DOMWindow.h"
-#include "Document.h"
+#include "NotImplemented.h"
 #include "np_v8object.h"
+#include "v8_proxy.h"
+#include "v8_binding.h"
 #include "v8_npobject.h"
 
 NPRuntimeFunctions npruntime_functions = {
-  NPN_GetStringIdentifier,
-  NPN_GetStringIdentifiers,
-  NPN_GetIntIdentifier,
-  NPN_IdentifierIsString,
-  NPN_UTF8FromIdentifier,
-  NPN_IntFromIdentifier,
-  NPN_CreateObject,
-  NPN_RetainObject,
-  NPN_ReleaseObject,
-  NPN_Invoke,
-  NPN_InvokeDefault,
-  NPN_Evaluate,
-  NPN_GetProperty,
-  NPN_SetProperty,
-  NPN_RemoveProperty,
-  NPN_HasProperty,
-  NPN_HasMethod,
-  NPN_ReleaseVariantValue,
-  NPN_SetException
+    NPN_GetStringIdentifier,
+    NPN_GetStringIdentifiers,
+    NPN_GetIntIdentifier,
+    NPN_IdentifierIsString,
+    NPN_UTF8FromIdentifier,
+    NPN_IntFromIdentifier,
+    NPN_CreateObject,
+    NPN_RetainObject,
+    NPN_ReleaseObject,
+    NPN_Invoke,
+    NPN_InvokeDefault,
+    NPN_Evaluate,
+    NPN_GetProperty,
+    NPN_SetProperty,
+    NPN_RemoveProperty,
+    NPN_HasProperty,
+    NPN_HasMethod,
+    NPN_ReleaseVariantValue,
+    NPN_SetException
 };
-
 
 
 namespace WebCore {
 
-bool JSBridge::m_recordPlaybackMode = false;
+bool ScriptController::m_recordPlaybackMode = false;
 
-// Implements static function declared in JSBridge.
-void JSBridge::setFlags(const char* str, int length) {
-  v8::V8::SetFlagsFromString(str, length);
+void ScriptController::setFlags(const char* str, int length)
+{
+    v8::V8::SetFlagsFromString(str, length);
 }
 
-// static
-void JSBridge::setDomain(Frame* frame, const String&) {
-  V8Proxy::DomainChanged(frame);
+void ScriptController::setDomain(Frame* frame, const String&)
+{
+    V8Proxy::DomainChanged(frame);
 }
 
-// static
-Frame* JSBridge::retrieveActiveFrame() {
-  return V8Proxy::retrieveActiveFrame();
+Frame* ScriptController::retrieveActiveFrame()
+{
+    return V8Proxy::retrieveActiveFrame();
 }
 
-// static
-bool JSBridge::isSafeScript(Frame* target) {
-  return V8Proxy::IsFromSameOrigin(target, true);
+bool ScriptController::isSafeScript(Frame* target)
+{
+    return V8Proxy::IsFromSameOrigin(target, true);
 }
 
-// static
-void JSBridge::gcProtectJSWrapper(void* dom_object) {
-  V8Proxy::GCProtect(static_cast<Peerable*>(dom_object));
+void ScriptController::gcProtectJSWrapper(void* dom_object)
+{
+    V8Proxy::GCProtect(static_cast<Peerable*>(dom_object));
 }
 
-// static
-void JSBridge::gcUnprotectJSWrapper(void* dom_object) {
-  V8Proxy::GCUnprotect(static_cast<Peerable*>(dom_object));
+void ScriptController::gcUnprotectJSWrapper(void* dom_object)
+{
+    V8Proxy::GCUnprotect(static_cast<Peerable*>(dom_object));
 }
 
-// static
-JSException JSBridge::NoException() {
-  return v8::Local<v8::Value>();
+JSException ScriptController::NoException()
+{
+    return v8::Local<v8::Value>();
 }
 
-// static
-bool JSBridge::IsException(JSException exception) {
-  return !exception.IsEmpty();
+bool ScriptController::IsException(JSException exception)
+{
+    return !exception.IsEmpty();
 }
 
-// static
-PausedTimeouts* JSBridge::pauseTimeouts(Frame* frame) {
-  if (!frame) return NULL;
-  DOMWindow* window = frame->domWindow();
-  if (!window) return NULL;
-  return window->pauseTimeouts();
+void ScriptController::pauseTimeouts(OwnPtr<PausedTimeouts>& result)
+{
+    DOMWindow* window = m_frame->domWindow();
+    if (!window) {
+        result.clear();
+        return;
+    }
+    // TODO(eseidel): we should fix DOMWindow::pauseTimeouts to use OwnPtr
+    result = window->pauseTimeouts();
 }
 
-// static
-void JSBridge::resumeTimeouts(Frame* frame, PausedTimeouts* timeouts) {
-  if (!frame) return;
-  DOMWindow* window = frame->domWindow();
-  if (!window) return;
-  window->resumeTimeouts(timeouts);
+void ScriptController::resumeTimeouts(OwnPtr<PausedTimeouts>& timeouts)
+{
+    DOMWindow* window = frame->domWindow();
+    if (!window) {
+        window.clear();
+        return;
+    }
+    // TODO(eseidel): we should fix DOMWindow::resumeTimeouts to use OwnPtr
+    window->resumeTimeouts(timeouts.take());
 }
 
-
-// ---------------------------------------------------------------------------
-// V8 implementation of JSBridge.
-
-V8Bridge::V8Bridge(Frame* frame) {
+ScriptController::ScriptController(Frame* frame)
+{
     m_proxy = new V8Proxy(frame);
 }
 
-V8Bridge::~V8Bridge() {
+ScriptController::~ScriptController()
+{
     delete m_proxy;
 }
 
 // Disconnect the proxy from its owner frame;
-void V8Bridge::disconnectFrame() {
-  m_proxy->disconnectFrame();
+void ScriptController::disconnectFrame()
+{
+    m_proxy->disconnectFrame();
 }
 
-bool V8Bridge::wasRunByUserGesture() {
-  Frame* active_frame = V8Proxy::retrieveActiveFrame();
-  // No script is running, must be run by users.
-  if (!active_frame)
-    return true;
+bool ScriptController::wasRunByUserGesture()
+{
+    Frame* active_frame = V8Proxy::retrieveActiveFrame();
+    // No script is running, must be run by users.
+    if (!active_frame)
+        return true;
 
-  V8Proxy* active_proxy =
-      static_cast<V8Bridge*>(active_frame->script())->proxy();
+    V8Proxy* active_proxy = active_frame->script()->proxy();
 
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(active_frame);
-  // TODO(fqian): find all cases context can be empty:
-  //  1) JS is disabled;
-  //  2) page is NULL;
-  if (context.IsEmpty())
-    return true;
+    v8::HandleScope handle_scope;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(active_frame);
+    // TODO(fqian): find all cases context can be empty:
+    //  1) JS is disabled;
+    //  2) page is NULL;
+    if (context.IsEmpty())
+        return true;
 
-  v8::Context::Scope scope(context);
+    v8::Context::Scope scope(context);
 
-  v8::Handle<v8::Object> global = context->Global();
-  v8::Handle<v8::Value> jsevent = global->Get(v8::String::NewSymbol("event"));
-  Event* event = V8Proxy::ToNativeEvent(jsevent);
+    v8::Handle<v8::Object> global = context->Global();
+    v8::Handle<v8::Value> jsevent = global->Get(v8::String::NewSymbol("event"));
+    Event* event = V8Proxy::ToNativeEvent(jsevent);
 
-  // Based on code from kjs_bindings.cpp.
-  // Note: This is more liberal than Firefox's implementation.
-  if (event) {
-    const AtomicString& type = event->type();
-    bool event_ok =
-      // mouse events
-      type == EventNames::clickEvent ||
-      type == EventNames::mousedownEvent ||
-      type == EventNames::mouseupEvent ||
-      type == EventNames::dblclickEvent ||
-      // keyboard events
-      type == EventNames::keydownEvent ||
-      type == EventNames::keypressEvent ||
-      type == EventNames::keyupEvent ||
-      // other accepted events
-      type == EventNames::selectEvent ||
-      type == EventNames::changeEvent ||
-      type == EventNames::focusEvent ||
-      type == EventNames::blurEvent ||
-      type == EventNames::submitEvent;
+    // Based on code from kjs_bindings.cpp.
+    // Note: This is more liberal than Firefox's implementation.
+    if (event) {
+        const AtomicString& type = event->type();
+        bool event_ok =
+          // mouse events
+          type == EventNames::clickEvent ||
+          type == EventNames::mousedownEvent ||
+          type == EventNames::mouseupEvent ||
+          type == EventNames::dblclickEvent ||
+          // keyboard events
+          type == EventNames::keydownEvent ||
+          type == EventNames::keypressEvent ||
+          type == EventNames::keyupEvent ||
+          // other accepted events
+          type == EventNames::selectEvent ||
+          type == EventNames::changeEvent ||
+          type == EventNames::focusEvent ||
+          type == EventNames::blurEvent ||
+          type == EventNames::submitEvent;
 
-    if (event_ok)
-      return true;
-  } else {  // no event
-    if (active_proxy->inlineCode() &&
-        !active_proxy->timerCallback()) {
-      // This is the <a href="javascript:window.open('...')> case -> we let it
-      // through
-      return true;
-    }
+        if (event_ok)
+          return true;
+    } else if (active_proxy->inlineCode() && !active_proxy->timerCallback())
+        // This is the <a href="javascript:window.open('...')> case -> we let it
+        // through
+        return true;
+
     // This is the <script>window.open(...)</script> case or a timer callback ->
     // block it
-  }
-
-  return false;
+    return false;
 }
 
 
 // Evaluate a script file in the environment of this proxy.
-String V8Bridge::evaluate(const String& filename, int baseLine,
-                          const String& code, Node* node, bool* succ) {
-  *succ = false;
-  String result;
+String ScriptController::evaluate(const String& filename, int baseLine,
+                          const String& code, Node* node, bool* succ)
+{
+    *succ = false;
+    String result;
 
-  v8::HandleScope hs;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
-  if (context.IsEmpty())
+    v8::HandleScope hs;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
+    if (context.IsEmpty())
+        return result;
+
+    v8::Context::Scope scope(context);
+
+    v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine, code, node);
+
+    if (obj.IsEmpty() || obj->IsUndefined())
+        return result;
+
+    // If the return value is not a string, return 0 (what KJS does).
+    if (!obj->IsString()) {
+        v8::TryCatch exception_block;
+        obj = obj->ToString();
+        if (exception_block.HasCaught())
+            obj = v8::String::New("");
+    }
+
+    result = ToWebCoreString(obj);
+    *succ = true;
+
     return result;
-
-  v8::Context::Scope scope(context);
-
-  v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine, code, node);
-
-  if (obj.IsEmpty() || obj->IsUndefined())
-    return result;
-
-  // If the return value is not a string, return 0 (what KJS does).
-  if (!obj->IsString()) {
-    v8::TryCatch exception_block;
-    obj = obj->ToString();
-    if (exception_block.HasCaught())
-      obj = v8::String::New("");
-  }
-
-  result = ToWebCoreString(obj);
-  *succ = true;
-
-  return result;
 }
 
-v8::Persistent<v8::Value> V8Bridge::evaluate(const String& filename,
+v8::Persistent<v8::Value> ScriptController::evaluate(const String& filename,
                                              int baseLine,
                                              const String& code,
-                                             Node* node) {
-  v8::HandleScope hs;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
-  if (context.IsEmpty())
-    return v8::Persistent<v8::Value>();
+                                             Node* node)
+{
+    v8::HandleScope hs;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
+    if (context.IsEmpty())
+        return v8::Persistent<v8::Value>();
 
-  v8::Context::Scope scope(context);
+    v8::Context::Scope scope(context);
 
-  v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine, code, node);
+    v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine, code, node);
 
-  if (obj.IsEmpty()) return v8::Persistent<v8::Value>();
+    if (obj.IsEmpty())
+        return v8::Persistent<v8::Value>();
 
-  // TODO(fqian): keep track the global handle created.
-  return v8::Persistent<v8::Value>::New(obj);
+    // TODO(fqian): keep track the global handle created.
+    return v8::Persistent<v8::Value>::New(obj);
 }
 
-void V8Bridge::disposeJSResult(v8::Persistent<v8::Value> result) {
-  result.Dispose();
-  result.Clear();
+void ScriptController::disposeJSResult(v8::Persistent<v8::Value> result)
+{
+    result.Dispose();
+    result.Clear();
 }
 
-EventListener* V8Bridge::createHTMLEventHandler(
-    const String& functionName, const String& code, Node* node) {
-  return m_proxy->createHTMLEventHandler(functionName, code, node);
+EventListener* ScriptController::createHTMLEventHandler(
+    const String& functionName, const String& code, Node* node)
+{
+    return m_proxy->createHTMLEventHandler(functionName, code, node);
 }
 
 #if ENABLE(SVG)
-EventListener* V8Bridge::createSVGEventHandler(
-    const String& functionName, const String& code, Node* node) {
-  return m_proxy->createSVGEventHandler(functionName, code, node);
+EventListener* ScriptController::createSVGEventHandler(
+    const String& functionName, const String& code, Node* node)
+{
+    return m_proxy->createSVGEventHandler(functionName, code, node);
 }
 #endif
 
-void V8Bridge::setEventHandlerLineno(int lineno) {
-  m_proxy->setEventHandlerLineno(lineno);
+void ScriptController::setEventHandlerLineno(int lineno)
+{
+    m_proxy->setEventHandlerLineno(lineno);
 }
 
-void V8Bridge::finishedWithEvent(Event* evt) {
-  m_proxy->finishedWithEvent(evt);
+void ScriptController::finishedWithEvent(Event* evt)
+{
+    m_proxy->finishedWithEvent(evt);
 }
 
-void V8Bridge::clear() {
-  m_proxy->clear();
+void ScriptController::clear()
+{
+    m_proxy->clear();
 }
 
-void V8Bridge::clearDocumentWrapper() {
-  m_proxy->clearDocumentWrapper();
+void ScriptController::clearDocumentWrapper()
+{
+    m_proxy->clearDocumentWrapper();
 }
 
 // Create a V8 object with an interceptor of NPObjectPropertyGetter
-void V8Bridge::BindToWindowObject(Frame* frame, const String& key,
-                                  NPObject* object) {
-  v8::HandleScope handle_scope;
+void ScriptController::BindToWindowObject(Frame* frame, const String& key, NPObject* object)
+{
+    v8::HandleScope handle_scope;
 
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
-  if (context.IsEmpty())
-    return;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
+    if (context.IsEmpty())
+        return;
 
-  v8::Context::Scope scope(context);
+    v8::Context::Scope scope(context);
 
-  v8::Handle<v8::Object> value = CreateV8ObjectForNPObject(object, NULL);
+    v8::Handle<v8::Object> value = CreateV8ObjectForNPObject(object, NULL);
 
-  // Attach to the global object
-  v8::Handle<v8::Object> global = context->Global();
-  global->Set(v8String(key), value);
+    // Attach to the global object
+    v8::Handle<v8::Object> global = context->Global();
+    global->Set(v8String(key), value);
+}
+
+void ScriptController::CollectGarbage()
+{
+    v8::HandleScope hs;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
+    if (context.IsEmpty())
+        return;
+
+    v8::Context::Scope scope(context);
+
+    m_proxy->Evaluate("", 0, "if (window.gc) void(gc());", NULL);
 }
 
 
-void V8Bridge::CollectGarbage() {
-  v8::HandleScope hs;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
-  if (context.IsEmpty()) return;
-
-  v8::Context::Scope scope(context);
-
-  m_proxy->Evaluate("", 0, "if (window.gc) void(gc());", NULL);
+NPRuntimeFunctions* ScriptController::functions()
+{
+    return &npruntime_functions;
 }
 
+NPObject* ScriptController::CreateScriptObject(Frame* frame)
+{
+    v8::HandleScope handle_scope;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
+    if (context.IsEmpty())
+        return 0;
 
-NPRuntimeFunctions *V8Bridge::functions() {
-  return &npruntime_functions;
-}
-
-
-NPObject *V8Bridge::CreateScriptObject(Frame* frame) {
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
-  if (context.IsEmpty())
-    return 0;
-
-  v8::Context::Scope scope(context);
-  DOMWindow *window = frame->domWindow();
-  v8::Handle<v8::Value> global =
-      V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, window);
-  ASSERT(global->IsObject());
-  return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(global),
+    v8::Context::Scope scope(context);
+    DOMWindow *window = frame->domWindow();
+    v8::Handle<v8::Value> global =
+        V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, window);
+    ASSERT(global->IsObject());
+    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(global),
                                 window);
 }
 
-NPObject *V8Bridge::CreateScriptObject(Frame* frame,
-                                       HTMLPlugInElement* element) {
-  v8::HandleScope handle_scope;
-  v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
-  if (context.IsEmpty())
-    return 0;
-  v8::Context::Scope scope(context);
+NPObject* ScriptController::CreateScriptObject(Frame* frame,
+                                       HTMLPlugInElement* element)
+{
+    v8::HandleScope handle_scope;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
+    if (context.IsEmpty())
+        return 0;
+    v8::Context::Scope scope(context);
 
-  DOMWindow *window = frame->domWindow();
-  v8::Handle<v8::Value> dom_win =
+    DOMWindow *window = frame->domWindow();
+    v8::Handle<v8::Value> dom_win =
     V8Proxy::ToV8Object(V8ClassIndex::HTMLEMBEDELEMENT, element);
-  if (dom_win->IsObject()) {
-    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(dom_win),
-                                  window);
-  } else {
+    if (!dom_win->IsObject())
+        return 0;
+
+    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(dom_win), window);
+}
+
+NPObject* ScriptController::CreateNoScriptObject()
+{
+    notImplemented();
     return 0;
-  }
 }
 
-NPObject *V8Bridge::CreateNoScriptObject() {
-  return 0;  // implement me
+bool ScriptController::haveInterpreter() const
+{
+    return m_proxy->ContextInitialized();
 }
 
-bool V8Bridge::haveInterpreter() const {
-  return m_proxy->ContextInitialized();
+bool ScriptController::isEnabled() const
+{
+    return m_proxy->isEnabled();
 }
 
-bool V8Bridge::isEnabled() const {
-  return m_proxy->isEnabled();
+JSInstanceHolder::JSInstanceHolder()
+{
 }
 
-JSInstanceHolder::JSInstanceHolder() : m_instance() { }
-
-JSInstanceHolder::JSInstanceHolder(JSInstance instance) {
-  *this = instance;
+JSInstanceHolder::JSInstanceHolder(JSInstance instance)
+{
+    *this = instance;
 }
 
-JSInstanceHolder::~JSInstanceHolder() {
-  Clear();
+JSInstanceHolder::~JSInstanceHolder()
+{
+    Clear();
 }
 
-bool JSInstanceHolder::IsEmpty() {
-  return m_instance.IsEmpty();
+bool JSInstanceHolder::IsEmpty()
+{
+    return m_instance.IsEmpty();
 }
 
-JSInstance JSInstanceHolder::Get() {
-  return v8::Local<v8::Object>::New(m_instance);
+JSInstance JSInstanceHolder::Get()
+{
+    return v8::Local<v8::Object>::New(m_instance);
 }
 
-void JSInstanceHolder::Clear() {
-  if (!m_instance.IsEmpty()) {
+void JSInstanceHolder::Clear()
+{
+    if (m_instance.IsEmpty())
+        return;
     v8::HandleScope scope;
     v8::Persistent<v8::Object> handle(m_instance);
 #ifndef NDEBUG
@@ -396,24 +420,26 @@ void JSInstanceHolder::Clear() {
 #endif
     handle.Dispose();
     m_instance.Clear();
-  }
 }
 
-JSInstance JSInstanceHolder::EmptyInstance() {
-  return v8::Local<v8::Object>();
+JSInstance JSInstanceHolder::EmptyInstance()
+{
+    return v8::Local<v8::Object>();
 }
 
-JSInstanceHolder& JSInstanceHolder::operator=(JSInstance instance) {
-  Clear();
-  if (!instance.IsEmpty()) {
+JSInstanceHolder& JSInstanceHolder::operator=(JSInstance instance)
+{
+    Clear();
+    if (instance.IsEmpty())
+        return *this;
+
     v8::Persistent<v8::Object> handle =
         v8::Persistent<v8::Object>::New(instance);
     m_instance = handle;
 #ifndef NDEBUG
     V8Proxy::RegisterGlobalHandle(JSINSTANCE, this, handle);
 #endif
-  }
-  return *this;
+    return *this;
 }
 
 }  // namespace WebCpre

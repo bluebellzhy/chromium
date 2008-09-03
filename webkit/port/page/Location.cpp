@@ -64,7 +64,7 @@ void Location::ChangeLocationTo(const KURL& url, bool lock_history) {
   if (url.isEmpty())
     return;
 
-  Frame* active_frame = JSBridge::retrieveActiveFrame();
+  Frame* active_frame = ScriptController::retrieveActiveFrame();
   if (!active_frame)
     return;
 
@@ -146,7 +146,7 @@ void Location::setHref(const String& value) {
   if (!m_frame)
     return;
 
-  Frame* active_frame = JSBridge::retrieveActiveFrame();
+  Frame* active_frame = ScriptController::retrieveActiveFrame();
   if (!active_frame)
     return;
 
@@ -155,7 +155,7 @@ void Location::setHref(const String& value) {
 
   // Allows cross domain access except javascript url.
   if (!parseURL(value).startsWith("javascript:", false) ||
-      JSBridge::isSafeScript(m_frame)) {
+      ScriptController::isSafeScript(m_frame)) {
     ChangeLocationTo(active_frame->loader()->completeURL(value), false);
   }  
 }
@@ -225,11 +225,11 @@ void Location::reload(bool forceget)
     if (!m_frame)
         return;
 
-    Frame* active_frame = JSBridge::retrieveActiveFrame();
+    Frame* active_frame = ScriptController::retrieveActiveFrame();
     if (!active_frame)
         return;
 
-    if (!JSBridge::isSafeScript(m_frame))
+    if (!ScriptController::isSafeScript(m_frame))
         return;
 
     bool userGesture = active_frame->script()->wasRunByUserGesture();
@@ -240,7 +240,7 @@ void Location::replace(const String& url) {
   if (!m_frame)
     return;
 
-  Frame* active_frame = JSBridge::retrieveActiveFrame();
+  Frame* active_frame = ScriptController::retrieveActiveFrame();
   if (!active_frame)
     return;
 
@@ -249,7 +249,7 @@ void Location::replace(const String& url) {
 
   // Allows cross domain access except javascript url.
   if (!parseURL(url).startsWith("javascript:", false) ||
-      JSBridge::isSafeScript(m_frame)) {
+      ScriptController::isSafeScript(m_frame)) {
     ChangeLocationTo(active_frame->loader()->completeURL(url), true);
   }
 }
@@ -258,7 +258,7 @@ void Location::assign(const String& url) {
   if (!m_frame) 
     return;
 
-  Frame* active_frame = JSBridge::retrieveActiveFrame();
+  Frame* active_frame = ScriptController::retrieveActiveFrame();
   if (!active_frame)
     return;
 
@@ -266,7 +266,7 @@ void Location::assign(const String& url) {
     return;
 
   if (!parseURL(url).startsWith("javascript:", false) ||
-      JSBridge::isSafeScript(m_frame)) {
+      ScriptController::isSafeScript(m_frame)) {
     ChangeLocationTo(active_frame->loader()->completeURL(url), false);
   }
 }
