@@ -87,6 +87,7 @@
 #include "Document.h"
 #include "DocumentFragment.h"  // Only needed for ReplaceSelectionCommand.h :(
 #include "DocumentLoader.h"
+#include "DOMWindow.h"
 #include "Editor.h"
 #include "Frame.h"
 #include "FrameLoader.h"

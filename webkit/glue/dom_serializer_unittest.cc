@@ -41,6 +41,7 @@
 #include "HTMLMetaElement.h"
 #include "HTMLNames.h"
 #include "KURL.h"
+#include "markup.h"
 #include "SharedBuffer.h"
 #include "SubstituteData.h"
 #pragma warning(pop)

@@ -70,7 +70,7 @@ namespace webkit_glue {
 void SetJavaScriptFlags(const std::wstring& str) {
 #if USE(V8_BINDING) || USE(JAVASCRIPTCORE_BINDINGS)
   std::string utf8_str = WideToUTF8(str);
-  WebCore::JSBridge::setFlags(utf8_str.data(), static_cast<int>(utf8_str.size()));
+  WebCore::ScriptController::setFlags(utf8_str.data(), static_cast<int>(utf8_str.size()));
 #endif
 }
 
@@ -172,7 +172,8 @@ std::wstring DumpRenderer(WebFrame* web_frame) {
   WebFrameImpl* webFrameImpl = static_cast<WebFrameImpl*>(web_frame);
   WebCore::Frame* frame = webFrameImpl->frame();
 
-  String frameText = WebCore::externalRepresentation(frame->contentRenderer());
+  WebCore::String frameText =
+      WebCore::externalRepresentation(frame->contentRenderer());
   return StringToStdWString(frameText);
 }
 

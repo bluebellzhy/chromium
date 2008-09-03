@@ -1059,8 +1059,6 @@ void WebViewImpl::SetPreferences(const WebPreferences& preferences) {
   // change this, since it would break existing rich text editors.
   settings->setEditableLinkBehavior(WebCore::EditableLinkNeverLive);
 
-  settings->setUsesDashboardBackwardCompatibilityMode(
-      preferences.dashboard_compatibility_mode);
   settings->setFontRenderingMode(NormalRenderingMode);
   settings->setJavaEnabled(preferences.java_enabled);
 
