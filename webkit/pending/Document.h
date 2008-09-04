@@ -34,6 +34,7 @@
 #include "KURL.h"
 #include "StringHash.h"
 #include "Timer.h"
+#include "unicode/uscript.h"
 #include <wtf/HashCountedSet.h>
 #include <wtf/ListHashSet.h>
 
@@ -234,6 +235,7 @@ public:
     String characterSet() const { return inputEncoding(); }
 
     void setCharset(const String&);
+    UScriptCode dominantScript() const;
 
     String contentLanguage() const { return m_contentLanguage; }
     void setContentLanguage(const String& lang) { m_contentLanguage = lang; }
