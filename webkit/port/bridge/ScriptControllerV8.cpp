@@ -385,6 +385,73 @@ bool ScriptController::isEnabled() const
     return m_proxy->isEnabled();
 }
 
+JSInstance ScriptController::createScriptInstanceForWidget(Widget* widget)
+{
+    ASSERT(widget != 0);
+
+    if (widget->isFrameView())
+        return JSInstanceHolder::EmptyInstance();
+
+    // Note:  We have to trust that the widget passed to us here
+    // is a WebPluginImpl.  There isn't a way to dynamically verify
+    // it, since the derived class (Widget) has no identifier.
+    WebPluginContainer* container = static_cast<WebPluginContainer*>(widget);
+    if (!container)
+        return JSInstanceHolder::EmptyInstance();
+
+    NPObject *npObject = container->GetPluginScriptableObject();
+    if (!npObject)
+        return JSInstanceHolder::EmptyInstance();
+
+#if USE(JSC)
+    // Register 'widget' with the frame so that we can teardown
+    // subobjects when the container goes away.
+    RefPtr<KJS::Bindings::RootObject> root = script()->createRootObject(widget);
+    KJS::Bindings::Instance* instance = 
+        KJS::Bindings::Instance::createBindingForLanguageInstance(
+            KJS::Bindings::Instance::CLanguage, npObject,
+            root.release());
+    // GetPluginScriptableObject returns a retained NPObject.  
+    // The caller is expected to release it.
+    NPN_ReleaseObject(npObject);
+    return instance;
+#elif USE(V8)
+    // Frame Memory Management for NPObjects
+    // -------------------------------------
+    // NPObjects are treated differently than other objects wrapped by JS.
+    // NPObjects are not Peerable, and cannot be made peerable, since NPObjects
+    // can be created either by the browser (e.g. the main window object) or by
+    // the plugin (the main plugin object for a HTMLEmbedElement).  Further,
+    // unlike most DOM Objects, the frame is especially careful to ensure 
+    // NPObjects terminate at frame teardown because if a plugin leaks a 
+    // reference, it could leak its objects (or the browser's objects).
+    // 
+    // The Frame maintains a list of plugin objects (m_pluginObjects)
+    // which it can use to quickly find the wrapped embed object.
+    // 
+    // Inside the NPRuntime, we've added a few methods for registering 
+    // wrapped NPObjects.  The purpose of the registration is because 
+    // javascript garbage collection is non-deterministic, yet we need to
+    // be able to tear down the plugin objects immediately.  When an object
+    // is registered, javascript can use it.  When the object is destroyed,
+    // or when the object's "owning" object is destroyed, the object will
+    // be un-registered, and the javascript engine must not use it.
+    //  
+    // Inside the javascript engine, the engine can keep a reference to the
+    // NPObject as part of its wrapper.  However, before accessing the object
+    // it must consult the NPN_Registry.
+
+    v8::Local<v8::Object> wrapper = CreateV8ObjectForNPObject(npObject, NULL);
+
+    // Track the plugin object.  We've been given a reference to the object.
+    m_pluginObjects.set(widget, npObject);
+
+    JSInstance instance = wrapper;
+    return instance;
+#endif
+}
+
+
 JSInstanceHolder::JSInstanceHolder()
 {
 }

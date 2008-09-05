@@ -1126,7 +1126,7 @@ JS%.h : %.idl $(JS_BINDINGS_SCRIPTS)
 
 # new-style V8 bindings
 
-V8_BINDINGS_SCRIPTS = \
+V8_SCRIPTS = \
     $(PORTROOT)/bindings/scripts/CodeGenerator.pm \
     $(PORTROOT)/bindings/scripts/CodeGeneratorV8.pm \
     $(PORTROOT)/bindings/scripts/IDLParser.pm \
@@ -1136,8 +1136,8 @@ V8_BINDINGS_SCRIPTS = \
 
 # Sometimes script silently fails (Cygwin problem?), 
 # use a bounded loop to retry if so, but not do so forever.
-V8%.h : %.idl $(V8_BINDINGS_SCRIPTS)
+V8%.h : %.idl $(V8_SCRIPTS)
 	for i in 1 2 3 4 5 6 7 8 9 10; do \
 	  if test -e $@; then break; fi; \
-	  perl -w -I $(PORTROOT)/bindings/scripts -I $(WebCore)/bindings/scripts $(PORTROOT)/bindings/scripts/generate-bindings.pl --defines "$(FEATURE_DEFINES) LANGUAGE_JAVASCRIPT V8_BINDING" --generator V8 --include ../../../webkit/port/dom --include ../../../webkit/port/html --include ../../../webkit/port/page --include ../../../webkit/port/xml --include svg --include dom --include html --include css --include page --include xml --outputdir . $< ; \
+	  perl -w -I $(PORTROOT)/bindings/scripts -I $(WebCore)/bindings/scripts $(PORTROOT)/bindings/scripts/generate-bindings.pl --defines "$(FEATURE_DEFINES) LANGUAGE_JAVASCRIPT V8" --generator V8 --include ../../../webkit/port/dom --include ../../../webkit/port/html --include ../../../webkit/port/page --include ../../../webkit/port/xml --include svg --include dom --include html --include css --include page --include xml --outputdir . $< ; \
 	done

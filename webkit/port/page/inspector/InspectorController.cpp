@@ -56,13 +56,13 @@
 #include "GraphicsContext.h"
 #include "HTMLFrameOwnerElement.h"
 #include "InspectorClient.h"
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include "JSDOMWindow.h"
 #include "JSInspectedObjectWrapper.h"
 #include "JSInspectorCallbackWrapper.h"
 #include "JSNode.h"
 #include "JSRange.h"
-#elif USE(V8_BINDING)
+#elif USE(V8)
 #include "v8_proxy.h"
 #include "v8_binding.h"
 #endif
@@ -79,7 +79,7 @@
 #include "SystemTime.h"
 #include "TextEncoding.h"
 #include "TextIterator.h"
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include "kjs_proxy.h"
 #include <JavaScriptCore/APICast.h>
 #include <JavaScriptCore/JSLock.h>
@@ -94,7 +94,7 @@
 #include "JSDatabase.h"
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 using namespace KJS;
 using namespace std;
 #endif
@@ -136,7 +136,7 @@ namespace bug1228513 {
   }
 } // namespace bug1228513
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 // TODO(ojan): We probably need to implement these functions to get the wrapped JS calls
 // to the DOM working.
 static JSRetainPtr<JSStringRef> jsStringRef(const char* str)
@@ -189,7 +189,7 @@ struct ConsoleMessage {
     {
     }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     // TODO(ojan): I think we'll need something like this when we wrap JS calls to the DOM
     ConsoleMessage(MessageSource s, MessageLevel l, ExecState* exec, const List& args, unsigned li, const String& u)
         : source(s)
@@ -207,7 +207,7 @@ struct ConsoleMessage {
     MessageSource source;
     MessageLevel level;
     String message;
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     Vector<ProtectedPtr<JSValue> > wrappedArguments;
 #endif
     unsigned line;
@@ -217,7 +217,7 @@ struct ConsoleMessage {
 #pragma mark -
 #pragma mark XMLHttpRequestResource Class
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 struct XMLHttpRequestResource {
     XMLHttpRequestResource(KJS::UString& sourceString)
     {
@@ -233,7 +233,7 @@ struct XMLHttpRequestResource {
 
     RefPtr<KJS::UString::Rep> sourceString;
 };
-#elif USE(V8_BINDING)
+#elif USE(V8)
 struct XMLHttpRequestResource {
     XMLHttpRequestResource(const String& str)
     {
@@ -271,9 +271,9 @@ struct InspectorResource : public RefCounted<InspectorResource> {
    
     ~InspectorResource()
     {
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
         setScriptObject(0, 0);
-#elif USE(V8_BINDING)
+#elif USE(V8)
         setScriptObject(v8::Handle<v8::Object>());
 #endif
     }
@@ -310,7 +310,7 @@ struct InspectorResource : public RefCounted<InspectorResource> {
         }
     }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     void setScriptObject(JSContextRef context, JSObjectRef newScriptObject)
     {
         if (scriptContext && scriptObject)
@@ -323,7 +323,7 @@ struct InspectorResource : public RefCounted<InspectorResource> {
         if (context && newScriptObject)
             JSValueProtect(context, newScriptObject);
     }
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void setScriptObject(v8::Handle<v8::Object> newScriptObject)
     {
         //XXXMB - the InspectorController and InspectorResource both maintain persistent handles
@@ -340,12 +340,12 @@ struct InspectorResource : public RefCounted<InspectorResource> {
 // TODO(ojan): XHR requests show up in the inspector, but not their contents.
 // Something is wrong obviously, but not sure what. Not the highest priority
 // thing the inspector needs fixed right now though.
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     void setXMLHttpRequestProperties(KJS::UString& data)
     {
         xmlHttpRequestResource.set(new XMLHttpRequestResource(data));
     }
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void setXMLHttpRequestProperties(String& data)
     {
         xmlHttpRequestResource.set(new XMLHttpRequestResource(data));
@@ -355,9 +355,9 @@ struct InspectorResource : public RefCounted<InspectorResource> {
     String sourceString() const
     {
        if (xmlHttpRequestResource) {
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
              return KJS::UString(xmlHttpRequestResource->sourceString);
-#elif USE(V8_BINDING)
+#elif USE(V8)
              return xmlHttpRequestResource->sourceString;
 #endif
        }
@@ -420,10 +420,10 @@ struct InspectorResource : public RefCounted<InspectorResource> {
     HTTPHeaderMap responseHeaderFields;
     String mimeType;
     String suggestedFilename;
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSContextRef scriptContext;
     JSObjectRef scriptObject;
-#elif USE(V8_BINDING)
+#elif USE(V8)
     v8::Persistent<v8::Object> scriptObject;
 #endif
     long long expectedContentLength;
@@ -437,9 +437,9 @@ struct InspectorResource : public RefCounted<InspectorResource> {
     double endTime;
 
     // Helper function to determine when the script object is initialized
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     inline bool hasScriptObject() const { return scriptObject; }
-#elif USE(V8_BINDING)
+#elif USE(V8)
     inline bool hasScriptObject() { return !scriptObject.IsEmpty(); }
 #endif
 
@@ -452,7 +452,7 @@ protected:
         , loader(documentLoader)
         , frame(frame)
         , xmlHttpRequestResource(0)
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
         , scriptContext(0)
         , scriptObject(0)
 #endif
@@ -521,7 +521,7 @@ private:
 #pragma mark -
 #pragma mark JavaScript Callbacks
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef addSourceToFrame(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     JSValueRef undefined = JSValueMakeUndefined(ctx);
@@ -580,7 +580,7 @@ static JSValueRef addSourceToFrame(JSContextRef ctx, JSObjectRef /*function*/, J
 
     return undefined;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::addSourceToFrame(unsigned long identifier, Node* node) 
 {    
     RefPtr<InspectorResource> resource = this->resources().get(identifier);
@@ -624,7 +624,7 @@ void InspectorController::addSourceToFrame(unsigned long identifier, Node* node)
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef getResourceDocumentNode(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     JSValueRef undefined = JSValueMakeUndefined(ctx);
@@ -661,7 +661,7 @@ static JSValueRef getResourceDocumentNode(JSContextRef ctx, JSObjectRef /*functi
     JSValueRef documentValue = toRef(JSInspectedObjectWrapper::wrap(exec, toJS(exec, document)));
     return documentValue;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 Node* InspectorController::getResourceDocumentNode(unsigned long identifier) { 
     RefPtr<InspectorResource> resource = this->resources().get(identifier);
     ASSERT(resource);
@@ -681,7 +681,7 @@ Node* InspectorController::getResourceDocumentNode(unsigned long identifier) {
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef highlightDOMNode(JSContextRef context, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* /*exception*/)
 {
     JSValueRef undefined = JSValueMakeUndefined(context);
@@ -701,7 +701,7 @@ static JSValueRef highlightDOMNode(JSContextRef context, JSObjectRef /*function*
 
     return undefined;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::highlightDOMNode(Node* node)
 {
     if (!enabled())
@@ -712,7 +712,7 @@ void InspectorController::highlightDOMNode(Node* node)
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef hideDOMNodeHighlight(JSContextRef context, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* /*exception*/)
 {
     JSValueRef undefined = JSValueMakeUndefined(context);
@@ -725,7 +725,7 @@ static JSValueRef hideDOMNodeHighlight(JSContextRef context, JSObjectRef /*funct
 
     return undefined;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::hideDOMNodeHighlight()
 {
     if (!enabled())
@@ -735,7 +735,7 @@ void InspectorController::hideDOMNodeHighlight()
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef loaded(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -745,13 +745,13 @@ static JSValueRef loaded(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef
     controller->scriptObjectReady();
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::loaded() { 
     scriptObjectReady();
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef unloading(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -761,12 +761,12 @@ static JSValueRef unloading(JSContextRef ctx, JSObjectRef /*function*/, JSObject
     controller->close();
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // We don't need to implement this because we just map windowUnloading to
 // InspectorController::close in the IDL file.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef attach(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -776,13 +776,13 @@ static JSValueRef attach(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef
     controller->attachWindow();
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::attach() {
     attachWindow();
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef detach(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -792,13 +792,13 @@ static JSValueRef detach(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef
     controller->detachWindow();
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::detach() {
     detachWindow();
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef search(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -865,7 +865,7 @@ static JSValueRef search(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef
 
     return result;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): See when/if this works. We should either make it work or remove it.
 void InspectorController::search(Node* node, const String& target) { 
     v8::HandleScope handle_scope;
@@ -960,7 +960,7 @@ static JSValueRef databaseTableNames(JSContextRef ctx, JSObjectRef /*function*/,
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef inspectedWindow(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -971,7 +971,7 @@ static JSValueRef inspectedWindow(JSContextRef ctx, JSObjectRef /*function*/, JS
     JSLock lock;
     return toRef(JSInspectedObjectWrapper::wrap(inspectedWindow->globalExec(), inspectedWindow));
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 DOMWindow* InspectorController::inspectedWindow() {
     // Can be null if page was already destroyed.
     if (!m_inspectedPage)
@@ -980,7 +980,7 @@ DOMWindow* InspectorController::inspectedWindow() {
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef localizedStrings(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -993,11 +993,11 @@ static JSValueRef localizedStrings(JSContextRef ctx, JSObjectRef /*function*/, J
 
     return JSValueMakeString(ctx, jsStringRef(url).get());
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how/if to implement this function.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef platform(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments[]*/, JSValueRef* /*exception*/)
 {
 #if PLATFORM(MAC)
@@ -1022,13 +1022,13 @@ static JSValueRef platform(JSContextRef ctx, JSObjectRef /*function*/, JSObjectR
 
     return platformValue;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 String InspectorController::platform() const {
   return String("windows");
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef moveByUnrestricted(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -1050,11 +1050,11 @@ static JSValueRef moveByUnrestricted(JSContextRef ctx, JSObjectRef /*function*/,
 
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how/if to implement this function.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef wrapCallback(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -1067,12 +1067,12 @@ static JSValueRef wrapCallback(JSContextRef ctx, JSObjectRef /*function*/, JSObj
     JSLock lock;
     return toRef(JSInspectorCallbackWrapper::wrap(toJS(ctx), toJS(arguments[0])));
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how to wrap JS calls to the DOM with V8.
 // Eventually, get it working over IPC.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef startDebuggingAndReloadInspectedPage(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -1083,11 +1083,11 @@ static JSValueRef startDebuggingAndReloadInspectedPage(JSContextRef ctx, JSObjec
 
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how/if to implement this function.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef stopDebugging(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -1098,11 +1098,11 @@ static JSValueRef stopDebugging(JSContextRef ctx, JSObjectRef /*function*/, JSOb
 
     return JSValueMakeUndefined(ctx);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how/if to implement this function.
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSValueRef debuggerAttached(JSContextRef ctx, JSObjectRef /*function*/, JSObjectRef thisObject, size_t /*argumentCount*/, const JSValueRef[] /*arguments*/, JSValueRef* /*exception*/)
 {
     InspectorController* controller = reinterpret_cast<InspectorController*>(JSObjectGetPrivate(thisObject));
@@ -1110,7 +1110,7 @@ static JSValueRef debuggerAttached(JSContextRef ctx, JSObjectRef /*function*/, J
         return JSValueMakeUndefined(ctx);
     return JSValueMakeBoolean(ctx, controller->debuggerAttached());
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Figure out how/if to implement this function.
 #endif
 
@@ -1122,7 +1122,7 @@ InspectorController::InspectorController(Page* page, InspectorClient* client)
     , m_inspectedPage(page)
     , m_client(client)
     , m_page(0)
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     , m_scriptObject(0) // is an uninitialized V8 object
     , m_controllerScriptObject(0) // is equivalent to |this|
     , m_scriptContext(0) // isn't necessary for V8
@@ -1142,7 +1142,7 @@ InspectorController::~InspectorController()
     m_bug1228513_inspectorState = bug1228513::DELETED;
     m_client->inspectorDestroyed();
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     if (m_scriptContext) {
         JSValueRef exception = 0;
 
@@ -1220,7 +1220,7 @@ void InspectorController::inspect(Node* node)
         focusNode();
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::focusNode()
 {
     if (!enabled())
@@ -1260,7 +1260,7 @@ void InspectorController::focusNode()
     JSObjectCallAsFunction(m_scriptContext, function, m_scriptObject, 1, &arg0, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::focusNode()
 {
     if (!enabled() || !m_nodeToFocus)
@@ -1317,10 +1317,10 @@ void InspectorController::setWindowVisible(bool visible)
 
     m_windowVisible = visible;
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     if (!m_scriptContext || !m_scriptObject)
         return;
-#elif USE(V8_BINDING
+#elif USE(V8)
     if (!hasScriptObject())
         return;
 #endif
@@ -1354,7 +1354,7 @@ void InspectorController::enableTrackResources(bool trackResources)
 }
 
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::addMessageToConsole(MessageSource source, MessageLevel level, ExecState* exec, const List& arguments, unsigned lineNumber, const String& sourceURL)
 {
     if (!enabled())
@@ -1397,7 +1397,7 @@ void InspectorController::detachWindow()
     m_client->detachWindow();
 }
 
-#if USE(V8_BINDING)
+#if USE(V8)
 void InspectorController::setScriptObject(v8::Handle<v8::Object> newScriptObject)
 {
     if (hasScriptObject()) {
@@ -1410,7 +1410,7 @@ void InspectorController::setScriptObject(v8::Handle<v8::Object> newScriptObject
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::windowScriptObjectAvailable()
 {
     if (!m_page || !enabled())
@@ -1458,7 +1458,7 @@ void InspectorController::windowScriptObjectAvailable()
 
     JSObjectSetProperty(m_scriptContext, global, jsStringRef("InspectorController").get(), m_controllerScriptObject, kJSPropertyAttributeNone, 0);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::windowScriptObjectAvailable()
 {
     if (!m_page || !enabled())
@@ -1475,7 +1475,7 @@ void InspectorController::windowScriptObjectAvailable()
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::scriptObjectReady()
 {
     ASSERT(m_scriptContext);
@@ -1506,7 +1506,7 @@ void InspectorController::scriptObjectReady()
     // Make sure our window is visible now that the page loaded
     showWindow();
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::scriptObjectReady()
 {
     if (!m_page || !enabled())
@@ -1557,9 +1557,9 @@ void InspectorController::showConsole()
         return;
     }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     callSimpleFunction(m_scriptContext, m_scriptObject, "showConsole");
-#elif USE(V8_BINDING)
+#elif USE(V8)
     if (windowVisible()) {
         v8::HandleScope handle_scope;
         v8::Handle<v8::Context> context = V8Proxy::GetContext(m_page->mainFrame());
@@ -1589,9 +1589,9 @@ void InspectorController::showTimeline()
         return;
     }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     callSimpleFunction(m_scriptContext, m_scriptObject, "showTimeline");
-#elif USE(V8_BINDING)
+#elif USE(V8)
     if (windowVisible()) {
         v8::HandleScope handle_scope;
         v8::Handle<v8::Context> context = V8Proxy::GetContext(m_page->mainFrame());
@@ -1618,7 +1618,7 @@ void InspectorController::close()
     closeWindow();
     if (m_page) {
         m_page->setParentInspectorController(0);
-#if USE(V8_BINDING)
+#if USE(V8)
         v8::HandleScope handle_scope;
         v8::Handle<v8::Context> context = V8Proxy::GetContext(m_page->mainFrame());
         v8::Context::Scope scope(context);
@@ -1626,13 +1626,13 @@ void InspectorController::close()
 #endif
     }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     ASSERT(m_scriptContext && m_scriptObject);
     JSValueUnprotect(m_scriptContext, m_scriptObject);
 #endif
 
     m_page = 0;
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     m_scriptObject = 0;
     m_scriptContext = 0;
 #endif
@@ -1651,7 +1651,7 @@ void InspectorController::closeWindow()
     m_client->closeWindow();
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static void addHeaders(JSContextRef context, JSObjectRef object, const HTTPHeaderMap& headers, JSValueRef* exception)
 {
     ASSERT_ARG(context, context);
@@ -1665,7 +1665,7 @@ static void addHeaders(JSContextRef context, JSObjectRef object, const HTTPHeade
             return;
     }
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 static void addHeaders(v8::Handle<v8::Object> object, const HTTPHeaderMap& headers)
 {
     ASSERT_ARG(object, !object.IsEmpty());
@@ -1677,7 +1677,7 @@ static void addHeaders(v8::Handle<v8::Object> object, const HTTPHeaderMap& heade
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSObjectRef scriptObjectForRequest(JSContextRef context, const InspectorResource* resource, JSValueRef* exception)
 {
     ASSERT_ARG(context, context);
@@ -1687,7 +1687,7 @@ static JSObjectRef scriptObjectForRequest(JSContextRef context, const InspectorR
 
     return object;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 static v8::Handle<v8::Object> scriptObjectForRequest(const InspectorResource* resource)
 {
     v8::Handle<v8::Object> object = v8::Object::New();
@@ -1696,7 +1696,7 @@ static v8::Handle<v8::Object> scriptObjectForRequest(const InspectorResource* re
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 static JSObjectRef scriptObjectForResponse(JSContextRef context, const InspectorResource* resource, JSValueRef* exception)
 {
     ASSERT_ARG(context, context);
@@ -1706,7 +1706,7 @@ static JSObjectRef scriptObjectForResponse(JSContextRef context, const Inspector
 
     return object;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 static v8::Handle<v8::Object> scriptObjectForResponse(const InspectorResource* resource)
 {
     v8::Handle<v8::Object> object = v8::Object::New();
@@ -1715,7 +1715,7 @@ static v8::Handle<v8::Object> scriptObjectForResponse(const InspectorResource* r
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 JSObjectRef InspectorController::addScriptResource(InspectorResource* resource)
 {
     ASSERT_ARG(resource, resource);
@@ -1776,7 +1776,7 @@ JSObjectRef InspectorController::addScriptResource(InspectorResource* resource)
 
     return resource->scriptObject;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::addScriptResource(InspectorResource* resource)
 {
     ASSERT_ARG(resource, resource);
@@ -1818,7 +1818,7 @@ void InspectorController::addScriptResource(InspectorResource* resource)
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 JSObjectRef InspectorController::addAndUpdateScriptResource(InspectorResource* resource)
 {
     ASSERT_ARG(resource, resource);
@@ -1833,7 +1833,7 @@ JSObjectRef InspectorController::addAndUpdateScriptResource(InspectorResource* r
     updateScriptResource(resource, resource->finished, resource->failed);
     return scriptResource;
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::addAndUpdateScriptResource(InspectorResource* resource)
 {
     ASSERT_ARG(resource, resource);
@@ -1847,7 +1847,7 @@ void InspectorController::addAndUpdateScriptResource(InspectorResource* resource
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::removeScriptResource(InspectorResource* resource)
 {
     ASSERT(m_scriptContext);
@@ -1877,7 +1877,7 @@ void InspectorController::removeScriptResource(InspectorResource* resource)
     JSObjectCallAsFunction(m_scriptContext, removeResourceFunction, m_scriptObject, 1, arguments, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::removeScriptResource(InspectorResource* resource)
 {
     ASSERT(hasScriptObject());
@@ -1917,7 +1917,7 @@ static void updateResourceResponse(InspectorResource* resource, const ResourceRe
     resource->suggestedFilename = response.suggestedFilename();
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::updateScriptResourceRequest(InspectorResource* resource)
 {
     ASSERT(resource->scriptObject);
@@ -1961,7 +1961,7 @@ void InspectorController::updateScriptResourceRequest(InspectorResource* resourc
     JSObjectSetProperty(m_scriptContext, resource->scriptObject, jsStringRef("mainResource").get(), mainResourceValue, kJSPropertyAttributeNone, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::updateScriptResourceRequest(InspectorResource* resource)
 {
     ASSERT(resource->hasScriptObject());
@@ -1983,7 +1983,7 @@ void InspectorController::updateScriptResourceRequest(InspectorResource* resourc
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::updateScriptResourceResponse(InspectorResource* resource)
 {
     ASSERT(resource->scriptObject);
@@ -2028,7 +2028,7 @@ void InspectorController::updateScriptResourceResponse(InspectorResource* resour
     JSObjectSetProperty(m_scriptContext, resource->scriptObject, jsStringRef("type").get(), typeValue, kJSPropertyAttributeNone, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::updateScriptResourceResponse(InspectorResource* resource)
 {
     ASSERT(resource->hasScriptObject());
@@ -2050,7 +2050,7 @@ void InspectorController::updateScriptResourceResponse(InspectorResource* resour
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::updateScriptResource(InspectorResource* resource, int length)
 {
     ASSERT(resource->scriptObject);
@@ -2065,7 +2065,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, int 
     JSObjectSetProperty(m_scriptContext, resource->scriptObject, jsStringRef("contentLength").get(), lengthValue, kJSPropertyAttributeNone, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::updateScriptResource(InspectorResource* resource, int length)
 {
     ASSERT(resource->hasScriptObject());
@@ -2082,7 +2082,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, int 
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::updateScriptResource(InspectorResource* resource, bool finished, bool failed)
 {
     ASSERT(resource->scriptObject);
@@ -2102,7 +2102,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, bool
     JSObjectSetProperty(m_scriptContext, resource->scriptObject, jsStringRef("finished").get(), finishedValue, kJSPropertyAttributeNone, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::updateScriptResource(InspectorResource* resource, bool finished, bool failed)
 {
     ASSERT(resource->hasScriptObject());
@@ -2119,7 +2119,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, bool
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::updateScriptResource(InspectorResource* resource, double startTime, double responseReceivedTime, double endTime)
 {
     ASSERT(resource->scriptObject);
@@ -2144,7 +2144,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, doub
     JSObjectSetProperty(m_scriptContext, resource->scriptObject, jsStringRef("endTime").get(), endTimeValue, kJSPropertyAttributeNone, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::updateScriptResource(InspectorResource* resource, double startTime, double responseReceivedTime, double endTime)
 {
     ASSERT(resource->hasScriptObject());
@@ -2162,7 +2162,7 @@ void InspectorController::updateScriptResource(InspectorResource* resource, doub
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::populateScriptObjects()
 {
     ASSERT(m_scriptContext);
@@ -2183,7 +2183,7 @@ void InspectorController::populateScriptObjects()
         addDatabaseScriptResource((*it).get());
 #endif
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::populateScriptObjects()
 {
     ResourcesMap::iterator resourcesEnd = m_resources.end();
@@ -2292,7 +2292,7 @@ void InspectorController::removeDatabaseScriptResource(InspectorDatabaseResource
 }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::addScriptConsoleMessage(const ConsoleMessage* message)
 {
     ASSERT_ARG(message, message);
@@ -2348,7 +2348,7 @@ void InspectorController::addScriptConsoleMessage(const ConsoleMessage* message)
     JSObjectCallAsFunction(m_scriptContext, addMessage, m_scriptObject, 1, &messageObject, &exception);
     HANDLE_EXCEPTION(exception);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 void InspectorController::addScriptConsoleMessage(const ConsoleMessage* message)
 {
     ASSERT_ARG(message, message);
@@ -2400,10 +2400,10 @@ void InspectorController::addScriptConsoleMessage(const ConsoleMessage* message)
 
 void InspectorController::resetScriptObjects()
 {
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     if (!m_scriptContext || !m_scriptObject)
         return;
-#elif USE(V8_BINDING)
+#elif USE(V8)
     if (!hasScriptObject())
         return;
 #endif
@@ -2411,9 +2411,9 @@ void InspectorController::resetScriptObjects()
     ResourcesMap::iterator resourcesEnd = m_resources.end();
     for (ResourcesMap::iterator it = m_resources.begin(); it != resourcesEnd; ++it) {
         InspectorResource* resource = it->second.get();
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
         resource->setScriptObject(0, 0);
-#elif USE(V8_BINDING)
+#elif USE(V8)
         resource->setScriptObject(v8::Handle<v8::Object>());
 #endif
     }
@@ -2426,9 +2426,9 @@ void InspectorController::resetScriptObjects()
     }
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     callSimpleFunction(m_scriptContext, m_scriptObject, "reset");
-#elif USE(V8_BINDING)
+#elif USE(V8)
     v8::HandleScope handle_scope;
     v8::Handle<v8::Context> context = V8Proxy::GetContext(m_page->mainFrame());
     v8::Context::Scope scope(context);
@@ -2694,7 +2694,7 @@ void InspectorController::didFailLoading(DocumentLoader* loader, unsigned long i
     }
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void InspectorController::resourceRetrievedByXMLHttpRequest(unsigned long identifier, KJS::UString& sourceString)
 {
     if (!enabled())
@@ -2706,7 +2706,7 @@ void InspectorController::resourceRetrievedByXMLHttpRequest(unsigned long identi
 
     resource->setXMLHttpRequestProperties(sourceString);
 }
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Implement!
 #endif
 
@@ -2843,7 +2843,7 @@ void InspectorController::drawNodeHighlight(GraphicsContext& context) const
     drawHighlightForBoxes(context, lineBoxRects, contentBox, paddingBox, borderBox, marginBox);
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 bool InspectorController::handleException(JSValueRef exception, unsigned lineNumber) const
 {
     if (!exception)
@@ -2886,7 +2886,7 @@ void InspectorController::exceptionWasRaised(ExecState*, int /*sourceID*/, int /
 {
 }
 
-#elif USE(V8_BINDING)
+#elif USE(V8)
 // TODO(ojan): Implement!
 #endif
 
