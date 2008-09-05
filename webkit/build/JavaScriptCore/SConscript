@@ -135,7 +135,6 @@ env = env.Clone(
 
 env.Append(
     CPPDEFINES = [
-        'HAVE_CONFIG_H',
         '__STD_C',
         'CRASH=__debugbreak',
         'U_STATIC_IMPLEMENTATION',

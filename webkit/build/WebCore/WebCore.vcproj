@@ -1080,14 +1080,6 @@
 				Name="network"
 				>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\AuthenticationChallenge.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\AuthenticationChallenge.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\Credential.cpp"
 					>
 				</File>
@@ -1121,14 +1113,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ProtectionSpace.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ResourceError.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ResourceError.h"
 					>
 				</File>
 				<File
