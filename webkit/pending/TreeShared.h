@@ -25,7 +25,7 @@
 
 namespace WebCore {
 
-#if USE(V8_BINDING)
+#if USE(V8)
 
 template<class T> class TreeShared : public Peerable, Noncopyable {
 public:
@@ -125,7 +125,7 @@ private:
     void* m_peer;
 };
 
-#elif USE(JAVASCRIPTCORE_BINDINGS)
+#elif USE(JSC)
 
 template<class T> class TreeShared : Noncopyable {
 public:

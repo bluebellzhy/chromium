@@ -24,10 +24,7 @@
 #define HTMLPlugInElement_h
 
 #include "HTMLFrameOwnerElement.h"
-
-#if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
 #include "ScriptController.h"
-#endif
 
 #if ENABLE(NETSCAPE_PLUGIN_API)
 struct NPObject;
@@ -64,11 +61,9 @@ public:
 
     virtual void defaultEventHandler(Event*);
 
-#if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
-    virtual void detach();
     virtual RenderWidget* renderWidgetForJSBindings() const = 0;
+    virtual void detach();
     JSInstance getInstance() const;
-#endif
 
 #if ENABLE(NETSCAPE_PLUGIN_API)
     virtual NPObject* getNPObject();
@@ -78,9 +73,7 @@ protected:
     static void updateWidgetCallback(Node*);
 
     AtomicString m_name;
-#if USE(JAVASCRIPTCORE_BINDINGS) || USE(V8_BINDING)
     mutable JSInstanceHolder m_instance;
-#endif
 #if ENABLE(NETSCAPE_PLUGIN_API)
     NPObject* m_NPObject;
 #endif

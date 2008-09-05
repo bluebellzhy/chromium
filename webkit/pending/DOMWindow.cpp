@@ -74,7 +74,7 @@
 using std::min;
 using std::max;
 
-#if USE(V8_BINDING)
+#if USE(V8)
 #include "Location.h"
 #include "Navigator.h"
 #include "CString.h"
@@ -94,7 +94,7 @@ using std::max;
 #endif // WIN
 
 #include "CSSHelper.h"  // parseURL
-#endif // V8_BINDING
+#endif // V8
 
 
 namespace WebCore {
@@ -162,7 +162,7 @@ void DOMWindow::adjustWindowRect(const FloatRect& screen, FloatRect& window, con
     window.setY(max(screen.y(), min(window.y(), screen.bottom() - window.height())));
 }
 
-#if USE(V8_BINDING)
+#if USE(V8)
 
 static int lastUsedTimeoutId;
 static int timerNestingLevel = 0;
@@ -201,7 +201,7 @@ void DOMWindowTimer::fired() {
     timerNestingLevel = 0;
 }
 
-#endif  // V8_BINDING
+#endif  // V8
 
 
 DOMWindow::DOMWindow(Frame* frame)
@@ -529,7 +529,7 @@ void DOMWindow::stop()
 
 void DOMWindow::alert(const String& message)
 {
-#if USE(V8_BINDING)
+#if USE(V8)
     // Before showing the JavaScript dialog, we give
     // the proxy implementation a chance to process any
     // pending console messages.
@@ -553,7 +553,7 @@ void DOMWindow::alert(const String& message)
 
 bool DOMWindow::confirm(const String& message)
 {
-#if USE(V8_BINDING)
+#if USE(V8)
     // Before showing the JavaScript dialog, we give
     // the proxy implementation a chance to process any
     // pending console messages.
@@ -577,7 +577,7 @@ bool DOMWindow::confirm(const String& message)
 
 String DOMWindow::prompt(const String& message, const String& defaultValue)
 {
-#if USE(V8_BINDING)
+#if USE(V8)
     // Before showing the JavaScript dialog, we give
     // the proxy implementation a chance to process any
     // pending console messages.
@@ -873,7 +873,7 @@ double DOMWindow::devicePixelRatio() const
     return page->chrome()->scaleFactor();
 }
 
-#if USE(V8_BINDING)
+#if USE(V8)
 
 static void setWindowFeature(const String& keyString, const String& valueString, WindowFeatures& windowFeatures) {
   int value;
@@ -1073,7 +1073,7 @@ void DOMWindow::resumeTimeouts(PausedTimeouts* timeouts) {
     delete[] array;
 }
 
-#endif  // V8_BINDING
+#endif  // V8
 
 void DOMWindow::updateLayout() const {
   WebCore::Document* docimpl = m_frame->document();

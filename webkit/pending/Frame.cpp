@@ -1069,7 +1069,7 @@ void Frame::clearDOMWindow()
         d->m_liveFormerWindows.add(d->m_domWindow.get());
         d->m_domWindow->clear();
     }
-#else if USE(V8_BINDING)
+#else if USE(V8)
     for (PluginObjectMap::iterator it = d->m_pluginObjects.begin(); 
          it != d->m_pluginObjects.end(); ++it) {
         _NPN_UnregisterObject(it->second);

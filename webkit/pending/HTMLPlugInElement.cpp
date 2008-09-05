@@ -36,11 +36,11 @@
 #include "Widget.h"
 #include "ScriptController.h"
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include "runtime.h"
 #endif
 
-#if ENABLE(NETSCAPE_PLUGIN_API) && USE(JAVASCRIPTCORE_BINDINGS)
+#if ENABLE(NETSCAPE_PLUGIN_API) && USE(JSC)
 #include "JSNode.h"
 #include "NP_jsobject.h"
 #include "npruntime_impl.h"
@@ -61,7 +61,7 @@ HTMLPlugInElement::HTMLPlugInElement(const QualifiedName& tagName, Document* doc
 
 HTMLPlugInElement::~HTMLPlugInElement()
 {
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     ASSERT(!m_instance); // cleared in detach()
 #endif
 
@@ -76,7 +76,7 @@ HTMLPlugInElement::~HTMLPlugInElement()
 #endif
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 void HTMLPlugInElement::detach()
 {
     m_instance.clear();

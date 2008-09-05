@@ -441,6 +441,9 @@ public:
 
     enum ParseMode { Compat, AlmostStrict, Strict };
 
+    // Used by Chromium to know if it can just SIGKILL a renderer when navigating
+    bool hasUnloadEventListener() const;
+
 private:
     virtual void determineParseMode() {}
     

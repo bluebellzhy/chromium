@@ -42,7 +42,7 @@
 using namespace WTF;
 using namespace Unicode;
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 using KJS::Identifier;
 using KJS::UString;
 #endif

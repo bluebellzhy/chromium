@@ -29,7 +29,7 @@
 #ifndef InspectorController_h
 #define InspectorController_h
 
-#if USE(V8_BINDING)
+#if USE(V8)
 // NOTE: The revision of the inspector JS and C++ that we are merged to
 // is stored in trunk/webkit/port/page/inspector/BASE_REVISION.
 
@@ -48,17 +48,17 @@
 #include "StringHash.h"
 #include "DomWindow.h"
 #include <wtf/RefCounted.h>
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include <JavaScriptCore/JSContextRef.h>
 #include <profiler/Profiler.h>
-#elif USE(V8_BINDING)
+#elif USE(V8)
 #include <v8.h>
 #endif
 #include <wtf/HashMap.h>
 #include <wtf/HashSet.h>
 #include <wtf/Vector.h>
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 namespace KJS {
     class Profile;
     class UString;
@@ -123,9 +123,9 @@ public:
     bool windowVisible();
     void setWindowVisible(bool visible = true);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     void addMessageToConsole(MessageSource, MessageLevel, KJS::ExecState*, const KJS::List& arguments, unsigned lineNumber, const String& sourceID);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     // TODO(ojan): Do we need to implement this version?
 #endif
     void addMessageToConsole(MessageSource, MessageLevel, const String& message, unsigned lineNumber, const String& sourceID);
@@ -133,10 +133,10 @@ public:
     void attachWindow();
     void detachWindow();
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSContextRef scriptContext() const { return m_scriptContext; };
     void setScriptContext(JSContextRef context) { m_scriptContext = context; };
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void setScriptObject(v8::Handle<v8::Object> newScriptObject);
 #endif
 
@@ -159,9 +159,9 @@ public:
     void didReceiveContentLength(DocumentLoader*, unsigned long identifier, int lengthReceived);
     void didFinishLoading(DocumentLoader*, unsigned long identifier);
     void didFailLoading(DocumentLoader*, unsigned long identifier, const ResourceError&);
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     void resourceRetrievedByXMLHttpRequest(unsigned long identifier, KJS::UString& sourceString);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     // TODO(ojan): implement
 #endif
 
@@ -180,7 +180,7 @@ public:
     void drawNodeHighlight(GraphicsContext&) const;
 
 
-#if USE(V8_BINDING)
+#if USE(V8)
     // InspectorController.idl
     void addSourceToFrame(unsigned long identifier, Node* frame);
     Node* getResourceDocumentNode(unsigned long identifier);
@@ -204,16 +204,16 @@ private:
     void addResource(InspectorResource*);
     void removeResource(InspectorResource*);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef addScriptResource(InspectorResource*);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void addScriptResource(InspectorResource*);
 #endif
     void removeScriptResource(InspectorResource*);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef addAndUpdateScriptResource(InspectorResource*);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void addAndUpdateScriptResource(InspectorResource*);
 #endif
     void updateScriptResourceRequest(InspectorResource*);
@@ -236,22 +236,22 @@ private:
     bool m_trackResources;
 
     // Helper function to determine when the script object is initialized
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     inline bool hasScriptObject() const { return m_scriptObject; }
-#elif USE(V8_BINDING)
+#elif USE(V8)
     inline bool hasScriptObject() { return !m_scriptObject.IsEmpty(); }
 #endif
 
 #if ENABLE(DATABASE)
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef addDatabaseScriptResource(InspectorDatabaseResource*);
     void removeDatabaseScriptResource(InspectorDatabaseResource*);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     // TODO(ojan): implement when we turn on databases.
 #endif
 #endif
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSValueRef callSimpleFunction(JSContextRef, JSObjectRef thisObject, const char* functionName) const;
     JSValueRef callFunction(JSContextRef, JSObjectRef thisObject, const char* functionName, size_t argumentCount, const JSValueRef arguments[], JSValueRef& exception) const;
     bool handleException(JSContextRef, JSValueRef exception, unsigned lineNumber) const;
@@ -260,14 +260,14 @@ private:
     void showWindow();
     void closeWindow();
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     virtual void didParseSource(KJS::ExecState*, const KJS::UString& source, int startingLineNumber, const KJS::UString& sourceURL, int sourceID);
     virtual void failedToParseSource(KJS::ExecState*, const KJS::UString& source, int startingLineNumber, const KJS::UString& sourceURL, int errorLine, const KJS::UString& errorMessage);
     virtual void didEnterCallFrame(KJS::ExecState*, int sourceID, int lineNumber);
     virtual void willExecuteStatement(KJS::ExecState*, int sourceID, int lineNumber);
     virtual void willLeaveCallFrame(KJS::ExecState*, int sourceID, int lineNumber);
     virtual void exceptionWasRaised(KJS::ExecState*, int sourceID, int lineNumber);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     // TODO(ojan): implement when we start integrating in the debugger.
 #endif
 
@@ -282,11 +282,11 @@ private:
 #if ENABLE(DATABASE)
     DatabaseResourcesSet m_databaseResources;
 #endif
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef m_scriptObject;
     JSObjectRef m_controllerScriptObject;
     JSContextRef m_scriptContext;
-#elif USE(V8_BINDING)
+#elif USE(V8)
     v8::Persistent<v8::Object> m_scriptObject;
 #endif
     bool m_windowVisible;
@@ -298,7 +298,7 @@ private:
 
 } // namespace WebCore
 
-#elif USE(JAVASCRIPTCORE_BINDINGS)
+#elif USE(JSC)
 // TODO(ojan): When we merge to webkit trunk, get rid of all the code below.
 // This part of this file contains the version of InspectorController.h that
 // we are synced to in the 3.1 branch, which we need to keep for the
@@ -307,9 +307,9 @@ private:
 
 #include "Chrome.h"
 #include <wtf/RefCounted.h>
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include <JavaScriptCore/JSContextRef.h>
-#elif USE(V8_BINDING)
+#elif USE(V8)
 #include <v8.h>
 #endif
 #include <wtf/HashMap.h>
@@ -395,7 +395,7 @@ public:
     void setAttachedWindow(bool);
     void setAttachedWindowHeight(unsigned height);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSContextRef scriptContext() const { return m_scriptContext; };
     void setScriptContext(JSContextRef context) { m_scriptContext = context; };
 #endif
@@ -456,7 +456,7 @@ public:
 
     void startGroup(MessageSource source, KJS::ExecState* exec, const KJS::ArgList& arguments, unsigned lineNumber, const String& sourceURL);
     void endGroup(MessageSource source, unsigned lineNumber, const String& sourceURL);
-#if USE(V8_BINDING)
+#if USE(V8)
     // InspectorController.idl
     void addSourceToFrame(unsigned long identifier, Node* frame);
     Node* getResourceDocumentNode(unsigned long identifier);
@@ -478,7 +478,7 @@ private:
     void addConsoleMessage(ConsoleMessage*);
     void addScriptConsoleMessage(const ConsoleMessage*);
 
-#if USE(V8_BINDING)
+#if USE(V8)
     void setScriptObject(v8::Handle<v8::Object> newScriptObject)
     {
         if (!m_scriptObject.IsEmpty()) {
@@ -494,16 +494,16 @@ private:
     void addResource(InspectorResource*);
     void removeResource(InspectorResource*);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef addScriptResource(InspectorResource*);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void addScriptResource(InspectorResource*);
 #endif
     void removeScriptResource(InspectorResource*);
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef addAndUpdateScriptResource(InspectorResource*);
-#elif USE(V8_BINDING)
+#elif USE(V8)
     void addAndUpdateScriptResource(InspectorResource*);
 #endif
     void updateScriptResourceRequest(InspectorResource*);
@@ -557,11 +557,11 @@ private:
 #if ENABLE(DATABASE)
     DatabaseResourcesSet m_databaseResources;
 #endif
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     JSObjectRef m_scriptObject;
     JSObjectRef m_controllerScriptObject;
     JSContextRef m_scriptContext;
-#elif USE(V8_BINDING)
+#elif USE(V8)
     v8::Persistent<v8::Object> m_scriptObject;
 #endif
     bool m_windowVisible;

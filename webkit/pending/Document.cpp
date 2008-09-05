@@ -409,7 +409,7 @@ Document::~Document()
 #endif
 
     XMLHttpRequest::detachRequests(this);
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     ScriptInterpreter::forgetAllDOMNodesForDocument(this);
 #endif
 

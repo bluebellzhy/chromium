@@ -72,6 +72,8 @@ public:
     static SimpleFontData* getCachedFontData(const FontPlatformData*);
     static FontPlatformData* getLastResortFallbackFont(const FontDescription&);
 
+    bool fontExists(const FontDescription&, const AtomicString& family);
+
     // TODO(jungshik): Is this the best place to put this function? It may
     // or may not be. Font.h is another place we can cosider.
     // Return a font family for |script| and |FontDescription.genericFamily()|.

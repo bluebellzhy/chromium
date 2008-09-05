@@ -32,7 +32,7 @@
 #include <wtf/Forward.h>
 #include <wtf/RefCounted.h>
 
-#if USE(V8_BINDING)
+#if USE(V8)
 #include <wtf/HashMap.h>
 #endif
 #include <wtf/RefPtr.h>
@@ -56,7 +56,7 @@ namespace WebCore {
     class Screen;
     class String;
 
-#if USE(V8_BINDING)
+#if USE(V8)
     class ScheduledAction;
     class PausedTimeouts;
     class DOMWindowTimer;
@@ -252,7 +252,7 @@ namespace WebCore {
         void updateLayout() const;
 
 
-#if USE(V8_BINDING)
+#if USE(V8)
     public:
         // DOM methods & attributes for Window.
 

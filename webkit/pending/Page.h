@@ -187,7 +187,7 @@ namespace WebCore {
         OwnPtr<Settings> m_settings;
         OwnPtr<ProgressTracker> m_progress;
         
-#if USE(V8_BINDING)
+#if USE(V8)
         // To fix crash in inspector window (Bug 904340)
         RefPtr<InspectorController> m_inspectorController;
 #else

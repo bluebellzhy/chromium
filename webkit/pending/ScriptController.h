@@ -34,11 +34,11 @@
 #define ScriptController_h
 
 #include "bindings/npruntime.h"
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 #include <kjs/ustring.h>
 #endif
 
-#if USE(V8_BINDING)
+#if USE(V8)
 #include "v8.h"
 #endif
 
@@ -116,7 +116,7 @@ typedef struct _NPRuntimeFunctions {
     NPN_SetExceptionProcPtr setException;
 } NPRuntimeFunctions;
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 namespace KJS {
     namespace Bindings {
         class RootObject;
@@ -138,7 +138,7 @@ class Widget;
 
 // JSString is the string class used for XMLHttpRequest's
 // m_responseText field.
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 typedef KJS::UString JSString;
 typedef KJS::Bindings::Instance* JSInstance;
 typedef KJS::Bindings::Instance* JSPersistentInstance;
@@ -146,7 +146,7 @@ typedef KJS::JSValue* JSException;
 typedef KJS::JSValue* JSResult;
 #endif
 
-#if USE(V8_BINDING)
+#if USE(V8)
 typedef String JSString;
 typedef v8::Local<v8::Object> JSInstance;
 typedef v8::Persistent<v8::Object> JSPersistentInstance;
@@ -267,6 +267,22 @@ public:
 
 private:
     static bool m_recordPlaybackMode;
+
+#if USE(V8)
+    typedef HashMap<void*, NPObject* > PluginObjectMap;
+#endif
+
+#if USE(JSC)
+         // The root object used for objects bound outside the context of a plugin.
+         RefPtr<KJS::Bindings::RootObject> m_bindingRootObject; 
+         RootObjectMap m_rootObjects;
+#elif USE(V8)
+        // A mapping between Widgets and their corresponding script object.
+        // This list is used so that when the plugin dies, we can immediately
+        // invalidate all sub-objects which are associated with that plugin.
+        // The frame keeps a NPObject reference for each item on the list.
+        PluginObjectMap m_pluginObjects;
+#endif
 };
 
 // JSInstance is an abstraction for a wrapped C class.  JSC and V8

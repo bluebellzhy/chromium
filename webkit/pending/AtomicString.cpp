@@ -31,7 +31,7 @@
 #include <kjs/identifier.h>
 #include <wtf/HashSet.h>
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 using KJS::Identifier;
 using KJS::UString;
 #endif
@@ -216,7 +216,7 @@ void AtomicString::remove(StringImpl* r)
     stringTable->remove(r);
 }
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
 PassRefPtr<StringImpl> AtomicString::add(const KJS::Identifier& identifier)
 {
     if (identifier.isNull())

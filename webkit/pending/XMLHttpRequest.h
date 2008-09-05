@@ -25,6 +25,7 @@
 #include "FormData.h"
 #include "ResourceResponse.h"
 #include "SubresourceLoaderClient.h"
+#include "ScriptController.h"
 #include <wtf/OwnPtr.h>
 
 namespace WebCore {

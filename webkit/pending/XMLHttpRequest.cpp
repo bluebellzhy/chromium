@@ -772,9 +772,9 @@ void XMLHttpRequest::loadRequestAsynchronously(ResourceRequest& request)
         // and they are referenced by the JavaScript wrapper.
         ref();
 
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
         KJS::gcProtectNullTolerant(ScriptInterpreter::getDOMObject(this));
-#elif USE(V8_BINDING)
+#elif USE(V8)
         JSBridge::gcProtectJSWrapper(this);
 #endif
     }
@@ -873,7 +873,7 @@ void XMLHttpRequest::abortError()
 
 void XMLHttpRequest::dropProtection()        
 {
-#if USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(JSC)
     // The XHR object itself holds on to the responseText, and
     // thus has extra cost even independent of any
     // responseText or responseXML objects it has handed
@@ -887,7 +887,7 @@ void XMLHttpRequest::dropProtection()
         KJS::Heap::heap(wrapper)->reportExtraMemoryCost(m_responseText.size() * 2);
         KJS::JSValue* wrapper = ScriptInterpreter::getDOMObject(this);
     }
-#elif USE(V8_BINDING)
+#elif USE(V8)
     JSBridge::gcUnprotectJSWrapper(this);
 #endif
 

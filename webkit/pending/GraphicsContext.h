@@ -328,7 +328,8 @@ namespace WebCore {
         */
         bool strokeContains(const Path&, const FloatPoint&) const;
 
-        //void setShouldDelete(bool should_delete);
+        // FIXME: This hack should be removed.
+        void setShouldDelete(bool should_delete);
 #endif
 
     private:
