@@ -376,7 +376,8 @@ void HistoryItemToVersionedString(PassRefPtr<HistoryItem> item, int version,
 }
 
 std::string CreateHistoryStateForURL(const GURL& url) {
-  RefPtr<HistoryItem> item(HistoryItem::create(GURLToKURL(url), String()));
+  // TODO(eseide): We probably should be passing a list visit time other than 0
+  RefPtr<HistoryItem> item(HistoryItem::create(GURLToKURL(url), String(), 0));
   std::string data;
   HistoryItemToString(item, &data);
   return data;

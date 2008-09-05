@@ -1036,7 +1036,7 @@ bool WebPluginImpl::InitiateHTTPRequest(int resource_id,
 
   const WebCore::String& referrer =  frame()->loader()->outgoingReferrer();
   if (!WebCore::FrameLoader::shouldHideReferrer(
-      KURL(complete_url_string), referrer)) {
+      WebCore::KURL(complete_url_string), referrer)) {
     info.request.setHTTPReferrer(referrer);
   }
 

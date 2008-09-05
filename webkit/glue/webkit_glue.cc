@@ -68,14 +68,14 @@
 namespace webkit_glue {
 
 void SetJavaScriptFlags(const std::wstring& str) {
-#if USE(V8_BINDING) || USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(V8) || USE(JSC)
   std::string utf8_str = WideToUTF8(str);
   WebCore::ScriptController::setFlags(utf8_str.data(), static_cast<int>(utf8_str.size()));
 #endif
 }
 
 void SetRecordPlaybackMode(bool value) {
-#if USE(V8_BINDING) || USE(JAVASCRIPTCORE_BINDINGS)
+#if USE(V8) || USE(JSC)
   WebCore::ScriptController::setRecordPlaybackMode(value);
 #endif
 }

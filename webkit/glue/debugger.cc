@@ -27,11 +27,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "config.h"  // webkit config for V8_BINDING
+#include "config.h"  // webkit config for V8
 #include "base/string_util.h"
 #include "webkit/glue/debugger.h"
 
-#if USE(V8_BINDING)
+#if USE(V8)
 #define USING_V8
 #include "v8/public/debug.h"
 #endif

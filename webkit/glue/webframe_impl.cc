@@ -439,7 +439,7 @@ GURL WebFrameImpl::GetOSDDURL() const {
                 child, WebCore::HTMLNames::linkTag);
         if (link_element && link_element->type() == kOSDType &&
             link_element->rel() == kOSDRel && !link_element->href().isEmpty()) {
-          return GURL(link_element->href());
+          return KURLToGURL(link_element->href());
         }
       }
     }
@@ -1564,10 +1564,9 @@ void WebFrameImpl::CreateChildFrame(const FrameLoadRequest& r,
     }
   }
 
-  webframe->frame_->loader()->load(new_url,
-                                   r.resourceRequest().httpReferrer(),
-                                   childLoadType,
-                                   String(), NULL, NULL);
+  webframe->frame_->loader()->loadURLIntoChildFrame(new_url,
+        r.resourceRequest().httpReferrer(),
+        webframe->frame_.get());
 
   // A synchronous navigation (about:blank) would have already processed
   // onload, so it is possible for the frame to have already been destroyed by
