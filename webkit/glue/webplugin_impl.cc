@@ -393,12 +393,12 @@ RoutingStatus WebPluginImpl::RouteToFrame(const char *method,
   WebCore::FrameLoader *loader = frame()->loader();
   // we actually don't know whether usergesture is true or false,
   // passing true since all we can do is assume it is okay.
-  loader->load(load_request,
-               false,  // lock history
-               true,   // user gesture
-               0,      // event
-               0,      // form element
-               HashMap<WebCore::String, WebCore::String>());
+  loader->loadFrameRequestWithFormAndValues(
+      load_request,
+      false,  // lock history
+      0,      // event
+      0,      // form element
+      HashMap<WebCore::String, WebCore::String>());
 
   // load() can cause the frame to go away.
   if (webframe_) {
@@ -611,9 +611,11 @@ void WebPluginImpl::print(WebCore::GraphicsContext* gc) {
     return;
 
   gc->save();
-  HDC hdc = gc->getWindowsContext();
+  // Our implementation of getWindowsContext doesn't care about any of the
+  // parameters, so just pass some random ones in.
+  HDC hdc = gc->getWindowsContext(WebCore::IntRect(), true, true);
   delegate_->Print(hdc);
-  gc->releaseWindowsContext(hdc);
+  gc->releaseWindowsContext(hdc, WebCore::IntRect(), true, true);
   gc->restore();
 }
 
@@ -1019,24 +1021,25 @@ bool WebPluginImpl::InitiateHTTPRequest(int resource_id,
                                         WebPluginResourceClient* client,
                                         const char* method, const char* buf,
                                         int buf_len,
-                                        const GURL& complete_url_string) {
+                                        const GURL& url) {
   if (!client) {
     NOTREACHED();
     return false;
   }
 
+  WebCore::KURL kurl = webkit_glue::GURLToKURL(url);
+
   ClientInfo info;
   info.id = resource_id;
   info.client = client;
   info.request.setFrame(frame());
-  info.request.setURL(webkit_glue::GURLToKURL(complete_url_string));
+  info.request.setURL(kurl);
   info.request.setOriginPid(delegate_->GetProcessId());
   info.request.setResourceType(ResourceType::OBJECT);
   info.request.setHTTPMethod(method);
 
   const WebCore::String& referrer =  frame()->loader()->outgoingReferrer();
-  if (!WebCore::FrameLoader::shouldHideReferrer(
-      WebCore::KURL(complete_url_string), referrer)) {
+  if (!WebCore::FrameLoader::shouldHideReferrer(kurl, referrer)) {
     info.request.setHTTPReferrer(referrer);
   }
 

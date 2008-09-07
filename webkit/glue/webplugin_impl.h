@@ -27,8 +27,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef WEBKIT_GLUE_WEBPLUGIN_IMPL_H__
-#define WEBKIT_GLUE_WEBPLUGIN_IMPL_H__
+#ifndef WEBKIT_GLUE_WEBPLUGIN_IMPL_H_
+#define WEBKIT_GLUE_WEBPLUGIN_IMPL_H_
 
 #include <string>
 #include <vector>
@@ -161,7 +161,7 @@ class WebPluginImpl : public WebPlugin,
   // Returns true on success.
   bool InitiateHTTPRequest(int resource_id, WebPluginResourceClient* client,
                            const char* method, const char* buf, int buf_len,
-                           const GURL& complete_url_string);
+                           const GURL& url);
 
   gfx::Rect GetWindowClipRect(const gfx::Rect& rect);
 
@@ -275,7 +275,7 @@ class WebPluginImpl : public WebPlugin,
 
   WebPluginContainer* widget_;
 
-  DISALLOW_EVIL_CONSTRUCTORS(WebPluginImpl);
+  DISALLOW_COPY_AND_ASSIGN(WebPluginImpl);
 };
 
-#endif  // #ifndef WEBKIT_GLUE_WEBPLUGIN_IMPL_H__
+#endif  // #ifndef WEBKIT_GLUE_WEBPLUGIN_IMPL_H_

@@ -33,6 +33,8 @@
 #ifndef ScriptController_h
 #define ScriptController_h
 
+#include "HashMap.h"
+
 #include "bindings/npruntime.h"
 #if USE(JSC)
 #include <kjs/ustring.h>
