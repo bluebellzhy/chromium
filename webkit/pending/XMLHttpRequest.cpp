@@ -34,7 +34,6 @@
 #include "FrameLoader.h"
 #include "HTTPParsers.h"
 #include "InspectorController.h"
-#include "JSDOMBinding.h"
 #include "KURL.h"
 #include "KURLHash.h"
 #include "Page.h"
@@ -46,7 +45,11 @@
 #include "XMLHttpRequestProgressEvent.h"
 #include "XMLHttpRequestUpload.h"
 #include "markup.h"
+
+#if USE(JSC)
 #include <kjs/protect.h>
+#include "JSDOMBinding.h"
+#endif
 
 #include "base/stats_counters.h"
 
@@ -236,7 +239,7 @@ XMLHttpRequest::State XMLHttpRequest::readyState() const
     return m_state;
 }
 
-const JSString& XMLHttpRequest::getResponseText(ExceptionCode& ec) const
+const JSString& XMLHttpRequest::responseText() const
 {
     return m_responseText;
 }
@@ -775,7 +778,7 @@ void XMLHttpRequest::loadRequestAsynchronously(ResourceRequest& request)
 #if USE(JSC)
         KJS::gcProtectNullTolerant(ScriptInterpreter::getDOMObject(this));
 #elif USE(V8)
-        JSBridge::gcProtectJSWrapper(this);
+        ScriptController::gcProtectJSWrapper(this);
 #endif
     }
 }
@@ -888,7 +891,7 @@ void XMLHttpRequest::dropProtection()
         KJS::JSValue* wrapper = ScriptInterpreter::getDOMObject(this);
     }
 #elif USE(V8)
-    JSBridge::gcUnprotectJSWrapper(this);
+    ScriptController::gcUnprotectJSWrapper(this);
 #endif
 
     deref();
@@ -1084,7 +1087,6 @@ void XMLHttpRequest::didFinishLoading(SubresourceLoader* loader)
         if (Page* page = frame->page()) {
             page->inspectorController()->resourceRetrievedByXMLHttpRequest(m_loader ? m_loader->identifier() : m_identifier, m_responseText);
             page->inspectorController()->addMessageToConsole(JSMessageSource, LogMessageLevel, "XHR finished loading \"" + m_url + "\".", 0, m_doc->url());
-        }
         }
 	}
 

@@ -40,6 +40,8 @@
 #include <kjs/ustring.h>
 #endif
 
+#include <wtf/HashMap.h>
+
 #if USE(V8)
 #include "v8.h"
 #endif
@@ -211,6 +213,9 @@ public:
 
     void clearDocumentWrapper();
 
+    // TODO(eseide): void* is a compile hack
+    void attachDebugger(void*);
+
     void CollectGarbage();
 
     // Create a NPObject wrapper for a JSObject
@@ -271,7 +276,7 @@ private:
     static bool m_recordPlaybackMode;
 
 #if USE(V8)
-    typedef HashMap<void*, NPObject* > PluginObjectMap;
+    typedef HashMap<void*, NPObject*> PluginObjectMap;
 #endif
 
 #if USE(JSC)

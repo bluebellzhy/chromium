@@ -162,7 +162,7 @@ public:
 #if USE(JSC)
     void resourceRetrievedByXMLHttpRequest(unsigned long identifier, KJS::UString& sourceString);
 #elif USE(V8)
-    // TODO(ojan): implement
+    void resourceRetrievedByXMLHttpRequest(unsigned long identifier, String& sourceString);
 #endif
 
 #if ENABLE(DATABASE)
