@@ -84,9 +84,12 @@
 #include "WindowFeatures.h"
 #include "XMLHttpRequest.h"
 #include "XMLTokenizer.h"
-#include "JSDOMBinding.h"
 #include "ScriptController.h"
 #include <kjs/JSObject.h>
+
+#if USE(JSC)
+#include "JSDOMBinding.h"
+#endif
 
 #if ENABLE(OFFLINE_WEB_APPLICATIONS)
 #include "ApplicationCache.h"

@@ -53,7 +53,6 @@
 #include "HTMLNames.h"
 #include "HTMLTableCellElement.h"
 #include "HitTestResult.h"
-#include "JSDOMWindowShell.h"
 #include "Logging.h"
 #include "markup.h"
 #include "MediaFeatureNames.h"
@@ -77,6 +76,10 @@
 #include "runtime_root.h"
 #include "visible_units.h"
 #include <wtf/RefCountedLeakCounter.h>
+
+#if USE(JSC)
+#include "JSDOMWindowShell.h"
+#endif
 
 #if FRAME_LOADS_USER_STYLESHEET
 #include "UserStyleSheetLoader.h"
