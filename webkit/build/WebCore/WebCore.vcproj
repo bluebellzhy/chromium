@@ -161,7 +161,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\page\Console.h"
+				RelativePath="..\..\pending\Console.h"
 				>
 			</File>
 			<File
@@ -344,7 +344,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\CompositeAnimation.h"
+					RelativePath="..\..\pending\CompositeAnimation.h"
 					>
 				</File>
 				<File
@@ -697,7 +697,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\FileSystem.h"
+				RelativePath="..\..\pending\FileSystem.h"
 				>
 			</File>
 			<File
@@ -1024,7 +1024,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\Image.h"
+					RelativePath="..\..\pending\Image.h"
 					>
 				</File>
 				<File
@@ -1192,7 +1192,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\text\AtomicString.h"
+					RelativePath="..\..\pending\AtomicString.h"
 					>
 				</File>
 				<File
@@ -2496,7 +2496,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\rendering\style\RenderStyle.h"
+					RelativePath="..\..\pending\RenderStyle.h"
 					>
 				</File>
 				<File
@@ -3069,35 +3069,35 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\Node.cpp"
+				RelativePath="..\..\pending\Node.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\Node.h"
+				RelativePath="..\..\pending\Node.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeFilter.cpp"
+				RelativePath="..\..\pending\NodeFilter.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeFilter.h"
+				RelativePath="..\..\pending\NodeFilter.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeFilterCondition.cpp"
+				RelativePath="..\..\pending\NodeFilterCondition.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeFilterCondition.h"
+				RelativePath="..\..\pending\NodeFilterCondition.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeIterator.cpp"
+				RelativePath="..\..\pending\NodeIterator.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\NodeIterator.h"
+				RelativePath="..\..\pending\NodeIterator.h"
 				>
 			</File>
 			<File
@@ -3245,11 +3245,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\TreeWalker.cpp"
+				RelativePath="..\..\pending\TreeWalker.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\dom\TreeWalker.h"
+				RelativePath="..\..\pending\TreeWalker.h"
 				>
 			</File>
 			<File
@@ -3389,7 +3389,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pending\Editor.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\editing\Editor.h"
 				>
 			</File>
 			<File
