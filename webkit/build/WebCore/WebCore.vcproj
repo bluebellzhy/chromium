@@ -133,14 +133,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AnimationController.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AnimationController.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AXObjectCache.cpp"
 				>
 			</File>
@@ -166,10 +158,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\page\ChromeClient.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\page\Console.cpp"
 				>
 			</File>
 			<File
@@ -332,6 +320,50 @@
 				RelativePath="..\..\..\third_party\WebKit\WebCore\page\WindowFeatures.h"
 				>
 			</File>
+			<Filter
+				Name="animation"
+				>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\AnimationBase.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\AnimationBase.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\AnimationController.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\AnimationController.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\CompositeAnimation.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\CompositeAnimation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\ImplicitAnimation.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\ImplicitAnimation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\KeyframeAnimation.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\page\animation\KeyframeAnimation.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="loader"
