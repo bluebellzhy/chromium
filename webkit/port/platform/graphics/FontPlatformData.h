@@ -25,6 +25,7 @@
 #define FontPlatformData_H
 
 #include "StringImpl.h"
+#include <wtf/PassRefPtr.h>
 #include <wtf/Refcounted.h>
 
 typedef struct HFONT__ *HFONT;
