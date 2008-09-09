@@ -386,7 +386,7 @@ struct InspectorResource : public RefCounted<InspectorResource> {
                     {
                         CachedCSSStyleSheet *sheet = 
                             reinterpret_cast<CachedCSSStyleSheet*>(cachedResource);
-                        sourceString = sheet->sheet();
+                        sourceString = sheet->sheetText();
                     }
                     break;
                 case CachedResource::Script:
