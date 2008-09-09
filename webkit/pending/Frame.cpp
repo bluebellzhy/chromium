@@ -1071,13 +1071,7 @@ void Frame::clearDOMWindow()
         d->m_liveFormerWindows.add(d->m_domWindow.get());
         d->m_domWindow->clear();
     }
-#else if USE(V8)
-    for (PluginObjectMap::iterator it = d->m_pluginObjects.begin(); 
-         it != d->m_pluginObjects.end(); ++it) {
-        _NPN_UnregisterObject(it->second);
-        NPN_ReleaseObject(it->second);
-    d->m_pluginObjects.clear();
-    d->m_domWindow = 0;
+    d->m_script.clearPluginObjects();
 }
 
 RenderView* Frame::contentRenderer() const

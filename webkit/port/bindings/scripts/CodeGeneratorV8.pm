@@ -299,7 +299,7 @@ sub GenerateSetDOMException
   my $indent = shift;
   my $result = "";
 
-  $result .= $indent . "if (ec != 0) {\n";
+  $result .= $indent . "if (ec) {\n";
   $result .= $indent . "    V8Proxy::SetDOMException(ec);\n";
   $result .= $indent . "    return v8::Handle<v8::Value>();\n";
   $result .= $indent . "}\n";
@@ -530,7 +530,7 @@ sub GenerateReplaceableAttrSetter
 
   push(@implContentDecls, 
        "  static void ${attrName}AttrSetter(v8::Local<v8::String> name," . 
-       " v8::Local<v8::Value> value, const v8::AccessorInfo& info) {\n");
+       " v8::Local<v8::Value> value, const v8::AccessorInfo& info)\n{\n");
 
   push(@implContentDecls, "    INC_STATS(L\"DOM.$implClassName.$attrName._set\");\n");
 
@@ -553,7 +553,7 @@ sub GenerateNormalAttrSetter
 
   push(@implContentDecls, 
        "  static void ${attrName}AttrSetter(v8::Local<v8::String> name," . 
-       " v8::Local<v8::Value> value, const v8::AccessorInfo& info) {\n");
+       " v8::Local<v8::Value> value, const v8::AccessorInfo& info)\n{\n");
 
   push(@implContentDecls, "    INC_STATS(L\"DOM.$implClassName.$attrName._set\");\n");
 
@@ -664,7 +664,7 @@ sub GenerateFunctionCallback
   my $name = $function->signature->name;
 
   push(@implContentDecls,
-"  static v8::Handle<v8::Value> ${name}Callback(const v8::Arguments& args) {\n" .
+"  static v8::Handle<v8::Value> ${name}Callback(const v8::Arguments& args)\n{\n" .
 "    INC_STATS(L\"DOM.$implClassName.$name\");\n");
 
   my $numParameters = @{$function->parameters};
@@ -1308,10 +1308,10 @@ sub IsRefPtrType
     return 1 if $type eq "XPathNSResolver";
     return 1 if $type eq "XPathResult";
 
+    return 1 if $type eq "SVGAngle";
     return 1 if $type eq "SVGElementInstance";
     return 1 if $type eq "SVGElementInstanceList";
     return 1 if $type =~ /^SVGPathSeg/;
-    return 1 if $type eq "SVGAngle";
     
     return 1 if $type =~ /^SVGAnimated/;
 

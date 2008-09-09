@@ -109,8 +109,11 @@
 #include "XMLHttpRequest.h"
 #include "XMLNames.h"
 #include "XMLTokenizer.h"
-#include "JSDOMBinding.h"
 #include "ScriptController.h"
+
+#if USE(JSC)
+#include "JSDOMBinding.h"
+#endif
 
 #if ENABLE(DATABASE)
 #include "Database.h"

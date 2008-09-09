@@ -212,6 +212,8 @@ public:
 
     JSInstance createScriptInstanceForWidget(Widget*);
 
+    void clearPluginObjects();
+
     // Check if the javascript engine has been initialized.
     bool haveInterpreter() const;
 

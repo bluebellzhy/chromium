@@ -141,6 +141,15 @@ ScriptController::~ScriptController()
 {
 }
 
+void ScriptController::clearPluginObjects()
+{
+    for (PluginObjectMap::iterator it = m_pluginObjects.begin(); 
+         it != m_pluginObjects.end(); ++it) {
+        _NPN_UnregisterObject(it->second);
+        NPN_ReleaseObject(it->second);
+    m_pluginObjects.clear();
+}
+
 // Disconnect the proxy from its owner frame;
 void ScriptController::disconnectFrame()
 {

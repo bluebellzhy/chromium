@@ -2972,7 +2972,8 @@ CALLBACK_FUNC_DECL(XMLHttpRequestGetResponseHeader) {
 }
 
 
-CALLBACK_FUNC_DECL(XMLHttpRequestOverrideMimeType) {
+CALLBACK_FUNC_DECL(XMLHttpRequestOverrideMimeType)
+{
   INC_STATS(L"DOM.XMLHttpRequest.overrideMimeType()");
   if (args.Length() < 1) {
     V8Proxy::ThrowError(V8Proxy::SYNTAX_ERROR, "Not enough arguments");
@@ -2982,7 +2983,7 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOverrideMimeType) {
   XMLHttpRequest* imp = V8Proxy::FastToNativeObject<XMLHttpRequest>(
       V8ClassIndex::XMLHTTPREQUEST, args.Holder());
   String value = ToWebCoreString(args[0]);
-  imp->overrideMIMEType(value);
+  imp->overrideMimeType(value);
   return v8::Undefined();
 }
 

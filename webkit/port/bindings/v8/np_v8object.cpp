@@ -36,6 +36,7 @@
 #include "bindings/npruntime.h"
 #include "npruntime_priv.h"
 #include "PlatformString.h"
+#include "ScriptController.h"
 #include "v8_helpers.h"
 #include "v8_np_utils.h"
 #include "v8_proxy.h"
