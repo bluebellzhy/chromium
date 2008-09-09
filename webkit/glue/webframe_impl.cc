@@ -1240,7 +1240,8 @@ void WebFrameImpl::Paste() {
 
 void WebFrameImpl::Replace(const std::wstring& wtext) {
   String text = webkit_glue::StdWStringToString(wtext);
-  frame()->editor()->replaceSelectionWithText(text, false, true);
+  RefPtr<DocumentFragment> fragment = createFragmentFromText(selection()->toRange().get(), text);
+  applyCommand(ReplaceSelectionCommand::create(document(), fragment.get(), false, true, true));
 }
 
 void WebFrameImpl::Delete() {
