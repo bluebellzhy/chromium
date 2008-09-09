@@ -60,6 +60,7 @@ struct WebPreferences {
   bool shrinks_standalone_images_to_fit;
   bool uses_universal_detector;
   bool text_areas_are_resizable;
+  bool dashboard_compatibility_mode;
   bool java_enabled;
 
   // TODO(tc): User style sheets will not work in chrome because it tries to

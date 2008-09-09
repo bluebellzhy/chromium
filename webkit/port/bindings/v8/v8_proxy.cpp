@@ -1350,7 +1350,7 @@ bool V8Proxy::isEnabled()
     // If the scheme is ftp: or file:, an empty file name indicates a directory
     // listing, which requires JavaScript to function properly.
     const char* kDirProtocols[] = { "ftp", "file" };
-    GURL url = KURLToGURL(document->url());
+    GURL url = webkit_glue::KURLToGURL(document->url());
     for (size_t i = 0; i < arraysize(kDirProtocols); ++i) {
         if (origin->protocol() == kDirProtocols[i]) {
             ASSERT(url.SchemeIs(kDirProtocols[i]));
@@ -1410,19 +1410,8 @@ void V8Proxy::clear()
 // This function is equivalent to
 // KJS::Window::allowsAccessFrom(const JSGlobalObject*,
 //      SecurityOrigin::Reason&, String& message) const.
-static bool SameOrigin(Frame* source, Frame* target,
-                       SecurityOrigin::Reason& reason, String& message)
+static bool SameOrigin(Frame* source, Frame* target, String& message)
 {
-    if (!source) {
-        reason = SecurityOrigin::GenericMismatch;
-        return false;
-    }
-
-    if (!target) {
-        reason = SecurityOrigin::GenericMismatch;
-        return false;
-    }
-
     // Allow access if the frames the windows represent are the same.
     if (source == target)
         return true;
@@ -1455,7 +1444,7 @@ static bool SameOrigin(Frame* source, Frame* target,
         return false;
     }
 
-    if (active_security_origin->canAccess(target_security_origin, reason))
+    if (active_security_origin->canAccess(target_security_origin))
         return true;
 
     return false;
@@ -1470,20 +1459,15 @@ static bool SameOrigin(Frame* source, Frame* target,
 // This is equivalent to KJS::Window::allowsAccessFrom(ExecState*, String&).
 bool V8Proxy::CanAccess(Frame* target)
 {
-    SecurityOrigin::Reason reason;
     String message;
 
     // Check dynamic (security) context first.
     Frame* source = V8Proxy::retrieveFrame(v8::Context::GetCurrentSecurityContext());
-    if (SameOrigin(source, target, reason, message))
+    if (SameOrigin(source, target, message))
         return true;
 
-    // Check lexical orgin if the reason is DomainSetInDOM mismatch.
-    if (reason != SecurityOrigin::DomainSetInDOMMismatch)
-        return false;
-
     source = V8Proxy::retrieveFrame(v8::Context::GetCurrent());
-    if (SameOrigin(source, target, reason, message))
+    if (SameOrigin(source, target, message))
         return true;
 
     return false;
@@ -1624,7 +1608,7 @@ void V8Proxy::initContextIfNeeded()
 
   V8Proxy::retrieveFrame(context)->loader()->dispatchWindowObjectAvailable();
 
-  if (JSBridge::RecordPlaybackMode()) {
+  if (ScriptController::RecordPlaybackMode()) {
     // Inject code which overrides a few common JS functions for implementing
     // randomness.  In order to implement effective record & playback of
     // websites, it is important that the URLs not change.  Many popular web
@@ -1675,11 +1659,6 @@ void V8Proxy::SetDOMException(int exception_code)
 {
   if (exception_code <= 0)
       return;
-
-  if (exception_code == XMLHttpRequestException::PERMISSION_DENIED) {
-    ThrowError(GENERAL_ERROR, "Permission denied");
-    return;
-  }
 
   ExceptionCodeDescription description;
   getExceptionCodeDescription(exception_code, description);
@@ -1902,7 +1881,7 @@ void* V8Proxy::ToNativeObjectImpl(V8ClassIndex::V8WrapperType type,
 }
 
 
-NodeFilter* V8Proxy::ToNativeNodeFilter(v8::Handle<v8::Value> filter)
+PassRefPtr<NodeFilter> V8Proxy::ToNativeNodeFilter(v8::Handle<v8::Value> filter)
 {
     // A NodeFilter is used when walking through a DOM tree or iterating tree
     // nodes.

@@ -376,7 +376,7 @@ class V8Proxy {
       DOMImplementation* impl);
 
   // Wrap JS node filter in C++
-  static NodeFilter* ToNativeNodeFilter(v8::Handle<v8::Value> filter);
+  static PassRefPtr<NodeFilter> ToNativeNodeFilter(v8::Handle<v8::Value> filter);
 
   static v8::Persistent<v8::FunctionTemplate> GetTemplate(
       V8ClassIndex::V8WrapperType type);

@@ -439,7 +439,7 @@ GURL WebFrameImpl::GetOSDDURL() const {
                 child, WebCore::HTMLNames::linkTag);
         if (link_element && link_element->type() == kOSDType &&
             link_element->rel() == kOSDRel && !link_element->href().isEmpty()) {
-          return KURLToGURL(link_element->href());
+          return webkit_glue::KURLToGURL(link_element->href());
         }
       }
     }
