@@ -272,11 +272,11 @@ CALLBACK_FUNC_DECL(XMLHttpRequestConstructor) {
   // Expect no parameters.
   // Allocate a XMLHttpRequest object as its internal field.
   Document* doc = V8Proxy::retrieveFrame()->document();
-  XMLHttpRequest* xhr = new XMLHttpRequest(doc);
+  RefPtr<XMLHttpRequest> xhr = XMLHttpRequest::create(doc);
   V8Proxy::SetDOMWrapper(args.Holder(),
-      V8ClassIndex::ToInt(V8ClassIndex::XMLHTTPREQUEST), xhr);
+      V8ClassIndex::ToInt(V8ClassIndex::XMLHTTPREQUEST), xhr.get());
   // Set object as the peer.
-  V8Proxy::SetJSWrapperForDOMObject(xhr,
+  V8Proxy::SetJSWrapperForDOMObject(xhr.get(),
       v8::Persistent<v8::Object>::New(args.Holder()));
   return args.Holder();
 }
@@ -352,10 +352,12 @@ CALLBACK_FUNC_DECL(XSLTProcessorTransformToDocument) {
       V8ClassIndex::XSLTPROCESSOR, args.Holder());
 
   Node* source = V8Proxy::FastToNativeObject<Node>(V8ClassIndex::NODE, args[0]);
-  if (!source) return v8::Undefined();
+  if (!source)
+      return v8::Undefined();
   RefPtr<Document> result = imp->transformToDocument(source);
   // Return undefined if no result was found.
-  if (!result) return v8::Undefined();
+  if (!result)
+      return v8::Undefined();
   return V8Proxy::ToV8Object(V8ClassIndex::NODE, result.get());
 }
 
@@ -401,9 +403,8 @@ CALLBACK_FUNC_DECL(XSLTProcessorGetParameter) {
 CALLBACK_FUNC_DECL(XSLTProcessorRemoveParameter) {
   INC_STATS(L"DOM.XSLTProcessor.removeParameter");
   // Bail out if localName is null or undefined.
-  if (args[1]->IsNull() || args[1]->IsUndefined()) {
+  if (args[1]->IsNull() || args[1]->IsUndefined())
     return v8::Undefined();
-  }
 
   XSLTProcessor* imp = V8Proxy::FastToNativeObject<XSLTProcessor>(
       V8ClassIndex::XSLTPROCESSOR, args.Holder());
@@ -416,33 +417,30 @@ CALLBACK_FUNC_DECL(XSLTProcessorRemoveParameter) {
 
 
 // ---- Canvas support ----
-static v8::Handle<v8::Value> CanvasStyleToV8Object(CanvasStyle* style) {
-  if (style->gradient()) {
-    return V8Proxy::ToV8Object(V8ClassIndex::CANVASGRADIENT,
-                               static_cast<Peerable*>(style->gradient()));
-  }
-  if (style->pattern()) {
-    return V8Proxy::ToV8Object(V8ClassIndex::CANVASPATTERN,
-                               static_cast<Peerable*>(style->pattern()));
-  }
-  return v8String(style->color());
+static v8::Handle<v8::Value> CanvasStyleToV8Object(CanvasStyle* style)
+{
+    if (style->canvasGradient())
+        return V8Proxy::ToV8Object(V8ClassIndex::CANVASGRADIENT, static_cast<Peerable*>(style->canvasGradient()));
+    if (style->canvasPattern())
+        return V8Proxy::ToV8Object(V8ClassIndex::CANVASPATTERN, static_cast<Peerable*>(style->canvasPattern()));
+    return v8String(style->color());
 }
 
-
-static PassRefPtr<CanvasStyle> V8ObjectToCanvasStyle(
-    v8::Handle<v8::Value> value) {
-  if (value->IsString()) return new CanvasStyle(ToWebCoreString(value));
+static PassRefPtr<CanvasStyle> V8ObjectToCanvasStyle(v8::Handle<v8::Value> value)
+{
+  if (value->IsString())
+      return CanvasStyle::create(ToWebCoreString(value));
 
   if (V8CanvasGradient::HasInstance(value)) {
     CanvasGradient* gradient =
         V8Proxy::FastDOMWrapperToNative<CanvasGradient>(value);
-    return new CanvasStyle(gradient);
+    return CanvasStyle::create(gradient);
   }
 
   if (V8CanvasPattern::HasInstance(value)) {
     CanvasPattern* pattern =
         V8Proxy::FastDOMWrapperToNative<CanvasPattern>(value);
-    return new CanvasStyle(pattern);
+    return CanvasStyle::create(pattern);
   }
 
   return 0;
@@ -1615,7 +1613,8 @@ INDEXED_PROPERTY_SETTER(HTMLSelectElementCollection) {
 // Also, certain prefixes such as 'pos', 'css-' and 'pixel-' are stripped
 // and the pixel_or_pos_prefix out parameter is used to indicate whether or
 // not the property name was prefixed with 'pos-' or 'pixel-'.
-static String CSSPropertyName(const String &p, bool *pixel_or_pos_prefix = 0) {
+static String CSSPropertyName(const String &p, bool *pixel_or_pos_prefix = 0)
+{
   String prop = p;
 
   int i = prop.length();
@@ -1631,13 +1630,13 @@ static String CSSPropertyName(const String &p, bool *pixel_or_pos_prefix = 0) {
     *pixel_or_pos_prefix = false;
 
   if (prop.startsWith("css-")) {
-    prop = prop.mid(4);
+    prop = prop.substring(4);
   } else if (prop.startsWith("pixel-")) {
-    prop = prop.mid(6);
+    prop = prop.substring(6);
     if (pixel_or_pos_prefix)
       *pixel_or_pos_prefix = true;
   } else if (prop.startsWith("pos-")) {
-    prop = prop.mid(4);
+    prop = prop.substring(4);
     if (pixel_or_pos_prefix)
       *pixel_or_pos_prefix = true;
   } else if (prop.startsWith("khtml-") ||
@@ -1654,9 +1653,8 @@ NAMED_PROPERTY_GETTER(CSSStyleDeclaration) {
   INC_STATS(L"DOM.CSSStyleDeclaration.NamedPropertyGetter");
   // First look for API defined attributes on the style declaration
   // object.
-  if (info.Holder()->HasRealNamedCallbackProperty(name)) {
+  if (info.Holder()->HasRealNamedCallbackProperty(name))
     return v8::Handle<v8::Value>();
-  }
 
   // Search the style declaration.
   CSSStyleDeclaration* imp = V8Proxy::FastToNativeObject<CSSStyleDeclaration>(
@@ -2754,7 +2752,7 @@ ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange) {
   if (value->IsNull()) {
     if (imp->onreadystatechange()) {
       V8XHREventListener* listener =
-          static_cast<V8XHREventListener*>(imp->onreadystatechange());
+          static_cast<V8XHREventListener*>(imp->onReadyStateChangeListener());
       v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
       RemoveHiddenXHRDependency(info.Holder(), v8_listener);
     }

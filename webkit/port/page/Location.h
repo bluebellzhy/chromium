@@ -38,7 +38,10 @@ namespace WebCore {
 
 class Location : public RefCounted<Location> {
  public:
-  Location::Location(Frame* frame) : m_frame(frame) { }
+  static PassRefPtr<Location> create(Frame* frame)
+  {
+    return adoptRef(new Location(frame));
+  }
 
   Frame* frame() { return m_frame; }
 
@@ -75,6 +78,8 @@ class Location : public RefCounted<Location> {
   void disconnectFrame() { m_frame = 0; }
 
  private:
+  Location(Frame* frame) : m_frame(frame) { }
+
   Frame* m_frame;
 
   friend class WindowV8;

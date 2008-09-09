@@ -62,6 +62,7 @@
 #include "Notation.h"
 #include "Text.h"
 #include "ProcessingInstruction.h"
+#include "Console.h"
 #include "CharacterData.h"
 #include "DocumentType.h"
 #include "DocumentFragment.h"
@@ -79,6 +80,7 @@
 #include "FrameLoader.h"
 #include "FrameTree.h"
 #include "RangeException.h"
+#include "ScriptController.h"
 #include "NodeFilter.h"
 #include "SecurityOrigin.h"
 #include "XMLHttpRequestException.h"
@@ -495,16 +497,12 @@ class JavaScriptConsoleMessage {
   const unsigned m_lineNumber;
 };
 
-
-void JavaScriptConsoleMessage::AddToPage(Page* page) const {
-  ASSERT(page);
-  Chrome* chrome = page->chrome();
-  // Only messages with ErrorMessageLevel are logged when
-  // calling Chrome::addMessageToConsole().
-  chrome->addMessageToConsole(JSMessageSource, ErrorMessageLevel,
-                              m_string, m_lineNumber, m_sourceID);
+void JavaScriptConsoleMessage::AddToPage(Page* page) const
+{
+    ASSERT(page);
+    Console* console = page->mainFrame()->domWindow()->console();
+    console->addMessage(JSMessageSource, ErrorMessageLevel, m_string, m_lineNumber, m_sourceID);
 }
-
 
 // The ConsoleMessageManager handles all console messages that stem
 // from JavaScript. It keeps a list of messages that have been delayed but
@@ -650,8 +648,8 @@ static void ReportUnsafeAccessTo(Frame* target, DelayReporting delay) {
   String str = String::format("Unsafe JavaScript attempt to access frame "
       "with URL %s from frame with URL %s. Domains, protocols and ports must "
       "match.\n",
-      targetDocument->url().utf8().data(),
-      sourceDocument->url().utf8().data());
+      targetDocument->url().string().utf8().data(),
+      sourceDocument->url().string().utf8().data());
 
   // Build a console message with fake source ID and line number.
   const String kSourceID = "";
@@ -1290,13 +1288,12 @@ V8Proxy* V8Proxy::retrieve() {
   return retrieve(window->frame());
 }
 
-
-V8Proxy* V8Proxy::retrieve(Frame* frame) {
-  if (!frame) return 0;
-  V8Bridge* bridge = static_cast<V8Bridge*>(frame->script());
-  return bridge->isEnabled() ? bridge->proxy() : 0;
+V8Proxy* V8Proxy::retrieve(Frame* frame)
+{
+    if (!frame)
+        return 0;
+    return frame->script()->isEnabled() ? frame->script()->proxy() : 0;
 }
-
 
 void V8Proxy::disconnectFrame() {
   // disconnect all event listeners
@@ -1892,19 +1889,21 @@ void* V8Proxy::ToNativeObjectImpl(V8ClassIndex::V8WrapperType type,
 }
 
 
-NodeFilter* V8Proxy::ToNativeNodeFilter(v8::Handle<v8::Value> filter) {
-  // A NodeFilter is used when walking through a DOM tree or iterating tree
-  // nodes.
-  // TODO: we may want to cache NodeFilterCondition and NodeFilter
-  // object, but it is minor.
-  // NodeFilter is passed to NodeIterator that has a ref counted pointer
-  // to NodeFilter. NodeFilter has a ref counted pointer to NodeFilterCondition.
-  // In NodeFilterCondition, filter object is persisted in its constructor,
-  // and disposed in its destructor. No need to use peer field in this case.
-  if (!filter->IsFunction()) return 0;
+NodeFilter* V8Proxy::ToNativeNodeFilter(v8::Handle<v8::Value> filter)
+{
+    // A NodeFilter is used when walking through a DOM tree or iterating tree
+    // nodes.
+    // TODO: we may want to cache NodeFilterCondition and NodeFilter
+    // object, but it is minor.
+    // NodeFilter is passed to NodeIterator that has a ref counted pointer
+    // to NodeFilter. NodeFilter has a ref counted pointer to NodeFilterCondition.
+    // In NodeFilterCondition, filter object is persisted in its constructor,
+    // and disposed in its destructor. No need to use peer field in this case.
+    if (!filter->IsFunction())
+        return 0;
 
-  NodeFilterCondition* cond = new V8NodeFilterCondition(filter);
-  return new NodeFilter(cond);
+    NodeFilterCondition* cond = new V8NodeFilterCondition(filter);
+    return NodeFilter::create(cond);
 }
 
 

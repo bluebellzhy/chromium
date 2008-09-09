@@ -134,12 +134,11 @@ void ScriptController::resumeTimeouts(OwnPtr<PausedTimeouts>& timeouts)
 
 ScriptController::ScriptController(Frame* frame)
 {
-    m_proxy = new V8Proxy(frame);
+    m_proxy.set(new V8Proxy(frame);
 }
 
 ScriptController::~ScriptController()
 {
-    delete m_proxy;
 }
 
 // Disconnect the proxy from its owner frame;
