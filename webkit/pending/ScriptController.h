@@ -282,11 +282,11 @@ public:
 
 private:
     Frame* m_frame;
-    OwnPtr<V8Proxy> m_proxy;
 
     static bool m_recordPlaybackMode;
 
 #if USE(V8)
+    OwnPtr<V8Proxy> m_proxy;
     typedef HashMap<void*, NPObject*> PluginObjectMap;
 #endif
 
