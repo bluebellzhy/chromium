@@ -39,6 +39,7 @@
 #include "Node.h"
 #include "NotImplemented.h"
 #include "np_v8object.h"
+#include "Widget.h"
 #include "v8_proxy.h"
 #include "v8_binding.h"
 #include "v8_npobject.h"
@@ -117,24 +118,22 @@ void ScriptController::pauseTimeouts(OwnPtr<PausedTimeouts>& result)
         result.clear();
         return;
     }
-    // TODO(eseidel): we should fix DOMWindow::pauseTimeouts to use OwnPtr
-    result = window->pauseTimeouts();
+    window->pauseTimeouts(result);
 }
 
 void ScriptController::resumeTimeouts(OwnPtr<PausedTimeouts>& timeouts)
 {
-    DOMWindow* window = frame->domWindow();
+    DOMWindow* window = m_frame->domWindow();
     if (!window) {
-        window.clear();
+        timeouts.clear();
         return;
     }
-    // TODO(eseidel): we should fix DOMWindow::resumeTimeouts to use OwnPtr
-    window->resumeTimeouts(timeouts.take());
+    window->resumeTimeouts(timeouts);
 }
 
 ScriptController::ScriptController(Frame* frame)
 {
-    m_proxy.set(new V8Proxy(frame);
+    m_proxy.set(new V8Proxy(frame));
 }
 
 ScriptController::~ScriptController()
@@ -327,7 +326,6 @@ void ScriptController::collectGarbage()
 
     m_proxy->Evaluate("", 0, "if (window.gc) void(gc());", NULL);
 }
-
 
 NPRuntimeFunctions* ScriptController::functions()
 {

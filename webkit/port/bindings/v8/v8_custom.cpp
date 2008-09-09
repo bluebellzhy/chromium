@@ -990,7 +990,7 @@ static Frame* createWindow(Frame* opener_frame,
   }
 
   if (!parseURL(url).startsWith("javascript:", false) ||
-      JSBridge::isSafeScript(new_frame)) {
+      V8Bridge::isSafeScript(new_frame)) {
     String completed_url =
         url.isEmpty() ? url : active_frame->document()->completeURL(url);
     bool user_gesture = active_frame->script()->wasRunByUserGesture();
@@ -2650,17 +2650,17 @@ CALLBACK_FUNC_DECL(DOMWindowBtoa) {
 // fix this by calling toString function on the receiver.
 // However, V8 implements toString in JavaScript, which requires
 // switching context of receiver. I consider it is dangerous.
-CALLBACK_FUNC_DECL(DOMWindowToString) {
-  INC_STATS(L"DOM.DOMWindow.toString()");
-  return args.This()->ObjectProtoToString();
+CALLBACK_FUNC_DECL(DOMWindowToString)
+{
+    INC_STATS(L"DOM.DOMWindow.toString()");
+    return args.This()->ObjectProtoToString();
 }
 
-
-CALLBACK_FUNC_DECL(DOMWindowNOP) {
-  INC_STATS(L"DOM.DOMWindow.nop()");
-  return v8::Undefined();
+CALLBACK_FUNC_DECL(DOMWindowNOP)
+{
+    INC_STATS(L"DOM.DOMWindow.nop()");
+    return v8::Undefined();
 }
-
 
 CALLBACK_FUNC_DECL(EventTargetNodeAddEventListener) {
   INC_STATS(L"DOM.EventTargetNode.addEventListener()");
@@ -2746,11 +2746,12 @@ static void RemoveHiddenXHRDependency(v8::Local<v8::Object> xhr,
 }
 
 
-ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange) {
+ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
+{
   XMLHttpRequest* imp = V8Proxy::FastToNativeObject<XMLHttpRequest>(
       V8ClassIndex::XMLHTTPREQUEST, info.Holder());
   if (value->IsNull()) {
-    if (imp->onreadystatechange()) {
+    if (imp->onReadyStateChangeListener()) {
       V8XHREventListener* listener =
           static_cast<V8XHREventListener*>(imp->onReadyStateChangeListener());
       v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
@@ -2758,24 +2759,24 @@ ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange) {
     }
 
     // Clear the listener
-    imp->setOnreadystatechange(0);
+    imp->setOnReadyStateChangeListener(0);
 
   } else {
     V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
     if (!proxy)
       return;
 
-    EventListener* listener =
-      proxy->FindOrCreateXHREventListener(value, false);
+    EventListener* listener = proxy->FindOrCreateXHREventListener(value, false);
     if (listener) {
-      imp->setOnreadystatechange(listener);
+      imp->setOnReadyStateChangeListener(listener);
       CreateHiddenXHRDependency(info.Holder(), value);
     }
   }
 }
 
 
-ACCESSOR_SETTER(XMLHttpRequestOnload) {
+ACCESSOR_SETTER(XMLHttpRequestOnload)
+{
   XMLHttpRequest* imp = V8Proxy::FastToNativeObject<XMLHttpRequest>(
       V8ClassIndex::XMLHTTPREQUEST, info.Holder());
   if (value->IsNull()) {
@@ -2793,8 +2794,7 @@ ACCESSOR_SETTER(XMLHttpRequestOnload) {
     if (!proxy)
       return;
 
-    EventListener* listener =
-      proxy->FindOrCreateXHREventListener(value, false);
+    EventListener* listener = proxy->FindOrCreateXHREventListener(value, false);
     if (listener) {
       imp->setOnload(listener);
       CreateHiddenXHRDependency(info.Holder(), value);
@@ -2803,7 +2803,8 @@ ACCESSOR_SETTER(XMLHttpRequestOnload) {
 }
 
 
-CALLBACK_FUNC_DECL(XMLHttpRequestAddEventListener) {
+CALLBACK_FUNC_DECL(XMLHttpRequestAddEventListener)
+{
   INC_STATS(L"DOM.XMLHttpRequest.addEventListener()");
   XMLHttpRequest* imp = V8Proxy::FastToNativeObject<XMLHttpRequest>(
       V8ClassIndex::XMLHTTPREQUEST, args.Holder());
@@ -2812,8 +2813,7 @@ CALLBACK_FUNC_DECL(XMLHttpRequestAddEventListener) {
   if (!proxy)
     return v8::Undefined();
 
-  EventListener* listener =
-    proxy->FindOrCreateXHREventListener(args[1], false);
+  EventListener* listener = proxy->FindOrCreateXHREventListener(args[1], false);
   if (listener) {
     String type = ToWebCoreString(args[0]);
     bool useCapture = args[2]->BooleanValue();
@@ -2849,7 +2849,8 @@ CALLBACK_FUNC_DECL(XMLHttpRequestRemoveEventListener) {
 }
 
 
-CALLBACK_FUNC_DECL(XMLHttpRequestOpen) {
+CALLBACK_FUNC_DECL(XMLHttpRequestOpen)
+{
   INC_STATS(L"DOM.XMLHttpRequest.open()");
   // Four cases:
   // open(method, url)
@@ -2870,8 +2871,7 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOpen) {
   String method = ToWebCoreString(args[0]);
   String urlstring = ToWebCoreString(args[1]);
   V8Proxy* proxy = V8Proxy::retrieve();
-  KURL url =
-    proxy->frame()->document()->completeURL(urlstring);
+  KURL url = proxy->frame()->document()->completeURL(urlstring);
 
   bool async = (args.Length() < 3) ? true : args[2]->BooleanValue();
 
@@ -2883,12 +2883,10 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOpen) {
     if (args.Length() >= 5 && !args[4]->IsUndefined()) {
       passwd = valueToStringWithNullCheck(args[4]);
       xhr->open(method, url, async, user, passwd, ec);
-    } else {
+    } else
       xhr->open(method, url, async, user, ec);
-    }
-  } else {
+  } else
     xhr->open(method, url, async, ec);
-  }
 
   if (ec != 0) {
     V8Proxy::SetDOMException(ec);
@@ -2898,12 +2896,11 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOpen) {
   return v8::Undefined();
 }
 
-
-static bool IsDocumentType(v8::Handle<v8::Value> value) {
-  // TODO(fqian): add other document types.
-  return V8Document::HasInstance(value) || V8HTMLDocument::HasInstance(value);
+static bool IsDocumentType(v8::Handle<v8::Value> value)
+{
+    // TODO(fqian): add other document types.
+    return V8Document::HasInstance(value) || V8HTMLDocument::HasInstance(value);
 }
-
 
 CALLBACK_FUNC_DECL(XMLHttpRequestSend) {
   INC_STATS(L"DOM.XMLHttpRequest.send()");

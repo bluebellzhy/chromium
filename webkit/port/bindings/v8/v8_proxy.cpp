@@ -97,6 +97,7 @@
 #endif
 
 #include "base/stats_table.h"
+#include "webkit/glue/webkit_glue.h"
 #include "webkit/glue/glue_util.h"
 
 namespace WebCore {
@@ -892,57 +893,57 @@ void V8Proxy::DisconnectEventListeners() {
 
 v8::Handle<v8::Script> V8Proxy::CompileScript(v8::Handle<v8::String> code,
                                               const String& fileName,
-                                              int baseLine) {
-  const uint16_t* fileNameString = FromWebCoreString(fileName);
-  v8::Handle<v8::String> name =
+                                              int baseLine)
+{
+    const uint16_t* fileNameString = FromWebCoreString(fileName);
+    v8::Handle<v8::String> name =
       v8::String::New(fileNameString, fileName.length());
-  v8::Handle<v8::Integer> line = v8::Integer::New(baseLine);
-  v8::ScriptOrigin origin(name, line);
-  v8::Handle<v8::Script> script = v8::Script::Compile(code, &origin);
-  return script;
+    v8::Handle<v8::Integer> line = v8::Integer::New(baseLine);
+    v8::ScriptOrigin origin(name, line);
+    v8::Handle<v8::Script> script = v8::Script::Compile(code, &origin);
+    return script;
 }
 
+bool V8Proxy::HandleOutOfMemory()
+{
+    v8::Local<v8::Context> context = v8::Context::GetCurrent();
 
-bool V8Proxy::HandleOutOfMemory() {
-  v8::Local<v8::Context> context = v8::Context::GetCurrent();
+    if (!context->HasOutOfMemoryException())
+        return false;
 
-  if (!context->HasOutOfMemoryException())
-    return false;
+    // Warning, error, disable JS for this frame?
+    Frame* frame = V8Proxy::retrieveFrame(context);
 
-  // Warning, error, disable JS for this frame?
-  Frame* frame = V8Proxy::retrieveFrame(context);
+    V8Proxy* proxy = V8Proxy::retrieve(frame);
+    // Clean m_context, m_document, and event handlers.
+    proxy->clear();
+    // Destroy the global object.
+    proxy->DestroyGlobal();
 
-  V8Proxy* proxy = V8Proxy::retrieve(frame);
-  // Clean m_context, m_document, and event handlers.
-  proxy->clear();
-  // Destroy the global object.
-  proxy->DestroyGlobal();
+    webkit_glue::NotifyJSOutOfMemory(frame);
 
-  webkit_glue::NotifyJSOutOfMemory(frame);
+    // Disable JS.
+    Settings* settings = frame->settings();
+    ASSERT(settings);
+    settings->setJavaScriptEnabled(false);
 
-  // Disable JS.
-  Settings* settings = frame->settings();
-  ASSERT(settings);
-  settings->setJavaScriptEnabled(false);
-
-  return true;
+    return true;
 }
-
 
 v8::Local<v8::Value> V8Proxy::Evaluate(const String& fileName, int baseLine,
-                                       const String& str, Node* n) {
-  ASSERT(v8::Context::InContext());
+                                       const String& str, Node* n)
+{
+    ASSERT(v8::Context::InContext());
 
-  // Compile the script.
-  v8::Local<v8::String> code = v8ExternalString(str);
-  v8::Handle<v8::Script> script = CompileScript(code, fileName, baseLine);
+    // Compile the script.
+    v8::Local<v8::String> code = v8ExternalString(str);
+    v8::Handle<v8::Script> script = CompileScript(code, fileName, baseLine);
 
-  // Set inlineCode to true for <a href="javascript:doSomething()">
-  // and false for <script>doSomething</script>. For some reason, fileName
-  // gives us this information.
-  return RunScript(script, fileName.isNull());
+    // Set inlineCode to true for <a href="javascript:doSomething()">
+    // and false for <script>doSomething</script>. For some reason, fileName
+    // gives us this information.
+    return RunScript(script, fileName.isNull());
 }
-
 
 v8::Local<v8::Value> V8Proxy::RunScript(v8::Handle<v8::Script> script,
                                         bool inline_code) {
@@ -1255,50 +1256,50 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
   return desc;
 }
 
-
-bool V8Proxy::ContextInitialized() {
-  return !m_context.IsEmpty();
+bool V8Proxy::ContextInitialized()
+{
+    return !m_context.IsEmpty();
 }
 
-
-DOMWindow* V8Proxy::retrieveWindow() {
-  // TODO: This seems very fragile. How do we know that the global object
-  // from the current context is something sensible? Do we need to use the
-  // last entered here? Who calls this?
-  v8::Handle<v8::Object> global = v8::Context::GetCurrent()->Global();
-  if (global.IsEmpty()) return 0;
-  v8::Handle<v8::Value> window = global->GetPrototype();
-  return ToNativeObject<DOMWindow>(V8ClassIndex::DOMWINDOW, window);
+DOMWindow* V8Proxy::retrieveWindow()
+{
+    // TODO: This seems very fragile. How do we know that the global object
+    // from the current context is something sensible? Do we need to use the
+    // last entered here? Who calls this?
+    v8::Handle<v8::Object> global = v8::Context::GetCurrent()->Global();
+    if (global.IsEmpty())
+        return 0;
+    v8::Handle<v8::Value> window = global->GetPrototype();
+    return ToNativeObject<DOMWindow>(V8ClassIndex::DOMWINDOW, window);
 }
 
-
-Frame* V8Proxy::retrieveFrame(v8::Handle<v8::Context> context) {
-  v8::Handle<v8::Object> global = context->Global();
-  v8::Handle<v8::Value> window_peer = global->GetPrototype();
-  DOMWindow* window =
-      ToNativeObject<DOMWindow>(V8ClassIndex::DOMWINDOW, window_peer);
-  return window->frame();
+Frame* V8Proxy::retrieveFrame(v8::Handle<v8::Context> context)
+{
+    v8::Handle<v8::Object> global = context->Global();
+    v8::Handle<v8::Value> window_peer = global->GetPrototype();
+    DOMWindow* window = ToNativeObject<DOMWindow>(V8ClassIndex::DOMWINDOW, window_peer);
+    return window->frame();
 }
 
-
-Frame* V8Proxy::retrieveActiveFrame() {
-  v8::Handle<v8::Context> context = v8::Context::GetEntered();
-  if (context.IsEmpty()) 
-    return 0;
-  return retrieveFrame(context);
+Frame* V8Proxy::retrieveActiveFrame()
+{
+    v8::Handle<v8::Context> context = v8::Context::GetEntered();
+    if (context.IsEmpty()) 
+        return 0;
+    return retrieveFrame(context);
 }
 
-
-Frame* V8Proxy::retrieveFrame() {
-  DOMWindow* window = retrieveWindow();
-  return window ? window->frame() : 0;
+Frame* V8Proxy::retrieveFrame()
+{
+    DOMWindow* window = retrieveWindow();
+    return window ? window->frame() : 0;
 }
 
-
-V8Proxy* V8Proxy::retrieve() {
-  DOMWindow* window = retrieveWindow();
-  ASSERT(window);
-  return retrieve(window->frame());
+V8Proxy* V8Proxy::retrieve()
+{
+    DOMWindow* window = retrieveWindow();
+    ASSERT(window);
+    return retrieve(window->frame());
 }
 
 V8Proxy* V8Proxy::retrieve(Frame* frame)
@@ -1308,87 +1309,91 @@ V8Proxy* V8Proxy::retrieve(Frame* frame)
     return frame->script()->isEnabled() ? frame->script()->proxy() : 0;
 }
 
-void V8Proxy::disconnectFrame() {
-  // disconnect all event listeners
-  DisconnectEventListeners();
+void V8Proxy::disconnectFrame()
+{
+    // disconnect all event listeners
+    DisconnectEventListeners();
 
-  // clear all timeouts.
-  if (m_frame->domWindow())
-    m_frame->domWindow()->clearAllTimeouts();
+    // clear all timeouts.
+    if (m_frame->domWindow())
+        m_frame->domWindow()->clearAllTimeouts();
 }
 
-bool V8Proxy::isEnabled() {
-  Settings* settings = m_frame->settings();
-  if (!settings)
-    return false;
-  
-  // In the common case, JavaScript is enabled and we're done.
-  if (settings->isJavaScriptEnabled())
-    return true;
+bool V8Proxy::isEnabled()
+{
+    Settings* settings = m_frame->settings();
+    if (!settings)
+        return false;
 
-  // If JavaScript has been disabled, we need to look at the frame to tell
-  // whether this script came from the web or the embedder. Scripts from the 
-  // embedder are safe to run, but scripts from the other sources are 
-  // disallowed.
-  Document* document = m_frame->document();
-  if (!document)
-    return false;
+    // In the common case, JavaScript is enabled and we're done.
+    if (settings->isJavaScriptEnabled())
+        return true;
 
-  SecurityOrigin* origin = document->securityOrigin();
-  if (origin->protocol().isEmpty())
-    return false;  // Uninitialized document
+    // If JavaScript has been disabled, we need to look at the frame to tell
+    // whether this script came from the web or the embedder. Scripts from the 
+    // embedder are safe to run, but scripts from the other sources are 
+    // disallowed.
+    Document* document = m_frame->document();
+    if (!document)
+        return false;
 
-  if (origin->protocol() == "http" || origin->protocol() == "https")
-    return false;  // Web site
+    SecurityOrigin* origin = document->securityOrigin();
+    if (origin->protocol().isEmpty())
+        return false;  // Uninitialized document
 
-  if (origin->protocol() == 
-      webkit_glue::StdStringToString(webkit_glue::GetUIResourceProtocol()))
-    return true;   // Embedder's scripts are ok to run
+    if (origin->protocol() == "http" || origin->protocol() == "https")
+        return false;  // Web site
 
-  // If the scheme is ftp: or file:, an empty file name indicates a directory
-  // listing, which requires JavaScript to function properly.
-  const char* kDirProtocols[] = { "ftp", "file" };
-  GURL url(document->url().utf8().data());
-  for (size_t i = 0; i < arraysize(kDirProtocols); ++i) {
-    if (origin->protocol() == kDirProtocols[i]) {
-      ASSERT(url.SchemeIs(kDirProtocols[i]));
-      return url.ExtractFileName().empty();
+    if (origin->protocol() == webkit_glue::StdStringToString(webkit_glue::GetUIResourceProtocol()))
+        return true;   // Embedder's scripts are ok to run
+
+    // If the scheme is ftp: or file:, an empty file name indicates a directory
+    // listing, which requires JavaScript to function properly.
+    const char* kDirProtocols[] = { "ftp", "file" };
+    GURL url = KURLToGURL(document->url());
+    for (size_t i = 0; i < arraysize(kDirProtocols); ++i) {
+        if (origin->protocol() == kDirProtocols[i]) {
+            ASSERT(url.SchemeIs(kDirProtocols[i]));
+            return url.ExtractFileName().empty();
+        }
     }
-  }
 
-  return false;  // Other protocols fall through to here
+    return false;  // Other protocols fall through to here
 }
 
+void V8Proxy::clearDocumentWrapper()
+{
+    v8::HandleScope handle_scope;
+    v8::Local<v8::Context> context = GetContext();
+    if (context.IsEmpty())
+        return;  // not initialize yet
 
-void V8Proxy::clearDocumentWrapper() {
-  v8::HandleScope handle_scope;
-  v8::Local<v8::Context> context = GetContext();
-  if (context.IsEmpty()) return;  // not initialize yet
-
-  if (!m_document.IsEmpty()) {
+    if (!m_document.IsEmpty()) {
 #ifndef NDEBUG
-    UnregisterGlobalHandle(this, m_document);
+        UnregisterGlobalHandle(this, m_document);
 #endif
-    m_document.Dispose();
-    m_document.Clear();
-  }
+        m_document.Dispose();
+        m_document.Clear();
+    }
 }
-
 
 // static
-void V8Proxy::DomainChanged(Frame* frame) {
-  V8Proxy* proxy = retrieve(frame);
-  proxy->ClearSecurityToken();
+void V8Proxy::DomainChanged(Frame* frame)
+{
+    V8Proxy* proxy = retrieve(frame);
+    proxy->ClearSecurityToken();
 }
 
-
-void V8Proxy::ClearSecurityToken() {
-  m_context->SetSecurityToken(m_global);
+void V8Proxy::ClearSecurityToken()
+{
+    m_context->SetSecurityToken(m_global);
 }
 
+void V8Proxy::clear()
+{
+    if (m_context.IsEmpty())
+        return;
 
-void V8Proxy::clear() {
-  if (!m_context.IsEmpty()) {
     ClearSecurityToken();
 
     if (m_frame->domWindow())
@@ -1399,67 +1404,62 @@ void V8Proxy::clear() {
     // Corresponds to the context creation in initContextIfNeeded().
     m_context.Dispose();
     m_context.Clear();
-  }
 }
-
 
 // Check if two frames are from the same origin.
 // This function is equivalent to
 // KJS::Window::allowsAccessFrom(const JSGlobalObject*,
 //      SecurityOrigin::Reason&, String& message) const.
 static bool SameOrigin(Frame* source, Frame* target,
-                       SecurityOrigin::Reason& reason, String& message) {
-  if (!source) {
-    reason = SecurityOrigin::GenericMismatch;
+                       SecurityOrigin::Reason& reason, String& message)
+{
+    if (!source) {
+        reason = SecurityOrigin::GenericMismatch;
+        return false;
+    }
+
+    if (!target) {
+        reason = SecurityOrigin::GenericMismatch;
+        return false;
+    }
+
+    // Allow access if the frames the windows represent are the same.
+    if (source == target)
+        return true;
+
+    Document* target_document = target->document();
+
+    // JS may be attempting to access the "window" object, which should be valid,
+    // even if the document hasn't been constructed yet.  If the document doesn't
+    // exist yet allow JS to access the window object.
+    if (!target_document)
+        return true;
+
+    Document* act_document = source->document();
+
+    const SecurityOrigin* active_security_origin = act_document->securityOrigin();
+    const SecurityOrigin* target_security_origin = target_document->securityOrigin();
+
+    String ui_resource_protocol = webkit_glue::StdStringToString(webkit_glue::GetUIResourceProtocol());
+    if (active_security_origin->protocol() == ui_resource_protocol) {
+        KURL inspector_url = webkit_glue::GURLToKURL(webkit_glue::GetInspectorURL());
+        ASSERT(inspector_url.protocol() == ui_resource_protocol);
+        ASSERT(inspector_url.protocol().endsWith("-resource"));
+
+        // The Inspector can access anything.
+        if (active_security_origin->host() == inspector_url.host())
+            return true;
+
+        // To mitigate XSS vulnerabilities on the browser itself, UI resources
+        // besides the Inspector can't access other documents.
+        return false;
+    }
+
+    if (active_security_origin->canAccess(target_security_origin, reason))
+        return true;
+
     return false;
-  }
-
-  if (!target) {
-    reason = SecurityOrigin::GenericMismatch;
-    return false;
-  }
-
-  // Allow access if the frames the windows represent are the same.
-  if (source == target)
-    return true;
-
-  Document* target_document = target->document();
-
-  // JS may be attempting to access the "window" object, which should be valid,
-  // even if the document hasn't been constructed yet.  If the document doesn't
-  // exist yet allow JS to access the window object.
-  if (!target_document)
-    return true;
-
-  Document* act_document = source->document();
-
-  const SecurityOrigin* active_security_origin = act_document->securityOrigin();
-  const SecurityOrigin* target_security_origin = 
-      target_document->securityOrigin();
-
-  String ui_resource_protocol = 
-      webkit_glue::StdStringToString(webkit_glue::GetUIResourceProtocol());
-  if (active_security_origin->protocol() == ui_resource_protocol) {
-    KURL inspector_url = 
-        webkit_glue::GURLToKURL(webkit_glue::GetInspectorURL());
-    ASSERT(inspector_url.protocol() == ui_resource_protocol);
-    ASSERT(inspector_url.protocol().endsWith("-resource"));
-
-    // The Inspector can access anything.
-    if (active_security_origin->host() == inspector_url.host())
-      return true;
-
-    // To mitigate XSS vulnerabilities on the browser itself, UI resources
-    // besides the Inspector can't access other documents.
-    return false;
-  }
-
-  if (active_security_origin->canAccess(target_security_origin, reason))
-    return true;
-
-  return false;
 }
-
 
 // Check if the current execution context can access a target frame.
 // First it checks same domain policy using the security context
@@ -1468,28 +1468,26 @@ static bool SameOrigin(Frame* source, Frame* target,
 // to check domain policy.
 //
 // This is equivalent to KJS::Window::allowsAccessFrom(ExecState*, String&).
-bool V8Proxy::CanAccess(Frame* target) {
-  SecurityOrigin::Reason reason;
-  String message;
+bool V8Proxy::CanAccess(Frame* target)
+{
+    SecurityOrigin::Reason reason;
+    String message;
 
-  // Check dynamic (security) context first.
-  Frame* source = 
-      V8Proxy::retrieveFrame(v8::Context::GetCurrentSecurityContext());
-  if (SameOrigin(source, target, reason, message)) {
-    return true;
-  }
+    // Check dynamic (security) context first.
+    Frame* source = V8Proxy::retrieveFrame(v8::Context::GetCurrentSecurityContext());
+    if (SameOrigin(source, target, reason, message))
+        return true;
 
-  // Check lexical orgin if the reason is DomainSetInDOM mismatch.
-  if (reason == SecurityOrigin::DomainSetInDOMMismatch) {
+    // Check lexical orgin if the reason is DomainSetInDOM mismatch.
+    if (reason != SecurityOrigin::DomainSetInDOMMismatch)
+        return false;
+
     source = V8Proxy::retrieveFrame(v8::Context::GetCurrent());
-    if (SameOrigin(source, target, reason, message)) {
-      return true;
-    }
-  }
+    if (SameOrigin(source, target, reason, message))
+        return true;
 
-  return false;
+    return false;
 }
-
 
 bool V8Proxy::IsFromSameOrigin(Frame* target, bool report_error)
 {
@@ -1505,7 +1503,6 @@ bool V8Proxy::IsFromSameOrigin(Frame* target, bool report_error)
     return true;
 }
 
-
 bool V8Proxy::CheckNodeSecurity(Node* node)
 {
     if (!node)
@@ -1518,7 +1515,6 @@ bool V8Proxy::CheckNodeSecurity(Node* node)
 
     return IsFromSameOrigin(target, true);
 }
-
 
 // Create a new environment and setup the global object.
 //
@@ -2309,7 +2305,8 @@ v8::Handle<v8::Object> V8Proxy::NodeToV8Object(Node* node)
       break;
     case Node::DOCUMENT_NODE: {
       is_document = true;
-      if (static_cast<Document*>(node)->isHTMLDocument())
+      Document* doc = static_cast<Document*>(node);
+      if (doc->isHTMLDocument())
         type = V8ClassIndex::HTMLDOCUMENT;
 #if ENABLE(SVG)
       else if (doc->isSVGDocument())
