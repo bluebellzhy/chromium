@@ -53,6 +53,7 @@
 #include "PlatformString.h"
 #include "Screen.h"
 #include "SecurityOrigin.h"
+#include "ScriptController.h"
 #include <algorithm>
 #include <wtf/MathExtras.h>
 
@@ -963,7 +964,7 @@ Navigator* DOMWindow::navigator()
 
 void DOMWindow::dump(const String& msg)
 {
-    if (!m_frame))
+    if (!m_frame)
         return;
 
     m_frame->domWindow()->console()->addMessage(JSMessageSource,
@@ -1040,11 +1041,13 @@ void DOMWindow::clearTimeout(int timeoutId)
     delete m_timeouts.take(timeoutId);
 }
 
-void DOMWindow::pauseTimeouts(OwnPtr<PauseTimeouts>& pausedTimeouts)
+void DOMWindow::pauseTimeouts(OwnPtr<PausedTimeouts>& pausedTimeouts)
 {
     size_t count = m_timeouts.size();
-    if (count == 0)
-        return 0;
+    if (count == 0) {
+        pausedTimeouts.clear();
+        return;
+    }
 
     PausedTimeout* t = new PausedTimeout[count];
     PausedTimeouts* result = new PausedTimeouts(t, count);
@@ -1064,10 +1067,6 @@ void DOMWindow::pauseTimeouts(OwnPtr<PauseTimeouts>& pausedTimeouts)
     deleteAllValues(m_timeouts);
     m_timeouts.clear();
 
-    int zoomedX = static_cast<int>(x * m_frame->pageZoomFactor());
-    int zoomedY = static_cast<int>(y * m_frame->pageZoomFactor());
-    view->setContentsPos(zoomedX, zoomedY);
-    view->setContentsPos(x * m_frame->pageZoomFactor(), y * m_frame->pageZoomFactor());
     pausedTimeouts.set(result);
 }
 

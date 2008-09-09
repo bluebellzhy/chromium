@@ -1412,13 +1412,8 @@ void V8Proxy::clear()
 //      SecurityOrigin::Reason&, String& message) const.
 static bool SameOrigin(Frame* source, Frame* target, String& message)
 {
-    if (!source) {
+    if (!source || !target)
         return false;
-    }
-
-    if (!target) {
-        return false;
-    }
 
     // Allow access if the frames the windows represent are the same.
     if (source == target)
