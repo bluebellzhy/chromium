@@ -883,16 +883,19 @@ CALLBACK_FUNC_DECL(DOMWindowPostMessage) {
   DOMWindow* source = V8Proxy::retrieveActiveFrame()->domWindow();
   ASSERT(source->frame());
 
-  String domain = source->frame()->loader()->url().host();
   String uri = source->frame()->loader()->url().string();
 
   v8::TryCatch try_catch;
 
   String message = ToWebCoreString(args[0]);
+  String domain = ToWebCoreString(args[1]);
 
   if (try_catch.HasCaught()) return v8::Undefined();
 
-  window->postMessage(message, domain, uri, source);
+  ExceptionCode ec;
+  window->postMessage(message, domain, source, ec);
+  if (ec)
+    V8Proxy::SetDOMException(ec);
 
   return v8::Undefined();
 }
@@ -918,7 +921,8 @@ static HashMap<String, String> parseModalDialogFeatures(
     const String& features_arg) {
   HashMap<String, String> map;
 
-  Vector<String> features = features_arg.split(';');
+  Vector<String> features;
+  features_arg.split(';', features);
   Vector<String>::const_iterator end = features.end();
   for (Vector<String>::const_iterator it = features.begin(); it != end; ++it) {
     String s = *it;
