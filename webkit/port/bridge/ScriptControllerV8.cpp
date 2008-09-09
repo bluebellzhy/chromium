@@ -316,7 +316,7 @@ void ScriptController::BindToWindowObject(Frame* frame, const String& key, NPObj
     global->Set(v8String(key), value);
 }
 
-void ScriptController::CollectGarbage()
+void ScriptController::collectGarbage()
 {
     v8::HandleScope hs;
     v8::Handle<v8::Context> context = V8Proxy::GetContext(m_proxy->frame());
@@ -334,7 +334,7 @@ NPRuntimeFunctions* ScriptController::functions()
     return &npruntime_functions;
 }
 
-NPObject* ScriptController::CreateScriptObject(Frame* frame)
+NPObject* ScriptController::createScriptObject(Frame* frame)
 {
     v8::HandleScope handle_scope;
     v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
@@ -350,8 +350,7 @@ NPObject* ScriptController::CreateScriptObject(Frame* frame)
                                 window);
 }
 
-NPObject* ScriptController::CreateScriptObject(Frame* frame,
-                                       HTMLPlugInElement* element)
+NPObject* ScriptController::createScriptObject(Frame* frame, HTMLPlugInElement* element)
 {
     v8::HandleScope handle_scope;
     v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
@@ -368,7 +367,7 @@ NPObject* ScriptController::CreateScriptObject(Frame* frame,
     return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(dom_win), window);
 }
 
-NPObject* ScriptController::CreateNoScriptObject()
+NPObject* ScriptController::createNoScriptObject()
 {
     notImplemented();
     return 0;
@@ -398,7 +397,7 @@ JSInstance ScriptController::createScriptInstanceForWidget(Widget* widget)
     if (!container)
         return JSInstanceHolder::EmptyInstance();
 
-    NPObject *npObject = container->GetPluginScriptableObject();
+    NPObject* npObject = container->GetPluginScriptableObject();
     if (!npObject)
         return JSInstanceHolder::EmptyInstance();
 

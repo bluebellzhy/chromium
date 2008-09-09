@@ -321,6 +321,11 @@ class V8Proxy {
     return static_cast<C*>(ExtractCPointer<Node>(wrapper));
   }
 
+  template<typename T>
+  static v8::Handle<v8::Value> ToV8Object(V8ClassIndex::V8WrapperType type, PassRefPtr<T> imp)
+  {
+    return ToV8Object(type, imp.get());
+  }
   static v8::Handle<v8::Value> ToV8Object(V8ClassIndex::V8WrapperType type,
                                           void* imp);
 
