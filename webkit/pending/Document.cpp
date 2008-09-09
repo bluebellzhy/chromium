@@ -2829,9 +2829,10 @@ void Document::removeWindowEventListener(const AtomicString& eventType, EventLis
             m_windowEventListeners.remove(it);
             return;
         }
+    }
     if ((eventType == unloadEvent) || (eventType == beforeunloadEvent)) {
-      if (Frame* frm = frame())
-        frm->loader()->unloadListenerChanged();
+        if (Frame* frm = frame())
+            frm->loader()->unloadListenerChanged();
     }
 }
 
@@ -2980,7 +2981,7 @@ void Document::setDomain(const String& newDomain)
     // have also assigned to access this page.
     if (equalIgnoringCase(domain(), newDomain)) {
         m_securityOrigin->setDomainFromDOM(newDomain);
-        JSBridge::setDomain(frame(), newDomain);
+        ScriptController::setDomain(frame(), newDomain);
         return;
     }
 
@@ -3002,7 +3003,7 @@ void Document::setDomain(const String& newDomain)
         return;
 
     m_securityOrigin->setDomainFromDOM(newDomain);
-    JSBridge::setDomain(frame(), newDomain);
+    ScriptController::setDomain(frame(), newDomain);
 }
 
 String Document::lastModified() const
