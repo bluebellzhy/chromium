@@ -40,6 +40,7 @@
 #include "NotImplemented.h"
 #include "np_v8object.h"
 #include "Widget.h"
+#include "webplugin_impl.h"
 #include "v8_proxy.h"
 #include "v8_binding.h"
 #include "v8_npobject.h"

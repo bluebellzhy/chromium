@@ -1311,6 +1311,7 @@ sub IsRefPtrType
     return 1 if $type eq "SVGElementInstance";
     return 1 if $type eq "SVGElementInstanceList";
     return 1 if $type =~ /^SVGPathSeg/;
+    return 1 if $type eq "SVGAngle";
     
     return 1 if $type =~ /^SVGAnimated/;
 

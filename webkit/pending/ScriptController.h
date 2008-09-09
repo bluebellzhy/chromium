@@ -162,7 +162,7 @@ typedef v8::Persistent<v8::Value> JSResult;
 class ScriptController {
 public:
     ScriptController(Frame*);
-    ~ScriptController() { }
+    ~ScriptController();
 
     // TODO(eseidel): V8Proxy should either be folded into ScriptController
     // or this accessor should be made JSProxy*

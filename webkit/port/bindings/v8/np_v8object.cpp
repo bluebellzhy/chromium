@@ -325,7 +325,7 @@ bool NPN_SetProperty(NPP npp, NPObject *npobj, NPIdentifier propertyName,
     NPIdentifierToV8Identifier(propertyName, identifier);
     obj->Set(v8::String::New(identifier.c_str()),
         ConvertNPVariantToV8Object(value,
-            object->root_object->frame()->windowScriptNPObject()));
+            object->root_object->frame()->script()->windowScriptNPObject()));
     return true;
   }
 
