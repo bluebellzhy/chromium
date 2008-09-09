@@ -1252,7 +1252,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\text\String.cpp"
+					RelativePath="..\..\pending\String.cpp"
 					>
 				</File>
 				<File
