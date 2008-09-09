@@ -25,7 +25,9 @@
 #ifndef TreeWalker_h
 #define TreeWalker_h
 
+#if USE(JSC)
 #include "JSDOMBinding.h"
+#endif
 #include "NodeFilter.h"
 #include "Traversal.h"
 #include <wtf/PassRefPtr.h>
@@ -45,6 +47,7 @@ namespace WebCore {
         Node* currentNode() const { return m_current.get(); }
         void setCurrentNode(PassRefPtr<Node>, ExceptionCode&);
 
+#if USE(JSC)
         Node* parentNode(KJS::ExecState*);
         Node* firstChild(KJS::ExecState*);
         Node* lastChild(KJS::ExecState*);
@@ -61,6 +64,7 @@ namespace WebCore {
         Node* nextSibling() { return nextSibling(execStateFromNode(m_current.get())); }
         Node* previousNode() { return previousNode(execStateFromNode(m_current.get())); }
         Node* nextNode() { return nextNode(execStateFromNode(m_current.get())); }
+#endif
 
     private:
         TreeWalker(PassRefPtr<Node>, unsigned whatToShow, PassRefPtr<NodeFilter>, bool expandEntityReferences);

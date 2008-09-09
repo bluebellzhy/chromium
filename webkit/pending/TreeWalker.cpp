@@ -56,6 +56,7 @@ inline Node* TreeWalker::setCurrent(PassRefPtr<Node> node)
     return m_current.get();
 }
 
+#if USE(JSC)
 Node* TreeWalker::parentNode(ExecState* exec)
 {
     RefPtr<Node> node = m_current;
@@ -275,5 +276,6 @@ Children:
     }
     return 0;
 }
+#endif // USE(JSC)
 
 } // namespace WebCore

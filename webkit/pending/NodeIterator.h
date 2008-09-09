@@ -25,7 +25,9 @@
 #ifndef NodeIterator_h
 #define NodeIterator_h
 
+#if USE(JSC)
 #include "JSDOMBinding.h"
+#endif
 #include "NodeFilter.h"
 #include "Traversal.h"
 #include <wtf/PassRefPtr.h>
@@ -43,8 +45,10 @@ namespace WebCore {
         }
         ~NodeIterator();
 
+#if USE(JSC)
         PassRefPtr<Node> nextNode(KJS::ExecState*, ExceptionCode&);
         PassRefPtr<Node> previousNode(KJS::ExecState*, ExceptionCode&);
+#endif
         void detach();
 
         Node* referenceNode() const { return m_referenceNode.node.get(); }
@@ -53,9 +57,11 @@ namespace WebCore {
         // This function is called before any node is removed from the document tree.
         void nodeWillBeRemoved(Node*);
 
+#if USE(JSC)
         // For non-JS bindings. Silently ignores the JavaScript exception if any.
         PassRefPtr<Node> nextNode(ExceptionCode& ec) { return nextNode(execStateFromNode(referenceNode()), ec); }
         PassRefPtr<Node> previousNode(ExceptionCode& ec) { return previousNode(execStateFromNode(referenceNode()), ec); }
+#endif
 
     private:
         NodeIterator(PassRefPtr<Node>, unsigned whatToShow, PassRefPtr<NodeFilter>, bool expandEntityReferences);

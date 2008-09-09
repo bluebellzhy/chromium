@@ -23,20 +23,18 @@
  */
 
 #include "config.h"
-#include "NodeFilter.h"
+#include "NodeFilterCondition.h"
 
-#include "Node.h"
-#include <kjs/ExecState.h>
+#include "NodeFilter.h"
 
 using namespace KJS;
 
 namespace WebCore {
 
 #if USE(JSC)
-short NodeFilter::acceptNode(ExecState* exec, Node* node) const
+short NodeFilterCondition::acceptNode(ExecState*, Node*) const
 {
-    // cast to short silences "enumeral and non-enumeral types in return" warning
-    return m_condition ? m_condition->acceptNode(exec, node) : static_cast<short>(FILTER_ACCEPT);
+    return NodeFilter::FILTER_ACCEPT;
 }
 #endif
 

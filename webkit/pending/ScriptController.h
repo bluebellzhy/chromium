@@ -160,30 +160,31 @@ typedef v8::Persistent<v8::Value> JSResult;
 
 class ScriptController {
 public:
-   ~ScriptController() { }
+    ScriptController(Frame*);
+    ~ScriptController() { }
 
-   void disconnectFrame();
+    void disconnectFrame();
 
-   bool wasRunByUserGesture();
-  
-  // Evaluate a script file in the environment of this proxy.
-  // If succeeded, 'succ' is set to true and result is returned
-  // as a string.
-   String evaluate(const String& filename, int baseLine, const String& code, Node*, bool* succ);
+    bool wasRunByUserGesture();
 
-  // Second API function for evaluating a JS code.
-  // It returns a JSResult which must be disposed by calling
-  // disposeJSResult. If the result is not disposed, it can cause
-  // serious memory leak. The caller determines whether the evaluation
-  // is successful by checking the value of JSResult.
-   JSResult evaluate(const String& filename, int baseLine, const String& code, Node*);
-   void disposeJSResult(JSResult result);
+    // Evaluate a script file in the environment of this proxy.
+    // If succeeded, 'succ' is set to true and result is returned
+    // as a string.
+    String evaluate(const String& filename, int baseLine, const String& code, Node*, bool* succ);
 
-   EventListener* createHTMLEventHandler(const String& functionName,
+    // Second API function for evaluating a JS code.
+    // It returns a JSResult which must be disposed by calling
+    // disposeJSResult. If the result is not disposed, it can cause
+    // serious memory leak. The caller determines whether the evaluation
+    // is successful by checking the value of JSResult.
+    JSResult evaluate(const String& filename, int baseLine, const String& code, Node*);
+    void disposeJSResult(JSResult result);
+
+    EventListener* createHTMLEventHandler(const String& functionName,
                                          const String& code, Node*);
 
 #if ENABLE(SVG)
-   EventListener* createSVGEventHandler(const String& functionName,
+    EventListener* createSVGEventHandler(const String& functionName,
                                         const String& code, Node*);
 #endif
   
@@ -273,6 +274,9 @@ public:
 #endif
 
 private:
+    Frame* m_frame;
+    OwnPtr<V8Proxy> m_proxy;
+
     static bool m_recordPlaybackMode;
 
 #if USE(V8)
@@ -280,15 +284,15 @@ private:
 #endif
 
 #if USE(JSC)
-         // The root object used for objects bound outside the context of a plugin.
-         RefPtr<KJS::Bindings::RootObject> m_bindingRootObject; 
-         RootObjectMap m_rootObjects;
+    // The root object used for objects bound outside the context of a plugin.
+    RefPtr<KJS::Bindings::RootObject> m_bindingRootObject; 
+    RootObjectMap m_rootObjects;
 #elif USE(V8)
-        // A mapping between Widgets and their corresponding script object.
-        // This list is used so that when the plugin dies, we can immediately
-        // invalidate all sub-objects which are associated with that plugin.
-        // The frame keeps a NPObject reference for each item on the list.
-        PluginObjectMap m_pluginObjects;
+    // A mapping between Widgets and their corresponding script object.
+    // This list is used so that when the plugin dies, we can immediately
+    // invalidate all sub-objects which are associated with that plugin.
+    // The frame keeps a NPObject reference for each item on the list.
+    PluginObjectMap m_pluginObjects;
 #endif
 };
 

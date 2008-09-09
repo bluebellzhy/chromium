@@ -85,10 +85,10 @@
 #include "XMLHttpRequest.h"
 #include "XMLTokenizer.h"
 #include "ScriptController.h"
-#include <kjs/JSObject.h>
 
 #if USE(JSC)
 #include "JSDOMBinding.h"
+#include <kjs/JSObject.h>
 #endif
 
 #if ENABLE(OFFLINE_WEB_APPLICATIONS)

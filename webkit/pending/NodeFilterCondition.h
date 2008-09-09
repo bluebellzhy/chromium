@@ -22,22 +22,30 @@
  *
  */
 
-#include "config.h"
-#include "NodeFilter.h"
+#ifndef NodeFilterCondition_h
+#define NodeFilterCondition_h
 
-#include "Node.h"
-#include <kjs/ExecState.h>
-
-using namespace KJS;
-
-namespace WebCore {
+#include <wtf/RefCounted.h>
 
 #if USE(JSC)
-short NodeFilter::acceptNode(ExecState* exec, Node* node) const
-{
-    // cast to short silences "enumeral and non-enumeral types in return" warning
-    return m_condition ? m_condition->acceptNode(exec, node) : static_cast<short>(FILTER_ACCEPT);
+namespace KJS {
+    class ExecState;
 }
 #endif
 
+namespace WebCore {
+
+    class Node;
+
+    class NodeFilterCondition : public RefCounted<NodeFilterCondition> {
+    public:
+        virtual ~NodeFilterCondition() { }
+#if USE(JSC)
+        virtual short acceptNode(KJS::ExecState*, Node*) const = 0;
+#endif
+        virtual void mark() { }
+    };
+
 } // namespace WebCore
+
+#endif // NodeFilterCondition_h

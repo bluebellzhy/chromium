@@ -86,6 +86,7 @@ NodeIterator::~NodeIterator()
     root()->document()->detachNodeIterator(this);
 }
 
+#if USE(JSC)
 PassRefPtr<Node> NodeIterator::nextNode(ExecState* exec, ExceptionCode& ec)
 {
     if (m_detached) {
@@ -143,6 +144,7 @@ PassRefPtr<Node> NodeIterator::previousNode(ExecState* exec, ExceptionCode& ec)
     m_candidateNode.clear();
     return result.release();
 }
+#endif
 
 void NodeIterator::detach()
 {

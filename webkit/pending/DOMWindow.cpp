@@ -932,7 +932,7 @@ void DOMWindow::setLocation(const String& v) {
   if (!m_frame)
     return;
 
-  Frame* active_frame = JSBridge::retrieveActiveFrame();
+  Frame* active_frame = ScriptController::retrieveActiveFrame();
   if (!active_frame)
     return;
 
@@ -940,7 +940,7 @@ void DOMWindow::setLocation(const String& v) {
     return;
 
   if (!parseURL(v).startsWith("javascript:", false) ||
-    JSBridge::isSafeScript(m_frame)) {
+    ScriptController::isSafeScript(m_frame)) {
     String completed_url = active_frame->loader()->completeURL(v).string();
 
     m_frame->loader()->scheduleLocationChange(completed_url,
@@ -949,24 +949,29 @@ void DOMWindow::setLocation(const String& v) {
   }
 }
 
-Navigator* DOMWindow::navigator() {
-  if (!m_navigator) {
-    m_navigator = new Navigator(m_frame);
-  }
-  return m_navigator.get();
+Navigator* DOMWindow::navigator()
+{
+    if (!m_navigator)
+        m_navigator = new Navigator(m_frame);
+
+    return m_navigator.get();
 }
 
-void DOMWindow::dump(const String& msg) {
-  if (!m_frame || !m_frame->page()) return;
+void DOMWindow::dump(const String& msg)
+{
+    if (!m_frame))
+        return;
 
-  m_frame->page()->chrome()->addMessageToConsole(JSMessageSource,
-    ErrorMessageLevel, msg, 0, m_frame->document()->url());
+    m_frame->domWindow()->console()->addMessage(JSMessageSource,
+        ErrorMessageLevel, msg, 0, m_frame->document()->url());
 }
 
-void DOMWindow::scheduleClose() {
-  if (!m_frame) return;
+void DOMWindow::scheduleClose()
+{
+    if (!m_frame)
+        return;
 
-  m_frame->scheduleClose();
+    m_frame->scheduleClose();
 }
 
 void DOMWindow::timerFired(DOMWindowTimer* timer) {
