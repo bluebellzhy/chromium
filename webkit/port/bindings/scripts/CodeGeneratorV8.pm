@@ -1142,7 +1142,7 @@ sub GenerateFunctionCallString()
     # This is a bit of a hack... we need to convert parameters to methods on SVG lists
     # of POD types which are items in the list to appropriate SVGList<> instances
     if ($returnsListItemPodType && $paramType . "List" eq $implClassName) {
-      $paramName = "SVGPODListItem<" . GetNativeType($paramType, 1) . ">::create($paramName)";    
+      $paramName = "SVGPODListItem<" . GetNativeType($paramType, 1) . ">::copy($paramName)";    
     }
     $functionString .= $paramName;
     if ($parameter->extendedAttributes->{"Return"}) {

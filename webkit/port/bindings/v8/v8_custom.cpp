@@ -990,7 +990,7 @@ static Frame* createWindow(Frame* opener_frame,
   }
 
   if (!parseURL(url).startsWith("javascript:", false) ||
-      V8Bridge::isSafeScript(new_frame)) {
+      ScriptController::isSafeScript(new_frame)) {
     String completed_url =
         url.isEmpty() ? url : active_frame->document()->completeURL(url);
     bool user_gesture = active_frame->script()->wasRunByUserGesture();
@@ -1166,7 +1166,7 @@ CALLBACK_FUNC_DECL(DOMWindowOpen) {
 
     if (!completed_url.isEmpty() &&
         (!parseURL(url_string).startsWith("javascript:", false) ||
-         JSBridge::isSafeScript(frame))) {
+         ScriptController::isSafeScript(frame))) {
       bool user_gesture = active_frame->script()->wasRunByUserGesture();
       frame->loader()->scheduleLocationChange(
           completed_url,
@@ -1377,7 +1377,8 @@ NAMED_PROPERTY_DELETER(HTMLDocument) {
 }
 
 
-NAMED_PROPERTY_SETTER(HTMLDocument) {
+NAMED_PROPERTY_SETTER(HTMLDocument)
+{
   INC_STATS(L"DOM.HTMLDocument.NamedPropertySetter");
   // Only handle document.all.  We insert the value into the shadow
   // internal field from which the getter will retrieve it.
@@ -1391,49 +1392,45 @@ NAMED_PROPERTY_SETTER(HTMLDocument) {
 }
 
 
-NAMED_PROPERTY_GETTER(HTMLDocument) {
-  INC_STATS(L"DOM.HTMLDocument.NamedPropertyGetter");
-  String key = ToWebCoreString(name);
+NAMED_PROPERTY_GETTER(HTMLDocument)
+{
+    INC_STATS(L"DOM.HTMLDocument.NamedPropertyGetter");
+    AtomicString key = ToWebCoreString(name);
 
-  // Special case for document.all.  If the value in the shadow
-  // internal field is not the marker object, then document.all has
-  // been temporarily shadowed and we return the value.
-  if (key == "all") {
-    ASSERT(info.Holder()->InternalFieldCount() ==
-           kHTMLDocumentInternalFieldCount);
-    v8::Local<v8::Value> marker =
-        info.Holder()->GetInternalField(kHTMLDocumentMarkerIndex);
-    v8::Local<v8::Value> value =
-        info.Holder()->GetInternalField(kHTMLDocumentShadowIndex);
-    if (marker != value) {
-      return value;
+    // Special case for document.all.  If the value in the shadow
+    // internal field is not the marker object, then document.all has
+    // been temporarily shadowed and we return the value.
+    if (key == "all") {
+        ASSERT(info.Holder()->InternalFieldCount() == kHTMLDocumentInternalFieldCount);
+        v8::Local<v8::Value> marker = info.Holder()->GetInternalField(kHTMLDocumentMarkerIndex);
+        v8::Local<v8::Value> value = info.Holder()->GetInternalField(kHTMLDocumentShadowIndex);
+        if (marker != value)
+            return value;
     }
-  }
 
-  HTMLDocument* imp = V8Proxy::FastToNativeObject<HTMLDocument>(
-      V8ClassIndex::HTMLDOCUMENT, info.Holder());
+    HTMLDocument* imp = V8Proxy::FastToNativeObject<HTMLDocument>(V8ClassIndex::HTMLDOCUMENT, info.Holder());
 
-  // Fast case for named elements that are not there.
-  if (!imp->hasNamedItem(key) && !imp->hasDocExtraNamedItem(key)) {
-    return v8::Handle<v8::Value>();
-  }
-  RefPtr<HTMLCollection> items = imp->documentNamedItems(key);
-  if (items->length() == 0) return v8::Handle<v8::Value>();
-  if (items->length() == 1) {
-    Node* node = items->firstItem();
-    Frame* frame = 0;
-    if (node->hasTagName(HTMLNames::iframeTag) &&
-        (frame = static_cast<HTMLIFrameElement*>(node)->contentFrame())) {
-      return V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, frame->domWindow());
+    // Fast case for named elements that are not there.
+    if (!imp->hasNamedItem(key.impl()) && !imp->hasExtraNamedItem(key.impl()))
+        return v8::Handle<v8::Value>();
+
+    RefPtr<HTMLCollection> items = imp->documentNamedItems(key);
+    if (items->length() == 0)
+        return v8::Handle<v8::Value>();
+    if (items->length() == 1) {
+        Node* node = items->firstItem();
+        Frame* frame = 0;
+        if (node->hasTagName(HTMLNames::iframeTag) && (frame = static_cast<HTMLIFrameElement*>(node)->contentFrame()))
+            return V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, frame->domWindow());
+        return V8Proxy::ToV8Object(V8ClassIndex::NODE, node);
     }
-    return V8Proxy::ToV8Object(V8ClassIndex::NODE, node);
-  }
-  return V8Proxy::ToV8Object(V8ClassIndex::HTMLCOLLECTION,
+    return V8Proxy::ToV8Object(V8ClassIndex::HTMLCOLLECTION,
                              static_cast<Peerable*>(items.get()));
 }
 
 
-NAMED_PROPERTY_GETTER(HTMLFrameSetElement) {
+NAMED_PROPERTY_GETTER(HTMLFrameSetElement)
+{
   INC_STATS(L"DOM.HTMLFrameSetElement.NamedPropertyGetter");
   HTMLFrameSetElement* imp = V8Proxy::FastToNativeObject<HTMLFrameSetElement>(
       V8ClassIndex::HTMLFRAMESETELEMENT, info.Holder());
@@ -1443,10 +1440,8 @@ NAMED_PROPERTY_GETTER(HTMLFrameSetElement) {
     Document* doc = static_cast<HTMLFrameElement*>(frame)->contentDocument();
     if (doc) {
       Frame* content_frame = doc->frame();
-      if (content_frame) {
-        return V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW,
-                                   content_frame->domWindow());
-      }
+      if (content_frame)
+        return V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, content_frame->domWindow());
     }
     return v8::Undefined();
   }
@@ -2751,15 +2746,15 @@ ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
   XMLHttpRequest* imp = V8Proxy::FastToNativeObject<XMLHttpRequest>(
       V8ClassIndex::XMLHTTPREQUEST, info.Holder());
   if (value->IsNull()) {
-    if (imp->onReadyStateChangeListener()) {
+    if (imp->onreadystatechange()) {
       V8XHREventListener* listener =
-          static_cast<V8XHREventListener*>(imp->onReadyStateChangeListener());
+          static_cast<V8XHREventListener*>(imp->onreadystatechange());
       v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
       RemoveHiddenXHRDependency(info.Holder(), v8_listener);
     }
 
     // Clear the listener
-    imp->setOnReadyStateChangeListener(0);
+    imp->setOnreadystatechange(0);
 
   } else {
     V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
@@ -2768,7 +2763,7 @@ ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
 
     EventListener* listener = proxy->FindOrCreateXHREventListener(value, false);
     if (listener) {
-      imp->setOnReadyStateChangeListener(listener);
+      imp->setOnreadystatechange(listener);
       CreateHiddenXHRDependency(info.Holder(), value);
     }
   }
@@ -2781,8 +2776,7 @@ ACCESSOR_SETTER(XMLHttpRequestOnload)
       V8ClassIndex::XMLHTTPREQUEST, info.Holder());
   if (value->IsNull()) {
     if (imp->onload()) {
-      V8XHREventListener* listener =
-          static_cast<V8XHREventListener*>(imp->onload());
+      V8XHREventListener* listener = static_cast<V8XHREventListener*>(imp->onload());
       v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
       RemoveHiddenXHRDependency(info.Holder(), v8_listener);
     }

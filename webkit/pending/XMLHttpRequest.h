@@ -92,6 +92,16 @@ public:
     void setOnProgressListener(PassRefPtr<EventListener> eventListener) { m_onProgressListener = eventListener; }
     EventListener* onProgressListener() const { return m_onProgressListener.get(); }
 
+#if USE(V8)
+    // Sam Weinig says that upstream WebKit plans to rename the above methods
+    // to have these same names for the bindings as well.
+    void setOnreadystatechange(EventListener* listener) { setOnReadyStateChangeListener(listener); }
+    EventListener* onreadystatechange() const { return onReadyStateChangeListener(); }
+
+    void setOnload(EventListener* listener) { setOnLoadListener(listener); }
+    EventListener* onload() const { return onLoadListener(); }
+#endif
+
     typedef Vector<RefPtr<EventListener> > ListenerVector;
     typedef HashMap<AtomicStringImpl*, ListenerVector> EventListenersMap;
 
