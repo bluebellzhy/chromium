@@ -164,8 +164,7 @@ Frame::~Frame()
     frameCounter.decrement();
 #endif
 
-    if (d->m_script.haveWindowShell())
-        d->m_script.windowShell()->disconnectFrame();
+    d->m_script.disconnectFrame();
 
     disconnectOwnerElement();
     

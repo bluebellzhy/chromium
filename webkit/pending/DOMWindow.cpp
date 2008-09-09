@@ -913,19 +913,23 @@ static void setWindowFeature(const String& keyString, const String& valueString,
 }
 
 
-void DOMWindow::back() {
-    if (m_history) m_history->back();
+void DOMWindow::back()
+{
+    if (m_history)
+        m_history->back();
 }
 
-void DOMWindow::forward() {
-    if (m_history) m_history->forward();
+void DOMWindow::forward()
+{
+    if (m_history)
+        m_history->forward();
 }
 
-Location* DOMWindow::location() {
-  if (!m_location) {
-    m_location = new Location(m_frame);
-  }
-  return m_location.get();
+Location* DOMWindow::location()
+{
+    if (!m_location)
+        m_location = Location::create(m_frame);
+    return m_location.get();
 }
 
 void DOMWindow::setLocation(const String& v) {
@@ -952,7 +956,7 @@ void DOMWindow::setLocation(const String& v) {
 Navigator* DOMWindow::navigator()
 {
     if (!m_navigator)
-        m_navigator = new Navigator(m_frame);
+        m_navigator = Navigator::create(m_frame);
 
     return m_navigator.get();
 }
@@ -975,7 +979,8 @@ void DOMWindow::scheduleClose()
 }
 
 void DOMWindow::timerFired(DOMWindowTimer* timer) {
-  if (!m_frame) return;
+  if (!m_frame)
+      return;
 
   // Simple case for non-one-shot timers.
   if (timer->isActive()) {
@@ -994,11 +999,11 @@ void DOMWindow::timerFired(DOMWindowTimer* timer) {
 }
 
 
-void DOMWindow::clearAllTimeouts() {
-  deleteAllValues(m_timeouts);
-  m_timeouts.clear();
+void DOMWindow::clearAllTimeouts()
+{
+    deleteAllValues(m_timeouts);
+    m_timeouts.clear();
 }
-
 
 int DOMWindow::installTimeout(ScheduledAction* a, int t, bool singleShot) {
   if (!m_frame)
@@ -1024,19 +1029,22 @@ int DOMWindow::installTimeout(ScheduledAction* a, int t, bool singleShot) {
   return timeoutId;
 }
 
-void DOMWindow::clearTimeout(int timeoutId) {
-  // timeout IDs have to be positive, and 0 and -1 are unsafe to
-  // even look up since they are the empty and deleted value
-  // respectively
-  if (timeoutId <= 0)
-    return;
+void DOMWindow::clearTimeout(int timeoutId)
+{
+    // timeout IDs have to be positive, and 0 and -1 are unsafe to
+    // even look up since they are the empty and deleted value
+    // respectively
+    if (timeoutId <= 0)
+        return;
 
-  delete m_timeouts.take(timeoutId);
+    delete m_timeouts.take(timeoutId);
 }
 
-PausedTimeouts* DOMWindow::pauseTimeouts() {
+void DOMWindow::pauseTimeouts(OwnPtr<PauseTimeouts>& pausedTimeouts)
+{
     size_t count = m_timeouts.size();
-    if (count == 0) return 0;
+    if (count == 0)
+        return 0;
 
     PausedTimeout* t = new PausedTimeout[count];
     PausedTimeouts* result = new PausedTimeouts(t, count);
@@ -1060,11 +1068,12 @@ PausedTimeouts* DOMWindow::pauseTimeouts() {
     int zoomedY = static_cast<int>(y * m_frame->pageZoomFactor());
     view->setContentsPos(zoomedX, zoomedY);
     view->setContentsPos(x * m_frame->pageZoomFactor(), y * m_frame->pageZoomFactor());
-    return result;
+    pausedTimeouts.set(result);
 }
 
-void DOMWindow::resumeTimeouts(PausedTimeouts* timeouts) {
-    if (!timeouts) return;
+void DOMWindow::resumeTimeouts(OwnPtr<PausedTimeouts>& timeouts) {
+    if (!timeouts)
+        return;
     size_t count = timeouts->numTimeouts();
     PausedTimeout* array = timeouts->takeTimeouts();
     for (size_t i = 0; i != count; ++i) {
@@ -1076,6 +1085,7 @@ void DOMWindow::resumeTimeouts(PausedTimeouts* timeouts) {
         timer->start(array[i].nextFireInterval, array[i].repeatInterval);
     }
     delete[] array;
+    timeouts.clear();
 }
 
 #endif  // V8

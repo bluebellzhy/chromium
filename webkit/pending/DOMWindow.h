@@ -290,8 +290,8 @@ namespace WebCore {
         void scheduleClose();
         void clearAllTimeouts();
 
-        PausedTimeouts* pauseTimeouts();
-        void resumeTimeouts(PausedTimeouts* timeouts);
+        void pauseTimeouts(OwnPtr<PausedTimeouts>&);
+        void resumeTimeouts(OwnPtr<PausedTimeouts>&);
 
     private:
         typedef HashMap<int, DOMWindowTimer*> TimeoutsMap;

@@ -44,6 +44,7 @@
 
 #if USE(V8)
 #include "v8.h"
+#include "v8_proxy.h"
 #endif
 
 // JavaScript implementations which expose NPObject will need to implement
@@ -165,7 +166,7 @@ public:
 
     // TODO(eseidel): V8Proxy should either be folded into ScriptController
     // or this accessor should be made JSProxy*
-    V8Proxy* proxy() { return m_proxy.get() }
+    V8Proxy* proxy() { return m_proxy.get(); }
 
     void disconnectFrame();
 
@@ -221,7 +222,7 @@ public:
     // TODO(eseide): void* is a compile hack
     void attachDebugger(void*);
 
-    void CollectGarbage();
+    void collectGarbage();
 
     // Create a NPObject wrapper for a JSObject
     // NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
