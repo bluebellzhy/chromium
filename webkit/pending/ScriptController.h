@@ -163,6 +163,10 @@ public:
     ScriptController(Frame*);
     ~ScriptController() { }
 
+    // TODO(eseidel): V8Proxy should either be folded into ScriptController
+    // or this accessor should be made JSProxy*
+    V8Proxy* proxy() { return m_proxy.get() }
+
     void disconnectFrame();
 
     bool wasRunByUserGesture();
