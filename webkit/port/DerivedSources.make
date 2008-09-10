@@ -721,7 +721,7 @@ all : \
     V8HTMLTitleElement.h \
     V8HTMLUListElement.h \
     V8History.h \
-    V8ImageData.h \   
+    V8ImageData.h \
     V8KeyboardEvent.h \
     V8MediaList.h \
     V8MessageEvent.h \
