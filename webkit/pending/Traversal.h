@@ -28,10 +28,12 @@
 #include <wtf/Forward.h>
 #include <wtf/RefPtr.h>
 
+#if USE(JSC)
 namespace KJS {
     class JSValue;
     class ExecState;
 }
+#endif
 
 namespace WebCore {
 
