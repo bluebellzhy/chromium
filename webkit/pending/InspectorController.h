@@ -140,7 +140,7 @@ public:
     void setScriptObject(v8::Handle<v8::Object> newScriptObject);
 #endif
 
-
+    void inspectedWindowScriptObjectCleared(Frame*);
     void windowScriptObjectAvailable();
 
     void scriptObjectReady();

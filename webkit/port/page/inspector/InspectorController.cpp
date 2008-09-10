@@ -1411,6 +1411,37 @@ void InspectorController::setScriptObject(v8::Handle<v8::Object> newScriptObject
 #endif
 
 #if USE(JSC)
+void InspectorController::inspectedWindowScriptObjectCleared(Frame* frame)
+{
+    if (!enabled() || !m_scriptContext || !m_scriptObject)
+        return;
+
+    JSDOMWindow* win = toJSDOMWindow(frame);
+    ExecState* exec = win->globalExec();
+
+    JSValueRef arg0;
+
+    {
+        KJS::JSLock lock(false);
+        arg0 = toRef(JSInspectedObjectWrapper::wrap(exec, win));
+    }
+
+    JSValueRef exception = 0;
+    callFunction(m_scriptContext, m_scriptObject, "inspectedWindowCleared", 1, &arg0, exception);
+}
+#elif USE(V8)
+void InspectorController::inspectedWindowScriptObjectCleared(Frame* frame)
+{
+    if (!enabled() || !m_scriptContext || !m_scriptObject)
+        return;
+
+    // TODO(tc): We need to call inspectedWindowCleared, but that won't matter
+    // until we merge in inspector.js as well.
+    notImplemented();
+}
+#endif
+
+#if USE(JSC)
 void InspectorController::windowScriptObjectAvailable()
 {
     if (!m_page || !enabled())
