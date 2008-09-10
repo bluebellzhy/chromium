@@ -95,8 +95,13 @@ public:
     typedef HashSet<RefPtr<InspectorDatabaseResource> > DatabaseResourcesSet;
 
     typedef enum {
+        CurrentPanel,
         ConsolePanel,
-        TimelinePanel
+        DatabasesPanel,
+        ElementsPanel,
+        ProfilesPanel,
+        ResourcesPanel,
+        ScriptsPanel
     } SpecialPanels;
 
     InspectorController(Page*, InspectorClient*);
