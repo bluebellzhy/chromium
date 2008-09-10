@@ -33,6 +33,7 @@
 #include "v8_vectornodelist.h"
 #include "v8_custom.h"
 
+#include "V8Attr.h"
 #include "V8CanvasGradient.h"
 #include "V8CanvasPattern.h"
 #include "V8Document.h"
