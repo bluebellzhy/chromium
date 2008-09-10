@@ -778,18 +778,19 @@ void FrameLoader::executeScript(const String& script, bool forceUserGesture)
 
 String FrameLoader::executeScript(const String& script, bool* succ, bool forceUserGesture)
 {
-    return executeScript(forceUserGesture ? String() : m_URL.string(), 1, script);
+    return executeScript(forceUserGesture ? String() : m_URL.string(), 1, script, succ);
 }
 
 String FrameLoader::executeScript(const String& url, int baseLine, const String& script, bool* succ)
 {
+    *succ = false;
     if (!m_frame->script()->isEnabled() || m_frame->script()->isPaused())
         return String();
 
     bool wasRunningScript = m_isRunningScript;
     m_isRunningScript = true;
 
-    JSValue* result = m_frame->script()->evaluate(url, baseLine, script);
+    String result = m_frame->script()->evaluate(url, baseLine, script, 0, succ);
 
     if (!wasRunningScript) {
         m_isRunningScript = false;
@@ -1008,17 +1009,16 @@ void FrameLoader::write(const char* str, int len, bool flush)
             Frame* parentFrame = m_frame->tree()->parent(); 
             if (parentFrame && parentFrame->document())
                 hintDecoder = parentFrame->document()->decoder();
-            m_decoder = new TextResourceDecoder(m_responseMIMEType, settings->defaultTextEncodingName(), settings->usesEncodingDetector(), hintDecoder);
+            m_decoder = TextResourceDecoder::create(m_responseMIMEType, settings->defaultTextEncodingName(), settings->usesEncodingDetector(), hintDecoder);
         } else 
-            m_decoder = new TextResourceDecoder(m_responseMIMEType, String());
+            m_decoder = TextResourceDecoder::create(m_responseMIMEType, String());
         if (m_encoding.isEmpty()) {
             Frame* parentFrame = m_frame->tree()->parent(); 
-            SecurityOrigin::Reason reason;
             // TODO(jungshik) : We might as well consider allowing inheriting charset
             // from parent even if canAccess returns false as long as the parent charset
             // is regarded as safe (that is, it's not UTF-7/ISO-2022-XX/HZ), of which
             // we're not yet sure.
-            if (parentFrame && parentFrame->document()->securityOrigin()->canAccess(m_frame->document()->securityOrigin(), reason))
+            if (parentFrame && parentFrame->document()->securityOrigin()->canAccess(m_frame->document()->securityOrigin()))
                 m_decoder->setEncoding(parentFrame->document()->inputEncoding(), TextResourceDecoder::EncodingFromParentFrame);
         } else {
             m_decoder->setEncoding(m_encoding,
@@ -1738,12 +1738,6 @@ bool FrameLoader::requestObject(RenderPart* renderer, const String& url, const A
 
 bool FrameLoader::shouldUsePlugin(const KURL& url, const String& mimeType, bool hasFallback, bool& useFallback)
 {
-    if ((mimeType == "image/tiff" || mimeType == "image/tif" || mimeType == "image/x-tiff")) {
-        String pluginName = PluginInfoStore::pluginNameForMIMEType(mimeType);
-        if (!pluginName.isEmpty() && !pluginName.contains("QuickTime", false)) 
-            return true;
-    }
-        
     if (m_frame->page() && (mimeType == "image/tiff" || mimeType == "image/tif" || mimeType == "image/x-tiff")) {
         String pluginName = m_frame->page()->pluginData()->pluginNameForMimeType(mimeType);
         if (!pluginName.isEmpty() && !pluginName.contains("QuickTime", false)) 
@@ -2146,11 +2140,7 @@ void FrameLoader::loadFrameRequestWithFormAndValues(const FrameLoadRequest& requ
     
     loadFrameRequestWithFormState(request, lockHistory, event, formState.release());        
 }
-    if (submitForm)
-        formState = FormState::create(submitForm, formValues, m_frame);
 
-    loadFrameRequestWithFormState(request, lockHistory, event, formState.release());        
-}
 
 void FrameLoader::loadURL(const KURL& newURL, const String& referrer, const String& frameName, FrameLoadType newLoadType,
     Event* event, PassRefPtr<FormState> prpFormState)
