@@ -477,6 +477,9 @@ END
   if ($implClassName eq "double") {
     $getterString = "imp_instance";
   }
+  if ($nativeType eq "String") {
+    $getterString = "ToString($getterString)";
+  }
   
   my $result;
   my $wrapper;
