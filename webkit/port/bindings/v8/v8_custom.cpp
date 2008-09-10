@@ -24,6 +24,7 @@
 #include "config.h"
 
 #include <Assertions.h>
+#include <ASCIICType.h>
 
 #include "v8_proxy.h"
 #include "v8_events.h"
@@ -32,8 +33,7 @@
 #include "v8_vectornodelist.h"
 #include "v8_custom.h"
 
-#include "V8Attr.h"
-#include "V8CanvasGradient.h"
+o6f7#include "V8CanvasGradient.h"
 #include "V8CanvasPattern.h"
 #include "V8Document.h"
 #include "V8DOMWindow.h"
@@ -1608,39 +1608,52 @@ INDEXED_PROPERTY_SETTER(HTMLSelectElementCollection) {
 // Also, certain prefixes such as 'pos', 'css-' and 'pixel-' are stripped
 // and the pixel_or_pos_prefix out parameter is used to indicate whether or
 // not the property name was prefixed with 'pos-' or 'pixel-'.
-static String CSSPropertyName(const String &p, bool *pixel_or_pos_prefix = 0)
+static String CSSPropertyName(const String &p, bool *hadPixelOrPosPrefix = 0)
 {
-  String prop = p;
+    if (hadPixelOrPosPrefix)
+        *hadPixelOrPosPrefix = false;
 
-  int i = prop.length();
-  while (--i > 0) {
-    ::UChar c = prop[i].unicode();
-    if (c >= 'A' && c <= 'Z')
-      prop.insert(i, '-');
-  }
+    unsigned length = p.length();
+    if (!length)
+        return String();
 
-  prop = prop.lower();
+    Vector<UChar> name;
+    name.reserveCapacity(length);
 
-  if (pixel_or_pos_prefix)
-    *pixel_or_pos_prefix = false;
+    unsigned i = 0;
 
-  if (prop.startsWith("css-")) {
-    prop = prop.substring(4);
-  } else if (prop.startsWith("pixel-")) {
-    prop = prop.substring(6);
-    if (pixel_or_pos_prefix)
-      *pixel_or_pos_prefix = true;
-  } else if (prop.startsWith("pos-")) {
-    prop = prop.substring(4);
-    if (pixel_or_pos_prefix)
-      *pixel_or_pos_prefix = true;
-  } else if (prop.startsWith("khtml-") ||
-             prop.startsWith("apple-") ||
-             prop.startsWith("webkit-")) {
-    prop.insert(0, '-');
-  }
+    if (p.startsWith("css-"))
+        i += 3;
+    else if (p.startsWith("pixel-")) {
+        i += 5;
+        if (hadPixelOrPosPrefix)
+            *hadPixelOrPosPrefix = true;
+    } else if (p.startsWith("pos-")) {
+        i += 3;
+        if (hadPixelOrPosPrefix)
+            *hadPixelOrPosPrefix = true;
+    } else if (p.startsWith("webkit-")
+            || p.startsWith("khtml-")
+            || p.startsWith("apple-"))
+        name.append('-');
+    else {
+        if (WTF::isASCIIUpper(p[0]))
+            return String();
+    }
 
-  return prop;
+    name.append(WTF::toASCIILower(p[i++]));
+
+    for (; i < length; ++i) {
+        UChar c = p[i];
+        if (!WTF::isASCIIUpper(c))
+            name.append(c);
+        else {
+            name.append('-');
+            name.append(WTF::toASCIILower(c));
+        }
+    }
+
+    return String::adopt(name);
 }
 
 
@@ -1895,29 +1908,23 @@ CALLBACK_FUNC_DECL(CanvasRenderingContext2DStrokeRect) {
   CanvasRenderingContext2D* context =
       V8Proxy::FastToNativeObject<CanvasRenderingContext2D>(
           V8ClassIndex::CANVASRENDERINGCONTEXT2D, args.Holder());
-  ExceptionCode ec = 0;
   double x = 0, y = 0, width = 0, height = 0, line_width = 0;
   if (args.Length() == 5) {
     context->strokeRect(TO_FLOAT(args[0]),
                         TO_FLOAT(args[1]),
                         TO_FLOAT(args[2]),
                         TO_FLOAT(args[3]),
-                        TO_FLOAT(args[4]),
-                        ec);
+                        TO_FLOAT(args[4]));
   } else if (args.Length() == 4) {
     context->strokeRect(TO_FLOAT(args[0]),
                         TO_FLOAT(args[1]),
                         TO_FLOAT(args[2]),
-                        TO_FLOAT(args[3]),
-                        ec);
+                        TO_FLOAT(args[3]));
   } else {
-    // Should throw index error
-    ec = INDEX_SIZE_ERR;
-  }
-  if (ec != 0) {
-    V8Proxy::SetDOMException(ec);
+    V8Proxy::SetDOMException(INDEX_SIZE_ERR);
     return v8::Handle<v8::Value>();
   }
+
   return v8::Undefined();
 }
 
