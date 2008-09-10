@@ -56,7 +56,6 @@
 #include "Logging.h"
 #include "markup.h"
 #include "MediaFeatureNames.h"
-#include "NP_jsobject.h"
 #include "Navigator.h"
 #include "NodeList.h"
 #include "Page.h"
@@ -129,14 +128,6 @@ Frame::Frame(Page* page, HTMLFrameOwnerElement* ownerElement, FrameLoaderClient*
 
     XMLNames::init();
 
-#if PLATFORM(MAC) && ENABLE(MAC_JAVA_BRIDGE)
-    static bool initializedJavaJSBindings;
-    if (!initializedJavaJSBindings) {
-        initializedJavaJSBindings = true;
-        initJavaJSBindings();
-    }
-#endif
-
     if (!ownerElement)
         page->setMainFrame(this);
     else {
@@ -180,8 +171,6 @@ Frame::~Frame()
         d->m_view->hide();
         d->m_view->clearFrame();
     }
-
-    disconnectPlatformScriptObjects();
 
     ASSERT(!d->m_lifeSupportTimer.isActive());
 
@@ -758,9 +747,7 @@ void Frame::setNeedsReapplyStyles()
 
     // Invalidate the FrameView so that FrameView::layout will get called,
     // which calls reapplyStyles.
-    FrameView* curView = view();
-    if (curView)
-        curView->invalidate();
+    view()->invalidate();
 }
 
 bool Frame::needsReapplyStyles() const
@@ -1117,6 +1104,16 @@ bool Frame::isDisconnected() const
 void Frame::setIsDisconnected(bool isDisconnected)
 {
     d->m_isDisconnected = isDisconnected;
+}
+
+bool Frame::excludeFromTextSearch() const
+{
+    return d->m_excludeFromTextSearch;
+}
+
+void Frame::setExcludeFromTextSearch(bool exclude)
+{
+    d->m_excludeFromTextSearch = exclude;
 }
 
 // returns FloatRect because going through IntRect would truncate any floats
@@ -1489,18 +1486,13 @@ UChar Frame::backslashAsCurrencySymbol() const
     return decoder->encoding().backslashAsCurrencySymbol();
 }
 
-static bool isInShadowTree(Node* node)
-{
-    for (Node* n = node; n; n = n->parentNode())
-        if (n->isShadowNode())
-            return true;
-    return false;
-}
-
 // Searches from the beginning of the document if nothing is selected.
 bool Frame::findString(const String& target, bool forward, bool caseFlag, bool wrapFlag, bool startInSelection)
 {
     if (target.isEmpty() || !document())
+        return false;
+    
+    if (excludeFromTextSearch())
         return false;
     
     // Start from an edge of the selection, if there's a selection that's not in shadow content. Which edge
@@ -1556,8 +1548,9 @@ bool Frame::findString(const String& target, bool forward, bool caseFlag, bool w
 
         resultRange = findPlainText(searchRange.get(), target, forward, caseFlag);
     }
+    
     if (!editor()->insideVisibleArea(resultRange.get())) {
-        resultRange = editor()->nextVisibleRange(resultRange.get(), target, forward, caseFlag);
+        resultRange = editor()->nextVisibleRange(resultRange.get(), target, forward, caseFlag, wrapFlag);
         if (!resultRange)
             return false;
     }
@@ -1592,7 +1585,7 @@ unsigned Frame::markAllMatchesForText(const String& target, bool caseFlag, unsig
     do {
         RefPtr<Range> resultRange(findPlainText(searchRange.get(), target, true, caseFlag));
         if (resultRange->collapsed(exception)) {
-            if (!isInShadowTree(resultRange->startContainer()))
+            if (!resultRange->startContainer()->isInShadowTree())
                 break;
 
             searchRange = rangeOfContents(document());
@@ -1628,9 +1621,11 @@ unsigned Frame::markAllMatchesForText(const String& target, bool caseFlag, unsig
     if (doc && d->m_view && contentRenderer()) {
         doc->updateLayout(); // Ensure layout is up to date.
         IntRect visibleRect(enclosingIntRect(d->m_view->visibleContentRect()));
-        GraphicsContext context((PlatformGraphicsContext*)0);
-        context.setPaintingDisabled(true);
-        paint(&context, visibleRect);
+        if (!visibleRect.isEmpty()) {
+            GraphicsContext context((PlatformGraphicsContext*)0);
+            context.setPaintingDisabled(true);
+            paint(&context, visibleRect);
+        }
     }
     
     return matchCount;
@@ -1699,8 +1694,8 @@ void Frame::pageDestroyed()
 void Frame::disconnectOwnerElement()
 {
     if (d->m_ownerElement) {
-        if (Document* doc = document()) 
-            doc->clearAXObjectCache(); 
+        if (Document* doc = document())
+            doc->clearAXObjectCache();
         d->m_ownerElement->m_contentFrame = 0;
         if (d->m_page)
             d->m_page->decrementFrameCount();
@@ -1763,17 +1758,12 @@ bool Frame::shouldClose()
     if (!body)
         return true;
 
-    loader()->setFiringUnloadEvents(true);
-
     RefPtr<BeforeUnloadEvent> beforeUnloadEvent = BeforeUnloadEvent::create();
     beforeUnloadEvent->setTarget(doc);
     doc->handleWindowEvent(beforeUnloadEvent.get(), false);
 
     if (!beforeUnloadEvent->defaultPrevented() && doc)
         doc->defaultEventHandler(beforeUnloadEvent.get());
-
-    loader()->setFiringUnloadEvents(false);
-
     if (beforeUnloadEvent->result().isNull())
         return true;
 
@@ -1894,8 +1884,7 @@ FramePrivate::FramePrivate(Page* page, Frame* parent, Frame* thisFrame, HTMLFram
     , m_prohibitsScrolling(false)
     , m_needsReapplyStyles(false)
     , m_isDisconnected(false)
-#if ENABLE(NETSCAPE_PLUGIN_API)
-#endif
+    , m_excludeFromTextSearch(false)
 #if FRAME_LOADS_USER_STYLESHEET
     , m_userStyleSheetLoader(0)
 #endif
