@@ -513,10 +513,14 @@ v8::Handle<v8::Value> V8Proxy::ConstructDOMObject(const v8::Arguments& args) {
         "DOM object constructor cannot be called as a function.");
     return v8::Undefined();
   }
-  T* obj = new T();
-  V8Proxy::SetDOMWrapper(args.Holder(), tag, obj);
+
+
+  // Note: it's OK to let this RefPtr go out of scope because we also call
+  // SetDOMWrapper(), which effectively holds a reference to obj.
+  RefPtr<T> obj = T::create();
+  V8Proxy::SetDOMWrapper(args.Holder(), tag, obj.get());
   V8Proxy::SetJSWrapperForDOMObject(
-      obj, v8::Persistent<v8::Object>::New(args.Holder()));
+      obj.get(), v8::Persistent<v8::Object>::New(args.Holder()));
   return args.Holder();
 }
 
