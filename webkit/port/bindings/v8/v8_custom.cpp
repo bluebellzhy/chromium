@@ -2904,40 +2904,34 @@ static bool IsDocumentType(v8::Handle<v8::Value> value)
     return V8Document::HasInstance(value) || V8HTMLDocument::HasInstance(value);
 }
 
-CALLBACK_FUNC_DECL(XMLHttpRequestSend) {
-  INC_STATS(L"DOM.XMLHttpRequest.send()");
-  // Two cases:
-  // send(document)
-  // send(string)
+CALLBACK_FUNC_DECL(XMLHttpRequestSend)
+{
+    INC_STATS(L"DOM.XMLHttpRequest.send()");
+    XMLHttpRequest* xhr = V8Proxy::FastToNativeObject<XMLHttpRequest>(
+        V8ClassIndex::XMLHTTPREQUEST, args.Holder());
 
-  // get implementation
-  XMLHttpRequest* xhr = V8Proxy::FastToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-
-  String body;
-  if (args.Length() >= 1) {
-    v8::Handle<v8::Value> arg = args[0];
-    if (IsDocumentType(arg)) {
-      v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(arg);
-      Document* doc =
-          V8Proxy::ToNativeObject<Document>(V8ClassIndex::DOCUMENT, obj);
-      ASSERT(doc);
-      body = doc->toString();
-    } else {
-      body = valueToStringWithNullCheck(arg);
+    ExceptionCode ec = 0;
+    if (args.Length() < 1)
+        xhr->send(ec);
+    else {
+        v8::Handle<v8::Value> arg = args[0];
+        // TODO(eseidel): upstream handles "File" objects too
+        if (IsDocumentType(arg)) {
+            v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(arg);
+            Document* doc = V8Proxy::ToNativeObject<Document>(V8ClassIndex::DOCUMENT, obj);
+            ASSERT(doc);
+            xhr->send(doc, ec);
+        } else
+            xhr->send(valueToStringWithNullCheck(arg), ec);
     }
-  }
 
-  ExceptionCode ec = 0;
-  xhr->send(body, ec);
-  if (ec != 0) {
-    V8Proxy::SetDOMException(ec);
-    return v8::Handle<v8::Value>();
-  }
+    if (ec) {
+        V8Proxy::SetDOMException(ec);
+        return v8::Handle<v8::Value>();
+    }
 
-  return v8::Undefined();
+    return v8::Undefined();
 }
-
 
 CALLBACK_FUNC_DECL(XMLHttpRequestSetRequestHeader) {
   INC_STATS(L"DOM.XMLHttpRequest.setRequestHeader()");
