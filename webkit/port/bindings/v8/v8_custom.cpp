@@ -33,7 +33,7 @@
 #include "v8_vectornodelist.h"
 #include "v8_custom.h"
 
-o6f7#include "V8CanvasGradient.h"
+#include "V8CanvasGradient.h"
 #include "V8CanvasPattern.h"
 #include "V8Document.h"
 #include "V8DOMWindow.h"
