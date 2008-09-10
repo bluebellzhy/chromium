@@ -4881,7 +4881,9 @@ String FrameLoader::referrer() const
 
 void FrameLoader::dispatchWindowObjectAvailable()
 {
-    if (!m_frame->script()->isEnabled() || !m_frame->script()->haveWindowShell())
+    // TODO(tc): We should also return early if we have no window shell.
+    // But we can't check that until we refactor ScriptController.
+    if (!m_frame->script()->isEnabled())
         return;
 
     m_client->windowObjectCleared();
