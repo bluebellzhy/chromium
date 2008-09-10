@@ -747,7 +747,9 @@ void Frame::setNeedsReapplyStyles()
 
     // Invalidate the FrameView so that FrameView::layout will get called,
     // which calls reapplyStyles.
-    view()->invalidate();
+    FrameView* curView = view();
+    if (curView)
+        curView->invalidate();
 }
 
 bool Frame::needsReapplyStyles() const
@@ -1758,12 +1760,17 @@ bool Frame::shouldClose()
     if (!body)
         return true;
 
+    loader()->setFiringUnloadEvents(true);
+
     RefPtr<BeforeUnloadEvent> beforeUnloadEvent = BeforeUnloadEvent::create();
     beforeUnloadEvent->setTarget(doc);
     doc->handleWindowEvent(beforeUnloadEvent.get(), false);
 
     if (!beforeUnloadEvent->defaultPrevented() && doc)
         doc->defaultEventHandler(beforeUnloadEvent.get());
+
+    loader()->setFiringUnloadEvents(false);
+
     if (beforeUnloadEvent->result().isNull())
         return true;
 
