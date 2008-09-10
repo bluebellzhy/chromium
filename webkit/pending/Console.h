@@ -90,6 +90,9 @@ namespace WebCore {
 
         void reportException(KJS::ExecState*, KJS::JSValue*);
         void reportCurrentException(KJS::ExecState*);
+#elif USE(V8)
+        void time(const String& title);
+        void groupEnd();
 #endif
     private:
         inline Page* page() const;

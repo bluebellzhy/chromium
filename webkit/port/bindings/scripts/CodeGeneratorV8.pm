@@ -1281,6 +1281,7 @@ sub IsRefPtrType
     return 1 if $type eq "CSSMediaRule";
     return 1 if $type eq "CSSFontFaceRule";
     return 1 if $type eq "CSSPageRule";
+    return 1 if $type eq "CSSPrimitiveValue";
     return 1 if $type eq "CSSStyleSheet";
     return 1 if $type eq "CSSStyleDeclaration";
     return 1 if $type eq "CSSValue";
@@ -1295,6 +1296,7 @@ sub IsRefPtrType
     return 1 if $type eq "HTMLDocument";
     return 1 if $type eq "HTMLElement";
     return 1 if $type eq "HTMLOptionsCollection";
+    return 1 if $type eq "ImageData";
     return 1 if $type eq "Node";
     return 1 if $type eq "NodeList";
     return 1 if $type eq "NodeFilter";

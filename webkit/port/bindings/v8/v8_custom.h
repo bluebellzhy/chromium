@@ -185,6 +185,8 @@ DECLARE_CALLBACK(HTMLDocumentClear)
 
 // Document customized functions
 DECLARE_CALLBACK(DocumentEvaluate)
+DECLARE_CALLBACK(DocumentFragmentQuerySelector)
+DECLARE_CALLBACK(DocumentFragmentQuerySelectorAll)
 
 // Window customized functions
 DECLARE_CALLBACK(DOMWindowAddEventListener)
@@ -224,6 +226,23 @@ DECLARE_CALLBACK(CanvasRenderingContext2DSetShadow)
 DECLARE_CALLBACK(CanvasRenderingContext2DDrawImage)
 DECLARE_CALLBACK(CanvasRenderingContext2DDrawImageFromRect)
 DECLARE_CALLBACK(CanvasRenderingContext2DCreatePattern)
+DECLARE_CALLBACK(CanvasRenderingContext2DFillText)
+DECLARE_CALLBACK(CanvasRenderingContext2DStrokeText)
+DECLARE_CALLBACK(CanvasRenderingContext2DPutImageData)
+
+// Console customized functions
+DECLARE_CALLBACK(ConsoleAssert)
+DECLARE_CALLBACK(ConsoleCount)
+DECLARE_CALLBACK(ConsoleDebug)
+DECLARE_CALLBACK(ConsoleDir)
+DECLARE_CALLBACK(ConsoleError)
+DECLARE_CALLBACK(ConsoleGroup)
+DECLARE_CALLBACK(ConsoleInfo)
+DECLARE_CALLBACK(ConsoleLog)
+DECLARE_CALLBACK(ConsoleProfile)
+DECLARE_CALLBACK(ConsoleProfileEnd)
+DECLARE_CALLBACK(ConsoleTimeEnd)
+DECLARE_CALLBACK(ConsoleWarn)
 
 // Implementation of Clipboard methods.
 DECLARE_CALLBACK(ClipboardClearData)
@@ -231,6 +250,8 @@ DECLARE_CALLBACK(ClipboardGetData)
 DECLARE_CALLBACK(ClipboardSetData)
 
 // Implementation of Element methods.
+DECLARE_CALLBACK(ElementQuerySelector)
+DECLARE_CALLBACK(ElementQuerySelectorAll)
 DECLARE_CALLBACK(ElementSetAttribute)
 DECLARE_CALLBACK(ElementSetAttributeNode)
 DECLARE_CALLBACK(ElementSetAttributeNS)
