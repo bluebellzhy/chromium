@@ -28,7 +28,9 @@
 #include "Node.h"
 #include "NodeFilter.h"
 
+#if USE(JSC)
 using namespace KJS;
+#endif
 
 namespace WebCore {
 
