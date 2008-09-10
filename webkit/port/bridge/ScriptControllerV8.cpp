@@ -42,10 +42,13 @@
 #include "np_v8object.h"
 #include "Widget.h"
 
-#include "glue/webplugin_impl.h"
 #include "v8_proxy.h"
 #include "v8_binding.h"
 #include "v8_npobject.h"
+
+//TODO(eseidel): We should remove this glue dependency
+#undef LOG // glue defines its own LOG macro
+#include "glue/webplugin_impl.h"
 
 NPRuntimeFunctions npruntime_functions = {
     NPN_GetStringIdentifier,
