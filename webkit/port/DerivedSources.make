@@ -721,6 +721,7 @@ all : \
     V8HTMLTitleElement.h \
     V8HTMLUListElement.h \
     V8History.h \
+    V8ImageData.h \   
     V8KeyboardEvent.h \
     V8MediaList.h \
     V8MessageEvent.h \
@@ -875,6 +876,7 @@ all : \
     V8StyleSheet.h \
     V8StyleSheetList.h \
     V8Text.h \
+    V8TextMetrics.h \
     V8TextEvent.h \
     V8TreeWalker.h \
     V8UIEvent.h \

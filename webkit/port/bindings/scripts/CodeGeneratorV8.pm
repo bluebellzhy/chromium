@@ -1670,7 +1670,7 @@ sub NativeToJSValue
         $value = GenerateReadOnlyPodTypeWrapper($type, $value);
       }
 
-      return "V8Proxy::ToV8Object(V8ClassIndex::$classIndex, static_cast<Peerable*>($value))";
+      return "V8Proxy::ToV8Object(V8ClassIndex::$classIndex, $value)";
     }
 }
 

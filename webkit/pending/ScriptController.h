@@ -168,8 +168,6 @@ public:
     // or this accessor should be made JSProxy*
     V8Proxy* proxy() { return m_proxy.get(); }
 
-    void disconnectFrame();
-
     bool wasRunByUserGesture();
 
     // Evaluate a script file in the environment of this proxy.
@@ -184,17 +182,12 @@ public:
     // is successful by checking the value of JSResult.
     JSResult evaluate(const String& filename, int baseLine, const String& code, Node*);
     void disposeJSResult(JSResult result);
+    void collectGarbage();
 
     EventListener* createHTMLEventHandler(const String& functionName, const String& code, Node*);
-
 #if ENABLE(SVG)
     EventListener* createSVGEventHandler(const String& functionName, const String& code, Node*);
 #endif
-  
-    void setEventHandlerLineno(int lineno);
-    void finishedWithEvent(Event*);
-
-    void clear();
 
     // Get the Root object
     //  JSRootObject* getRootObject();
@@ -205,24 +198,22 @@ public:
 
     // Create an NPObject for the window object.
     NPObject* createScriptObject(Frame*);
-
     NPObject* createScriptObject(Frame*, HTMLPlugInElement*);
 
     JSInstance createScriptInstanceForWidget(Widget*);
 
+    void clear();
     void clearPluginObjects();
+    void clearDocumentWrapper();
+    void disconnectFrame();
 
     // Check if the javascript engine has been initialized.
     bool haveInterpreter() const;
 
     bool isEnabled() const;
 
-    void clearDocumentWrapper();
-
     // TODO(eseide): void* is a compile hack
     void attachDebugger(void*);
-
-    void collectGarbage();
 
     // Create a NPObject wrapper for a JSObject
     // NPObject *WrapScriptObject(NPP pluginId, JSObject* objectToWrap,
@@ -246,7 +237,7 @@ public:
     // Tell the proxy that document.domain is set.
     static void setDomain(Frame* target, const String& newDomain);
 
-    // Pass flags to the JS engine
+    // Pass command-line flags to the JS engine
     static void setFlags(const char* str, int length);
 
     // Protect and unprotect the JS wrapper from garbage collected.
@@ -267,6 +258,20 @@ public:
     static bool RecordPlaybackMode() { return m_recordPlaybackMode; }
     static void setRecordPlaybackMode(bool value) { m_recordPlaybackMode = value; }
 
+    void finishedWithEvent(Event*);
+    void setEventHandlerLineno(int lineno) { m_handlerLineno = lineno; }
+
+    void setProcessingTimerCallback(bool b) { m_processingTimerCallback = b; }
+    bool processingUserGesture() const;
+
+    void setPaused(bool b) { m_paused = b; }
+    bool isPaused() const { return m_paused; }
+
+    const String* sourceURL() const { return m_sourceURL; } // 0 if we are not evaluating any script
+
+    void clearWindowShell();
+    void updateDocument();
+
     void pauseTimeouts(OwnPtr<PausedTimeouts>&);
     void resumeTimeouts(OwnPtr<PausedTimeouts>&);
 
@@ -279,9 +284,14 @@ public:
 #endif
 
 private:
-    Frame* m_frame;
-
     static bool m_recordPlaybackMode;
+
+    Frame* m_frame;
+    int m_handlerLineno;
+    const String* m_sourceURL;
+
+    bool m_processingTimerCallback;
+    bool m_paused;
 
 #if USE(V8)
     OwnPtr<V8Proxy> m_proxy;

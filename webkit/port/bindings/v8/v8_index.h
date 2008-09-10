@@ -264,6 +264,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(UNDETECTABLEHTMLCOLLECTION, UndetectableHTMLCollection)             \
   V(HTMLCOLLECTION, HTMLCollection)                                     \
   V(HTMLOPTIONSCOLLECTION, HTMLOptionsCollection)                       \
+  V(IMAGEDATA, ImageData)                                               \
   V(INSPECTORCONTROLLER, InspectorController)                           \
   V(KEYBOARDEVENT, KeyboardEvent)                                       \
   V(LOCATION, Location)                                                 \
@@ -290,6 +291,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(STYLESHEET, StyleSheet)                                             \
   V(STYLESHEETLIST, StyleSheetList)                                     \
   V(TEXTEVENT, TextEvent)                                               \
+  V(TEXTMETRICS, TextMetrics)                                           \
   V(TREEWALKER, TreeWalker)                                             \
   V(UIEVENT, UIEvent)                                                   \
   V(WHEELEVENT, WheelEvent)                                             \
