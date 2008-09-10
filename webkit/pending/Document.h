@@ -41,7 +41,7 @@
 // FIXME: We should move Mac off of the old Frame-based user stylesheet loading
 // code and onto the new code in Page. We can't do that until the code in Page
 // supports non-file: URLs, however.
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) || PLATFORM(QT)
 #define FRAME_LOADS_USER_STYLESHEET 1
 #else
 #define FRAME_LOADS_USER_STYLESHEET 0
@@ -442,7 +442,7 @@ public:
     enum ParseMode { Compat, AlmostStrict, Strict };
 
     // Used by Chromium to know if it can just SIGKILL a renderer when navigating
-    bool hasUnloadEventListener() const;
+    bool hasUnloadEventListener();
 
 private:
     virtual void determineParseMode() {}
