@@ -1689,8 +1689,7 @@ void Frame::pageDestroyed()
         page()->focusController()->setFocusedFrame(0);
 
     // This will stop any JS timers
-    if (script()->haveWindowShell())
-        script()->windowShell()->disconnectFrame();
+    script()->disconnectFrame();
 
     script()->clearScriptObjects();
 
@@ -1879,7 +1878,6 @@ FramePrivate::FramePrivate(Page* page, Frame* parent, Frame* thisFrame, HTMLFram
     , m_ownerElement(ownerElement)
     , m_script(thisFrame)
     , m_zoomFactor(parent ? parent->d->m_zoomFactor : 1.0f)
-    , m_zoomFactorIsTextOnly(parent ? parent->d->m_zoomFactorIsTextOnly : true)
     , m_selectionGranularity(CharacterGranularity)
     , m_selectionController(thisFrame)
     , m_caretBlinkTimer(thisFrame, &Frame::caretBlinkTimerFired)
