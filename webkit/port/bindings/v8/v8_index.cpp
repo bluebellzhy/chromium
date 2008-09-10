@@ -63,6 +63,8 @@
 #include "V8Element.h"
 #include "V8Entity.h"
 #include "V8EntityReference.h"
+#include "V8File.h"
+#include "V8FileList.h"
 #include "V8History.h"
 #include "V8HTMLCanvasElement.h"
 #include "V8UndetectableHTMLCollection.h"

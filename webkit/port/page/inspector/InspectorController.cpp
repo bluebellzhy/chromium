@@ -1129,7 +1129,7 @@ InspectorController::InspectorController(Page* page, InspectorClient* client)
 #endif
     , m_windowVisible(false)
     , m_debuggerAttached(false)
-    , m_showAfterVisible(FocusedNodeDocumentPanel)
+    , m_showAfterVisible(ElementsPanel)
     , m_nextIdentifier(-2)
     , m_trackResources(false)
 {

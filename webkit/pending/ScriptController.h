@@ -259,9 +259,7 @@ public:
     static void setRecordPlaybackMode(bool value) { m_recordPlaybackMode = value; }
 
     void finishedWithEvent(Event*);
-#if USE(V8)
-    void setEventHandlerLineno(int lineno) { m_proxy->setEventHandlerLineno(lineno); }
-#endif
+    void setEventHandlerLineno(int lineno);
 
     void setProcessingTimerCallback(bool b) { m_processingTimerCallback = b; }
     bool processingUserGesture() const;

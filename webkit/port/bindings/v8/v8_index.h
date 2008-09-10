@@ -260,6 +260,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(DOMWINDOW, DOMWindow)                                               \
   V(EVENT, Event)                                                       \
   V(EVENTEXCEPTION, EventException)                                     \
+  V(FILE, File)                                                         \
   V(FILELIST, FileList)                                                 \
   V(HISTORY, History)                                                   \
   V(UNDETECTABLEHTMLCOLLECTION, UndetectableHTMLCollection)             \
