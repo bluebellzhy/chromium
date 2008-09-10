@@ -144,6 +144,7 @@
 using WebCore::ChromeClientWin;
 using WebCore::Color;
 using WebCore::Document;
+using WebCore::DocumentFragment;
 using WebCore::DocumentLoader;
 using WebCore::ExceptionCode;
 using WebCore::GraphicsContext;
@@ -668,22 +669,23 @@ WebView* WebFrameImpl::GetView() const {
 
 void WebFrameImpl::BindToWindowObject(const std::wstring& name,
                                       NPObject* object) {
-    assert(frame_);
-    if (!frame_ || !frame_->script()->isEnabled())
-      return;
+  assert(frame_);
+  if (!frame_ || !frame_->script()->isEnabled())
+    return;
 
-    String key = webkit_glue::StdWStringToString(name);
-    frame_->script()->BindToWindowObject(frame_.get(), key, object);
+  String key = webkit_glue::StdWStringToString(name);
+  frame_->script()->BindToWindowObject(frame_.get(), key, object);
 }
 
 
 // Call JavaScript garbage collection.
 void WebFrameImpl::CallJSGC() {
-    if (!frame_) return;
-    if (!frame_->settings()->isJavaScriptEnabled()) return;
-    frame_->script()->CollectGarbage();
+  if (!frame_)
+    return;
+  if (!frame_->settings()->isJavaScriptEnabled())
+    return;
+  frame_->script()->collectGarbage();
 }
-
 
 void WebFrameImpl::GetContentAsPlainText(int max_chars,
                                          std::wstring* text) const {
@@ -1240,8 +1242,10 @@ void WebFrameImpl::Paste() {
 
 void WebFrameImpl::Replace(const std::wstring& wtext) {
   String text = webkit_glue::StdWStringToString(wtext);
-  RefPtr<DocumentFragment> fragment = createFragmentFromText(selection()->toRange().get(), text);
-  applyCommand(ReplaceSelectionCommand::create(document(), fragment.get(), false, true, true));
+  RefPtr<DocumentFragment> fragment =
+      createFragmentFromText(frame()->selection()->toRange().get(), text);
+  WebCore::applyCommand(WebCore::ReplaceSelectionCommand::create(
+      frame()->document(), fragment.get(), false, true, true));
 }
 
 void WebFrameImpl::Delete() {
