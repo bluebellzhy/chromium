@@ -1432,9 +1432,6 @@ void InspectorController::inspectedWindowScriptObjectCleared(Frame* frame)
 #elif USE(V8)
 void InspectorController::inspectedWindowScriptObjectCleared(Frame* frame)
 {
-    if (!enabled() || !m_scriptContext || !m_scriptObject)
-        return;
-
     // TODO(tc): We need to call inspectedWindowCleared, but that won't matter
     // until we merge in inspector.js as well.
     notImplemented();
