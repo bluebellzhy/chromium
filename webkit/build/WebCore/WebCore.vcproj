@@ -705,7 +705,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\Font.cpp"
+				RelativePath="..\..\pending\Font.cpp"
 				>
 			</File>
 			<File
