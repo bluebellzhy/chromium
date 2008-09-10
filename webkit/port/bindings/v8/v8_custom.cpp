@@ -3062,10 +3062,7 @@ CALLBACK_FUNC_DECL(NodeIteratorPreviousNode) {
 
 CALLBACK_FUNC_DECL(NodeFilterAcceptNode) {
   INC_STATS(L"DOM.NodeFilter.acceptNode()");
-  NodeFilter* imp = V8Proxy::FastToNativeObject<NodeFilter>(
-      V8ClassIndex::NODEFILTER, args.Holder());
-  Node* node = V8Proxy::FastToNativeObject<Node>(V8ClassIndex::NODE, args[0]);
-  return v8::Local<v8::Integer>(v8::Integer::New(imp->acceptNode(node)));
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);  
 }
 
 ACCESSOR_SETTER(DOMWindowEventHandler) {
