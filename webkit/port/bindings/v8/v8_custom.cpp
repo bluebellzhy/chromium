@@ -977,9 +977,8 @@ static Frame* createWindow(Frame* opener_frame,
   // "_self" or "_parent".
   Frame* new_frame = active_frame->loader()->createWindow(
       opener_frame->loader(), frame_request, window_features, created);
-  if (!new_frame) {
+  if (!new_frame)
     return 0;
-  }
 
   new_frame->loader()->setOpener(opener_frame);
   new_frame->loader()->setOpenedByDOM();
@@ -1005,9 +1004,6 @@ static Frame* createWindow(Frame* opener_frame,
           active_frame->loader()->outgoingReferrer(),
           false,
           user_gesture);
-      if (Document* old_doc = opener_frame->document()) {
-        new_frame->document()->setBaseURL(old_doc->baseURL());
-      }
     } else if (!url.isEmpty()) {
       new_frame->loader()->scheduleLocationChange(
           completed_url,

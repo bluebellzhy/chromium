@@ -38,8 +38,10 @@
 #include "Frame.h"
 #include "Node.h"
 #include "NotImplemented.h"
+#include "npruntime_priv.h"
 #include "np_v8object.h"
 #include "Widget.h"
+
 #include "glue/webplugin_impl.h"
 #include "v8_proxy.h"
 #include "v8_binding.h"
@@ -143,10 +145,11 @@ ScriptController::~ScriptController()
 
 void ScriptController::clearPluginObjects()
 {
-    for (PluginObjectMap::iterator it = m_pluginObjects.begin(); 
-         it != m_pluginObjects.end(); ++it) {
+    PluginObjectMap::iterator it = m_pluginObjects.begin();
+    for (; it != m_pluginObjects.end(); ++it) {
         _NPN_UnregisterObject(it->second);
         NPN_ReleaseObject(it->second);
+    }
     m_pluginObjects.clear();
 }
 
