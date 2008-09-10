@@ -38,6 +38,7 @@
 #include "NodeFilter.h"
 #include "PlatformString.h"  // for WebCore::String
 #include <wtf/HashMap.h>   // for HashMap
+#include <wtf/PassRefPtr.h> // so generated bindings don't have to
 
 #include <iterator>
 #include <list>

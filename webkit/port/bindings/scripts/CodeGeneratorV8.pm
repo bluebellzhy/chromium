@@ -1664,6 +1664,10 @@ sub NativeToJSValue
       return "V8Proxy::ToV8Object(V8ClassIndex::RGBCOLOR, new RGBColor($value))";
     }
 
+    if ($type eq "CSSStyleDeclaration") {
+        $implIncludes{"CSSMutableStyleDeclaration.h"} = 1;
+    }
+
     else {
       $implIncludes{"wtf/RefCounted.h"} = 1;
       my $classIndex = uc($type);
