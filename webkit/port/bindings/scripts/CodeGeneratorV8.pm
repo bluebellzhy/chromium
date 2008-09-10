@@ -1147,7 +1147,13 @@ sub GenerateFunctionCallString()
     if ($returnsListItemPodType && $paramType . "List" eq $implClassName) {
       $paramName = "SVGPODListItem<" . GetNativeType($paramType, 1) . ">::copy($paramName)";    
     }
-    $functionString .= $paramName;
+    
+    if ($parameter->type eq "NodeFilter") {
+        $functionString .= "$paramName.get()";
+    } else {
+        $functionString .= $paramName;
+    }
+    
     if ($parameter->extendedAttributes->{"Return"}) {
       $nodeToReturn = $parameter->name;
     }
@@ -1351,6 +1357,9 @@ sub GetNativeType
 
     # temporary hack
     $type = GetImplementationClassName($type);
+
+    # temporary hack
+    return "RefPtr<NodeFilter>" if $type eq "NodeFilter";
 
     return "RefPtr<${type}>" if IsRefPtrType($type) and not $isParameter;
 
@@ -1646,6 +1655,10 @@ sub NativeToJSValue
     AddIncludesForType($type);
     # $implIncludes{GetImplementationFileName($type)} = 1 unless AvoidInclusionOfType($type);
 
+    if ($type eq "CSSStyleDeclaration") {
+        $implIncludes{"CSSMutableStyleDeclaration.h"} = 1;
+    }
+
     # special case for non-DOM node interfaces
     if (IsDOMNodeType($type)) {
       return "V8Proxy::ToV8Object(V8ClassIndex::NODE, $value)";
@@ -1665,10 +1678,6 @@ sub NativeToJSValue
 
     if ($type eq "RGBColor") {
       return "V8Proxy::ToV8Object(V8ClassIndex::RGBCOLOR, new RGBColor($value))";
-    }
-
-    if ($type eq "CSSStyleDeclaration") {
-        $implIncludes{"CSSMutableStyleDeclaration.h"} = 1;
     }
 
     else {
