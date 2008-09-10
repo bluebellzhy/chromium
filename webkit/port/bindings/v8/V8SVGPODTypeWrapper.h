@@ -200,6 +200,11 @@ struct PODTypeReadWriteHashInfo {
         ASSERT(getter);
     }
 
+    bool isHashTableDeletedValue() const
+    {
+        return creator == reinterpret_cast<PODTypeCreator*>(-1);
+    }
+
     bool operator==(const PODTypeReadWriteHashInfo& other) const
     {
         return creator == other.creator && getter == other.getter && setter == other.setter;

@@ -66,6 +66,7 @@
 #include "RenderTextControl.h"
 #include "RenderTheme.h"
 #include "RenderView.h"
+#include "ScriptController.h"
 #include "Settings.h"
 #include "SystemTime.h"
 #include "TextIterator.h"
