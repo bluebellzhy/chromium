@@ -321,6 +321,8 @@ DECLARE_NAMED_PROPERTY_GETTER(HTMLCollection)
 
 // SVG custom properties and callbacks
 #if ENABLE(SVG)
+DECLARE_PROPERTY_ACCESSOR_GETTER(SVGLengthValue)
+DECLARE_CALLBACK(SVGLengthConvertToSpecifiedUnits)
 DECLARE_CALLBACK(SVGMatrixInverse)
 DECLARE_CALLBACK(SVGMatrixRotateFromVector)
 #endif

@@ -3177,6 +3177,19 @@ ACCESSOR_SETTER(HTMLOptionsCollectionLength) {
 }
 
 #if ENABLE(SVG)
+
+ACCESSOR_GETTER(SVGLengthValue) {
+  // TODO(erg): Need to create a constructor to KJS's SVGLength::value...
+  notImplemented();
+  return v8::Undefined();
+}
+
+CALLBACK_FUNC_DECL(SVGLengthConvertToSpecifiedUnits) {
+  // TODO(erg): KJS's SVGLength::convertToSpecifiedUnits needs to be translated here!
+  notImplemented();
+  return v8::Undefined();
+}
+
 CALLBACK_FUNC_DECL(SVGMatrixInverse) {
   INC_STATS(L"DOM.SVGMatrix.inverse()");
   AffineTransform imp =

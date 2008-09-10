@@ -811,7 +811,12 @@ sub GenerateImplementation
       }
       
       # Generate the accessor.
-      GenerateNormalAttrGetter($attribute, $classIndex, $implClassName);
+      if ($attribute->signature->extendedAttributes->{"CustomGetter"}) {
+        $implIncludes{"v8_custom.h"} = 1;
+      } else {
+        GenerateNormalAttrGetter($attribute, $classIndex, $implClassName);
+      }
+
       if ($attribute->signature->extendedAttributes->{"CustomSetter"}) {
         $implIncludes{"v8_custom.h"} = 1;
       } elsif ($attribute->signature->extendedAttributes->{"Replaceable"}) {
@@ -883,7 +888,7 @@ END
          }
       }
 
-      my $customAccessor = $attrExt->{"Custom"} || $attrExt->{"CustomSetter"} || "";
+      my $customAccessor = $attrExt->{"Custom"} || $attrExt->{"CustomSetter"} || $attrExt->{"CustomGetter"} || "";
       if ($customAccessor eq 1) {
         # use the naming convension, interface + (capitalize) attr name
         $customAccessor = $interfaceName . WK_ucfirst($attrName);
@@ -920,7 +925,12 @@ END
       } elsif ($attrExt->{"CustomSetter"}) {
         $getter = "${interfaceName}Internal::${attrName}AttrGetter";
         $setter = "V8Custom::v8${customAccessor}AccessorSetter";
-        
+
+      # Custom Getter
+      } elsif ($attrExt->{"CustomGetter"}) {
+        $getter = "V8Custom::v8${customAccessor}AccessorGetter";
+        $setter = "${interfaceName}Internal::${attrName}AttrSetter";
+                
       # Replaceable
       } elsif ($attrExt->{"Replaceable"}) {
         # Replaceable accessor is put on instance template with ReadOnly attribute.
