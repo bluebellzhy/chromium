@@ -378,12 +378,6 @@ NPObject* ScriptController::createScriptObject(Frame* frame, HTMLPlugInElement* 
     return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(dom_win), window);
 }
 
-NPObject* ScriptController::createNoScriptObject()
-{
-    notImplemented();
-    return 0;
-}
-
 bool ScriptController::haveInterpreter() const
 {
     return m_proxy->ContextInitialized();
