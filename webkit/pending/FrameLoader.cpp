@@ -784,7 +784,7 @@ String FrameLoader::executeScript(const String& script, bool* succ, bool forceUs
 String FrameLoader::executeScript(const String& url, int baseLine, const String& script, bool* succ)
 {
     if (!m_frame->script()->isEnabled() || m_frame->script()->isPaused())
-        return 0;
+        return String();
 
     bool wasRunningScript = m_isRunningScript;
     m_isRunningScript = true;
