@@ -1212,7 +1212,7 @@ void InspectorController::inspect(Node* node)
     m_nodeToFocus = node;
 
     if (!hasScriptObject()) {
-        m_showAfterVisible = FocusedNodeDocumentPanel;
+        m_showAfterVisible = ElementsPanel;
         return;
     }
 
@@ -1331,12 +1331,12 @@ void InspectorController::setWindowVisible(bool visible)
             focusNode();
         if (m_showAfterVisible == ConsolePanel)
             showConsole();
-        else if (m_showAfterVisible == TimelinePanel)
+        else if (m_showAfterVisible == ResourcesPanel)
             showTimeline();
     } else
         resetScriptObjects();
 
-    m_showAfterVisible = FocusedNodeDocumentPanel;
+    m_showAfterVisible = ElementsPanel;
 }
 
 void InspectorController::enableTrackResources(bool trackResources)
@@ -1613,7 +1613,7 @@ void InspectorController::showTimeline()
     show();
 
     if (!hasScriptObject()) {
-        m_showAfterVisible = TimelinePanel;
+        m_showAfterVisible = ResourcesPanel;
         return;
     }
 
