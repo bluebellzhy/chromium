@@ -2991,72 +2991,62 @@ CALLBACK_FUNC_DECL(XMLHttpRequestOverrideMimeType)
 
 CALLBACK_FUNC_DECL(TreeWalkerParentNode) {
   INC_STATS(L"DOM.TreeWalker.parentNode()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->parentNode());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerFirstChild) {
   INC_STATS(L"DOM.TreeWalker.firstChild()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->firstChild());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerLastChild) {
   INC_STATS(L"DOM.TreeWalker.lastChild()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->lastChild());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerNextNode) {
   INC_STATS(L"DOM.TreeWalker.nextNode()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->nextNode());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerPreviousNode) {
   INC_STATS(L"DOM.TreeWalker.previousNode()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->previousNode());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerNextSibling) {
   INC_STATS(L"DOM.TreeWalker.nextSibling()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->nextSibling());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(TreeWalkerPreviousSibling) {
   INC_STATS(L"DOM.TreeWalker.previousSibling()");
-  TreeWalker* imp = V8Proxy::FastToNativeObject<TreeWalker>(
-      V8ClassIndex::TREEWALKER, args.Holder());
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->previousSibling());
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(NodeIteratorNextNode) {
   INC_STATS(L"DOM.NodeIterator.nextNode()");
-  NodeIterator* imp = V8Proxy::FastToNativeObject<NodeIterator>(
-      V8ClassIndex::NODEITERATOR, args.Holder());
-  ExceptionCode ec = 0;
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->nextNode(ec));
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(NodeIteratorPreviousNode) {
   INC_STATS(L"DOM.NodeIterator.previousNode()");
-  NodeIterator* imp = V8Proxy::FastToNativeObject<NodeIterator>(
-      V8ClassIndex::NODEITERATOR, args.Holder());
-  ExceptionCode ec = 0;
-  return V8Proxy::ToV8Object(V8ClassIndex::NODE, imp->previousNode(ec));
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(NodeFilterAcceptNode) {
   INC_STATS(L"DOM.NodeFilter.acceptNode()");
   V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);  
+  return v8::Undefined();
 }
 
 ACCESSOR_SETTER(DOMWindowEventHandler) {
