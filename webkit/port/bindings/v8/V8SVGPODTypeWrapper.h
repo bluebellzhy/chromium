@@ -227,19 +227,25 @@ struct PODTypeReadWriteHashInfoHash {
 
 template<typename PODType, typename PODTypeCreator>
 struct PODTypeReadWriteHashInfoTraits : WTF::GenericHashTraits<PODTypeReadWriteHashInfo<PODType, PODTypeCreator> > {
+    typedef PODTypeReadWriteHashInfo<PODType, PODTypeCreator> CacheInfo;
+
     static const bool emptyValueIsZero = true;
     static const bool needsDestruction = false;
 
-    static const PODTypeReadWriteHashInfo<PODType, PODTypeCreator>& deletedValue()
+    static const CacheInfo& emptyValue()
     {
-        static PODTypeReadWriteHashInfo<PODType, PODTypeCreator> key(true);
+        static CacheInfo key(true);
         return key;
     }
 
-    static const PODTypeReadWriteHashInfo<PODType, PODTypeCreator>& emptyValue()
+    static void constructDeletedValue(CacheInfo& slot)
     {
-        static PODTypeReadWriteHashInfo<PODType, PODTypeCreator> key;
-        return key;
+        new (&slot) CacheInfo(WTF::HashTableDeletedValue);
+    }
+
+    static bool isDeletedValue(const CacheInfo& value)
+    {
+        return value.isHashTableDeletedValue();
     }
 };
 

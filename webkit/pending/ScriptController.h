@@ -259,7 +259,6 @@ public:
     static void setRecordPlaybackMode(bool value) { m_recordPlaybackMode = value; }
 
     void finishedWithEvent(Event*);
-    void setEventHandlerLineno(int lineno) { m_handlerLineno = lineno; }
 
     void setProcessingTimerCallback(bool b) { m_processingTimerCallback = b; }
     bool processingUserGesture() const;
@@ -287,7 +286,6 @@ private:
     static bool m_recordPlaybackMode;
 
     Frame* m_frame;
-    int m_handlerLineno;
     const String* m_sourceURL;
 
     bool m_processingTimerCallback;
