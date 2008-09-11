@@ -814,7 +814,7 @@ void GraphicsContext::endTransparencyLayer()
     m_data->canvas()->restore();
 }
 
-void GraphicsContext::setShadow(const IntSize& size, int blur, const Color& color)
+void GraphicsContext::setPlatformShadow(const IntSize& size, int blur, const Color& color)
 {
     if (paintingDisabled())
         return;
@@ -835,14 +835,6 @@ void GraphicsContext::setShadow(const IntSize& size, int blur, const Color& colo
     }
     else
         m_data->setDrawLooper(NULL);
-}
-
-void GraphicsContext::clearShadow()
-{
-    if (paintingDisabled())
-        return;
-
-    m_data->setDrawLooper(NULL);
 }
 
 void GraphicsContext::drawFocusRing(const Color& color)
@@ -946,21 +938,6 @@ void GraphicsContext::setLineJoin(LineJoin join)
     }
 }
 
-void GraphicsContext::setFillRule(WindRule rule)
-{
-    switch (rule) {
-    case RULE_NONZERO:
-        m_data->setFillRule(SkPath::kWinding_FillType);
-        break;
-    case RULE_EVENODD:
-        m_data->setFillRule(SkPath::kEvenOdd_FillType);
-        break;
-    default:
-        SkDEBUGF(("GraphicsContext::setFillRule: unknown WindRule %d\n", rule));
-        break;
-    }
-}
-
 void GraphicsContext::scale(const FloatSize& size)
 {
     if (paintingDisabled())
@@ -1060,10 +1037,14 @@ void GraphicsContext::setPlatformFillColor(const Color& color)
     m_data->setFillColor(color.rgb());
 }
 
+/*
+TODO(brettw): WebKit's implementation of this function moved into the cross-
+platform file GraphicsContext.cpp. We need to figure out how to hook this up
+properly once everything links.
 void GraphicsContext::setPlatformStrokeStyle(const StrokeStyle & strokestyle)
 {
     m_data->setStrokeStyle(StrokeStyle2StrokeStyle(strokestyle));
-}
+}*/
 
 void GraphicsContext::setPlatformStrokeColor(const Color& strokecolor)
 {
