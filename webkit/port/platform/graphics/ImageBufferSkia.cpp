@@ -31,6 +31,8 @@
 #include "ImageBuffer.h"
 
 #include "GraphicsContext.h"
+#include "ImageData.h"
+#include "NotImplemented.h"
 #include "PlatformContextSkia.h"
 
 using namespace std;
@@ -47,7 +49,31 @@ GraphicsContext* ImageBuffer::context() const
     return m_context.get();
 }
 
+Image* ImageBuffer::image() const
+{
+    notImplemented();
+    return 0;
+}
+
+PassRefPtr<ImageData> ImageBuffer::getImageData(const IntRect&) const
+{
+    notImplemented();
+    return 0;
+}
+
+void ImageBuffer::putImageData(ImageData*, const IntRect&, const IntPoint&)
+{
+    notImplemented();
+}
+
+String ImageBuffer::toDataURL(const String&) const
+{
+    notImplemented();
+    return String();
+}
+
 ImageBuffer::ImageBuffer(const IntSize& size) :
+    m_data(0),
     m_size(size),
     m_context(GraphicsContext::createOffscreenContext(size.width(), size.height()))
 {
