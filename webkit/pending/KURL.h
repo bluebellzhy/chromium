@@ -177,7 +177,15 @@ public:
 #if USE(JSC)
     operator KJS::UString() const { return m_url.string(); }
 #endif
-#else
+
+    unsigned hostStart() const;
+    unsigned hostEnd() const;
+    
+    unsigned pathStart() const;
+    unsigned pathEnd() const;
+    unsigned pathAfterLastSlash() const;
+
+#else  // !USE_GOOGLE_URL_LIBRARY
     operator const String&() const { return m_string; }
 #if USE(JSC)
     operator KJS::UString() const { return m_string; }

@@ -536,3 +536,35 @@ TEST(GKURL, UserPass) {
   kurl.setUser("");
   EXPECT_TRUE(kurl.string() == gurl.string());
 }
+
+TEST(GKURL, Offsets) {
+  const char* src1 = "http://user:pass@google.com/foo/bar.html?baz=query#ref";
+  WebCore::GoogleKURL gurl1(src1);
+  WebCore::WebKitKURL kurl1(src1);
+
+  EXPECT_TRUE(kurl1.hostStart() == gurl1.hostStart());
+  EXPECT_TRUE(kurl1.hostEnd() == gurl1.hostEnd());
+  EXPECT_TRUE(kurl1.pathStart() == gurl1.pathStart());
+  EXPECT_TRUE(kurl1.pathEnd() == gurl1.pathEnd());
+  EXPECT_TRUE(kurl1.pathAfterLastSlash() == gurl1.pathAfterLastSlash());
+
+  const char* src2 = "http://google.com/foo/";
+  WebCore::GoogleKURL gurl2(src2);
+  WebCore::WebKitKURL kurl2(src2);
+
+  EXPECT_TRUE(kurl2.hostStart() == gurl2.hostStart());
+  EXPECT_TRUE(kurl2.hostEnd() == gurl2.hostEnd());
+  EXPECT_TRUE(kurl2.pathStart() == gurl2.pathStart());
+  EXPECT_TRUE(kurl2.pathEnd() == gurl2.pathEnd());
+  EXPECT_TRUE(kurl2.pathAfterLastSlash() == gurl2.pathAfterLastSlash());
+
+  const char* src3 = "javascript:foobar";
+  WebCore::GoogleKURL gurl3(src3);
+  WebCore::WebKitKURL kurl3(src3);
+
+  EXPECT_TRUE(kurl3.hostStart() == gurl3.hostStart());
+  EXPECT_TRUE(kurl3.hostEnd() == gurl3.hostEnd());
+  EXPECT_TRUE(kurl3.pathStart() == gurl3.pathStart());
+  EXPECT_TRUE(kurl3.pathEnd() == gurl3.pathEnd());
+  EXPECT_TRUE(kurl3.pathAfterLastSlash() == gurl3.pathAfterLastSlash());
+}

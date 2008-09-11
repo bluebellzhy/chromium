@@ -39,6 +39,8 @@
 #include "googleurl/src/url_canon_internal.h"
 #include "googleurl/src/url_util.h"
 
+using namespace WTF;
+
 namespace WebCore {
 
 namespace {
@@ -63,6 +65,20 @@ public:
 private:
     const TextEncoding* m_encoding;
 };
+
+// Note that this function must be named differently than the one in KURL.cpp
+// since our unit tests evilly include both files, and their local definition
+// will be ambiguous.
+inline void AssertProtocolIsGood(const char* protocol)
+{
+#ifndef NDEBUG
+    const char* p = protocol;
+    while (*p) {
+        ASSERT(*p > ' ' && *p < 0x7F && !(*p >= 'A' && *p <= 'Z'));
+        ++p;
+    }
+#endif
+}
 
 }  // namespace
 
@@ -651,19 +667,20 @@ void KURL::replaceComponents(const Replacements& replacements)
         m_url.setAscii(output.data(), output.length());
 }
 
-bool KURL::schemeIs(const char* lower_ascii_scheme) const
+bool KURL::protocolIs(const char* protocol) const
 {
+    AssertProtocolIsGood(protocol);
     if (m_parsed.scheme.len <= 0)
-        return lower_ascii_scheme == NULL;
+        return protocol == NULL;
     return LowerCaseEqualsASCII(
         m_url.utf8String().data() + m_parsed.scheme.begin,
         m_url.utf8String().data() + m_parsed.scheme.end(),
-        lower_ascii_scheme);
+        protocol);
 }
  
 bool KURL::isLocalFile() const
 {
-    return schemeIs("file");
+    return protocolIs("file");
 }
 
 // This is called to escape a URL string. It is only used externally when
@@ -733,6 +750,38 @@ bool equalIgnoringRef(const KURL& a, const KURL& b)
         strncmp(a.m_url.utf8String().data(), b.m_url.utf8String().data(), a_len) == 0;
 }
 
+unsigned KURL::hostStart() const
+{
+    return m_parsed.CountCharactersBefore(url_parse::Parsed::HOST, false);
+}
+
+unsigned KURL::hostEnd() const
+{
+    return m_parsed.CountCharactersBefore(url_parse::Parsed::HOST, true);
+}
+
+unsigned KURL::pathStart() const
+{
+    return m_parsed.CountCharactersBefore(url_parse::Parsed::PATH, false);
+}
+
+unsigned KURL::pathEnd() const
+{
+    return m_parsed.CountCharactersBefore(url_parse::Parsed::QUERY, true);
+}
+
+unsigned KURL::pathAfterLastSlash() const
+{
+    // When there's no path, ask for what would be the beginning of it.
+    if (!m_parsed.path.is_valid())
+        return m_parsed.CountCharactersBefore(url_parse::Parsed::PATH, false);
+
+    url_parse::Component filename;
+    url_parse::ExtractFileName(m_url.utf8String().data(), m_parsed.path,
+                               &filename);
+    return filename.begin;
+}
+
 #ifdef KURL_DECORATE_GLOBALS
 const KURL& KURL::blankURL()
 #else
@@ -742,6 +791,29 @@ const KURL& blankURL()
     static KURL staticBlankURL("about:blank");
     return staticBlankURL;
 }
+
+#ifdef KURL_DECORATE_GLOBALS
+bool KURL::protocolIs(const String& url, const char* protocol)
+#else
+bool protocolIs(const String& url, const char* protocol)
+#endif
+{
+    // Do the comparison without making a new string object.
+    AssertProtocolIsGood(protocol);
+    for (int i = 0; ; ++i) {
+        if (!protocol[i])
+            return url[i] == ':';
+        if (toASCIILower(url[i]) != protocol[i])
+            return false;
+    }
+}
+
+#ifndef KURL_DECORATE_GLOBALS
+inline bool KURL::protocolIs(const String& string, const char* protocol)
+{
+    return WebCore::protocolIs(string, protocol);
+}
+#endif
 
 }  // namespace WebCore
 
