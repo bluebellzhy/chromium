@@ -1222,7 +1222,7 @@ void Document::recalcStyle(StyleChange change)
                   AtomicString docFont = FontCache::getGenericFontForScript(
                       script, tmpDescription);
                   if (!docFont.isEmpty()) {
-                      RefPtr<FontFamily> newFamily(new FontFamily);
+                      RefPtr<SharedFontFamily> newFamily(SharedFontFamily::create());
                       newFamily->setFamily(docFont);
                       currFamily.appendFamily(newFamily);
                       currFamily = *newFamily;
