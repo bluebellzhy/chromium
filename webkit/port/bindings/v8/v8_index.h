@@ -298,6 +298,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(UIEVENT, UIEvent)                                                   \
   V(WHEELEVENT, WheelEvent)                                             \
   V(XMLHTTPREQUEST, XMLHttpRequest)                                     \
+  V(XMLHTTPREQUESTUPLOAD, XMLHttpRequestUpload)                         \
   V(XMLHTTPREQUESTEXCEPTION, XMLHttpRequestException)                   \
   V(XMLSERIALIZER, XMLSerializer)                                       \
   V(XPATHEVALUATOR, XPathEvaluator)                                     \

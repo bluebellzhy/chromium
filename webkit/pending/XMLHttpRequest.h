@@ -98,8 +98,20 @@ public:
     void setOnreadystatechange(EventListener* listener) { setOnReadyStateChangeListener(listener); }
     EventListener* onreadystatechange() const { return onReadyStateChangeListener(); }
 
+    void setOnabort(PassRefPtr<EventListener> eventListener) { m_onAbortListener = eventListener; }
+    EventListener* onabort() const { return m_onAbortListener.get(); }
+
+    void setOnerror(PassRefPtr<EventListener> eventListener) { m_onErrorListener = eventListener; }
+    EventListener* onerror() const { return m_onErrorListener.get(); }
+
     void setOnload(EventListener* listener) { setOnLoadListener(listener); }
     EventListener* onload() const { return onLoadListener(); }
+
+    void setOnloadstart(PassRefPtr<EventListener> eventListener) { m_onLoadStartListener = eventListener; }
+    EventListener* onloadstart() const { return m_onLoadStartListener.get(); }
+
+    void setOnprogress(PassRefPtr<EventListener> eventListener) { m_onProgressListener = eventListener; }
+    EventListener* onprogress() const { return m_onProgressListener.get(); }
 #endif
 
     typedef Vector<RefPtr<EventListener> > ListenerVector;

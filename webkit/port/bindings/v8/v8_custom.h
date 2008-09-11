@@ -263,8 +263,8 @@ DECLARE_CALLBACK(EventTargetNodeAddEventListener)
 DECLARE_CALLBACK(EventTargetNodeRemoveEventListener)
 
 // Custom implementation of XMLHttpRequest properties
-DECLARE_PROPERTY_ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
 DECLARE_PROPERTY_ACCESSOR_SETTER(XMLHttpRequestOnload)
+DECLARE_PROPERTY_ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
 DECLARE_CALLBACK(XMLHttpRequestAddEventListener)
 DECLARE_CALLBACK(XMLHttpRequestRemoveEventListener)
 DECLARE_CALLBACK(XMLHttpRequestOpen)

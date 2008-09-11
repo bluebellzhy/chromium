@@ -885,6 +885,7 @@ all : \
     V8VoidCallback.h \
     V8WheelEvent.h \
     V8XMLHttpRequest.h \
+    V8XMLHttpRequestUpload.h \
     V8XMLHttpRequestException.h \
     V8XMLSerializer.h \
     V8XPathEvaluator.h \

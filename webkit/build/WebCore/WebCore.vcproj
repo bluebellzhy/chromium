@@ -2553,6 +2553,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\xml\XMLHttpRequestUpload.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\xml\XMLHttpRequestUpload.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\xml\XMLSerializer.cpp"
 				>
 			</File>

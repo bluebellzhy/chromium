@@ -176,6 +176,7 @@
 #include "V8XPathExpression.h"
 #include "V8XPathNSResolver.h"
 #include "V8XMLHttpRequest.h"
+#include "V8XMLHttpRequestUpload.h"
 #include "V8XMLHttpRequestException.h"
 #include "V8XMLSerializer.h"
 #include "V8XPathEvaluator.h"
