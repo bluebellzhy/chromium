@@ -68,12 +68,6 @@ private:
     bool m_multiLine;
 };
 
-bool RenderTextControlInnerBlock::nodeAtPoint(const HitTestRequest& request, HitTestResult& result, int x, int y, int tx, int ty, HitTestAction hitTestAction)
-{
-    RenderTextControl* renderer = static_cast<RenderTextControl*>(node()->shadowAncestorNode()->renderer());
-    return RenderBlock::nodeAtPoint(request, result, x, y, tx, ty, renderer->placeholderIsVisible() ? HitTestBlockBackground : hitTestAction);
-}
-
 VisiblePosition RenderTextControlInnerBlock::positionForCoordinates(int x, int y)
 {
     int contentsX = x;
