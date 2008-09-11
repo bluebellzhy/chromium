@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="wtf"
-	InheritedPropertySheets="$(SolutionDir)..\third_party\icu38\build\using_icu.vsprops;$(SolutionDir)..\build\common.vsprops"
+	InheritedPropertySheets="$(SolutionDir)..\third_party\icu38\build\using_icu.vsprops;$(SolutionDir)..\build\common.vsprops;..\webkit_common_defines.vsprops"
 	DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;$(TargetPath)"
 	>
 	<Tool
