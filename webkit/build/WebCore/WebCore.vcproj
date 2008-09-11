@@ -1541,6 +1541,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSParserValues.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSParserValues.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSPrimitiveValue.cpp"
 				>
 			</File>
@@ -1662,6 +1670,30 @@
 			</File>
 			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSValueList.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariableDependentValue.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariableDependentValue.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariablesDeclaration.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariablesDeclaration.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariablesRule.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\css\CSSVariablesRule.h"
 				>
 			</File>
 			<File
