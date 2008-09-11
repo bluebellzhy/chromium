@@ -1362,6 +1362,7 @@ sub GetNativeType
     return "SVGPaint::SVGPaintType" if $type eq "SVGPaintType";
     return "DOMTimeStamp" if $type eq "DOMTimeStamp";
     return "RGBColor" if $type eq "RGBColor";
+    return "EventTargetNode*" if $type eq "EventTarget" and $isParameter;
 
     return "String" if $type eq "DOMUserData";  # temporary hack, TODO
 
