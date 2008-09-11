@@ -78,7 +78,7 @@ mailing address.
 #include <string.h>
 #include "GIFImageDecoder.h"
 
-#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX)
+#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX) || PLATFORM(SKIA)
 
 using WebCore::GIFImageDecoder;
 

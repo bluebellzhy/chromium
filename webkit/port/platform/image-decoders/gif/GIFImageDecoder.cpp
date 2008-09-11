@@ -27,7 +27,7 @@
 #include "GIFImageDecoder.h"
 #include "GIFImageReader.h"
 
-#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX)
+#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX) || PLATFORM(SKIA)
 
 namespace WebCore {
 

@@ -40,7 +40,7 @@
 #include "png.h"
 #include "assert.h"
 
-#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX)
+#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX) || PLATFORM(SKIA)
 
 namespace WebCore {
 
