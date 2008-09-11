@@ -732,6 +732,11 @@ void KURL::print() const
 }
 #endif
 
+// Empty definition, because GURL doesn't need an explicit state reset
+void KURL::invalidate()
+{
+}
+
 // Equal up to reference fragments, if any.
 bool equalIgnoringRef(const KURL& a, const KURL& b)
 {
