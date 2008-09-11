@@ -217,11 +217,10 @@ static HGLOBAL createGlobalHDropContent(const KURL& url, String& fileName, Share
     WCHAR filePath[MAX_PATH];
 
     if (url.isLocalFile()) {
-        String path = url.path();
+        String localPath = url.path();
         // windows does not enjoy a leading slash on paths
-        if (path[0] == '/')
-            path = path.substring(1);
-        String localPath = path;
+        if (localPath[0] == '/')
+            localPath = localPath.substring(1);
         LPCTSTR localPathStr = localPath.charactersWithNullTermination();
         if (wcslen(localPathStr) + 1 < MAX_PATH)
             wcscpy_s(filePath, MAX_PATH, localPathStr);
@@ -308,6 +307,9 @@ static HGLOBAL createGlobalUrlFileDescriptor(const String& url, const String& ti
 
 static HGLOBAL createGlobalImageFileDescriptor(const String& url, const String& title, CachedImage* image)
 {
+    ASSERT_ARG(image, image);
+    ASSERT(image->image()->data());
+
     HRESULT hr = S_OK;
     HGLOBAL memObj = 0;
     String fsPath;
@@ -321,11 +323,8 @@ static HGLOBAL createGlobalImageFileDescriptor(const String& url, const String& 
     fgd->fgd[0].dwFlags = FD_FILESIZE;
     fgd->fgd[0].nFileSizeLow = image->image()->data()->size();
     
-    // Note: We fail to get the extension if we're running in the sandbox.
-    String extension = WebCore::MIMETypeRegistry::getPreferredExtensionForMIMEType(
-        image->response().mimeType());
-    if (!extension.isEmpty())
-        extension = "." + extension;
+    String extension(".");
+    extension += WebCore::MIMETypeRegistry::getPreferredExtensionForMIMEType(image->response().mimeType());
     const String& preferredTitle = title.isEmpty() ? image->response().suggestedFilename() : title;
     fsPath = filesystemPathFromUrlOrTitle(url, preferredTitle, extension.isEmpty() ? 0 : (TCHAR*)extension.charactersWithNullTermination(), false);
 
@@ -417,11 +416,10 @@ PassRefPtr<ClipboardWin> ClipboardWin::create(bool isForDragging, WCDataObject* 
 static bool writeURL(WCDataObject *data, const KURL& url, String title, bool withPlainText, bool withHTML)
 {
     ASSERT(data);
-    ASSERT(!url.isEmpty());
-    
-    if (!url.isValid())
-        return false;
 
+    if (url.isEmpty())
+        return false;
+    
     if (title.isEmpty()) {
         title = url.lastPathComponent();
         if (title.isEmpty())
@@ -513,21 +511,19 @@ String ClipboardWin::getData(const String& type, bool& success) const
     return "";
 }
 
-bool ClipboardWin::setData(const String &type, const String &data)
+bool ClipboardWin::setData(const String& type, const String& data)
 {
-    //FIXME: Need to be able to write to the system clipboard <rdar://problem/5015941>
+    // FIXME: Need to be able to write to the system clipboard <rdar://problem/5015941>
     ASSERT(isForDragging());
     if (policy() != ClipboardWritable || !m_writableDataObject)
         return false;
 
     ClipboardDataType winType = clipboardTypeFromMIMEType(type);
 
-    if (winType == ClipboardDataTypeURL) {
-        KURL url(data);
-        if (!url.isValid())
-            return false;
-        return WebCore::writeURL(m_writableDataObject.get(), url, String(), false, true);
-    } else if ( winType == ClipboardDataTypeText) {
+    if (winType == ClipboardDataTypeURL)
+        return WebCore::writeURL(m_writableDataObject.get(), KURL(data), String(), false, true);
+
+    if (winType == ClipboardDataTypeText) {
         STGMEDIUM medium = {0};
         medium.tymed = TYMED_HGLOBAL;
         medium.hGlobal = createGlobalData(data);
@@ -586,7 +582,7 @@ HashSet<String> ClipboardWin::types() const
     return results;
 }
 
-void ClipboardWin::setDragImage(CachedImage* image, Node* node, const IntPoint &loc)
+void ClipboardWin::setDragImage(CachedImage* image, Node *node, const IntPoint &loc)
 {
     if (policy() != ClipboardImageWritable && policy() != ClipboardWritable) 
         return;
@@ -672,7 +668,7 @@ static void writeImageToDataObject(IDataObject* dataObject, Element* element, co
         return;
 
     SharedBuffer* imageBuffer = cachedImage->image()->data();
-    if (!imageBuffer->size())
+    if (!imageBuffer || !imageBuffer->size())
         return;
 
     HGLOBAL imageFileDescriptor = createGlobalImageFileDescriptor(url.string(), element->getAttribute(altAttr), cachedImage);
@@ -691,8 +687,6 @@ static void writeImageToDataObject(IDataObject* dataObject, Element* element, co
     HGLOBAL hDropContent = createGlobalHDropContent(url, fileName, imageBuffer);
 
     writeFileToDataObject(dataObject, imageFileDescriptor, imageFileContent, hDropContent);
-    // TODO(tc): Also write the mime type to the dataObject so we can
-    // fix the filename once we're back in the browser process.
 }
 
 void ClipboardWin::declareAndWriteDragImage(Element* element, const KURL& url, const String& title, Frame* frame)
