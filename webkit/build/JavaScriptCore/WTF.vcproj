@@ -238,6 +238,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\RefCountedLeakCounter.cpp"
+			>
+		</File>
+		<File
 			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\RefPtr.h"
 			>
 		</File>
