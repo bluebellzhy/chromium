@@ -39,8 +39,6 @@
 #include "JPEGImageDecoder.h"
 #include <assert.h>
 
-#if PLATFORM(CAIRO) || PLATFORM(QT) || PLATFORM(WX) || PLATFORM(SKIA)
-
 extern "C" {
 #include "jpeglib.h"
 }
@@ -511,5 +509,3 @@ void JPEGImageDecoder::jpegComplete()
 }
 
 }
-
-#endif // PLATFORM(CAIRO)
