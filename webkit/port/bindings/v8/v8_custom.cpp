@@ -2678,6 +2678,18 @@ CALLBACK_FUNC_DECL(DocumentEvaluate) {
                              static_cast<Peerable*>(result.get()));
 }
 
+CALLBACK_FUNC_DECL(DocumentQuerySelector) {
+  INC_STATS(L"DOM.Document.querySelector()");
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
+}
+
+CALLBACK_FUNC_DECL(DocumentQuerySelectorAll) {
+  INC_STATS(L"DOM.Document.querySelectorAll()");
+  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  return v8::Undefined();
+}
+
 CALLBACK_FUNC_DECL(DocumentFragmentQuerySelector) {
   INC_STATS(L"DOM.DocumentFragment.querySelector()");
   V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);

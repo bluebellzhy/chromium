@@ -185,6 +185,8 @@ DECLARE_CALLBACK(HTMLDocumentClear)
 
 // Document customized functions
 DECLARE_CALLBACK(DocumentEvaluate)
+DECLARE_CALLBACK(DocumentQuerySelector)
+DECLARE_CALLBACK(DocumentQuerySelectorAll)
 DECLARE_CALLBACK(DocumentFragmentQuerySelector)
 DECLARE_CALLBACK(DocumentFragmentQuerySelectorAll)
 
