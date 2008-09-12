@@ -1350,6 +1350,7 @@ sub GetNativeType
     
     return "int" if $type eq "short" or $type eq "unsigned short";
     return "int" if $type eq "long" or $type eq "unsigned long";
+    return "unsigned long long" if $type eq "unsigned long long";
     return "bool" if $type eq "boolean";
     return "String" if $type eq "DOMString";
     return "Range::CompareHow" if $type eq "CompareHow";

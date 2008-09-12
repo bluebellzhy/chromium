@@ -273,6 +273,16 @@ DECLARE_CALLBACK(XMLHttpRequestSetRequestHeader)
 DECLARE_CALLBACK(XMLHttpRequestGetResponseHeader)
 DECLARE_CALLBACK(XMLHttpRequestOverrideMimeType)
 
+// Custom implementation of XMLHttpRequestUpload properties
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnabort)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnerror)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnload)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnloadstart)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnprogress)
+DECLARE_CALLBACK(XMLHttpRequestUploadAddEventListener)
+DECLARE_CALLBACK(XMLHttpRequestUploadRemoveEventListener)
+DECLARE_CALLBACK(XMLHttpRequestUploadDispatchEvent)
+
 // Custom implementation of TreeWalker functions
 DECLARE_CALLBACK(TreeWalkerParentNode)
 DECLARE_CALLBACK(TreeWalkerFirstChild)

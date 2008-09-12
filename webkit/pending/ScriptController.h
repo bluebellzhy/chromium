@@ -173,7 +173,7 @@ public:
     // Evaluate a script file in the environment of this proxy.
     // If succeeded, 'succ' is set to true and result is returned
     // as a string.
-    String evaluate(const String& filename, int baseLine, const String& code, Node*, bool* succ);
+    String evaluate(const String& filename, int baseLine, const String& code, Node* node = NULL, bool* succ = NULL);
 
     // Second API function for evaluating a JS code.
     // It returns a JSResult which must be disposed by calling

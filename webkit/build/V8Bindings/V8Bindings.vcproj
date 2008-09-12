@@ -200,6 +200,14 @@
 				>
 			</File>
 			<File
+				RelativePath="$(IntDir)\DerivedSources\V8CanvasPixelArray.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8CanvasPixelArray.h"
+				>
+			</File>
+			<File
 				RelativePath="$(IntDir)\DerivedSources\V8CanvasRenderingContext2D.cpp"
 				>
 			</File>
@@ -469,6 +477,22 @@
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8EventTargetNode.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8File.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8File.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8FileList.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8FileList.h"
 				>
 			</File>
 			<File
@@ -973,6 +997,14 @@
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8InspectorController.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8ImageData.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8ImageData.h"
 				>
 			</File>
 			<File
@@ -2016,6 +2048,14 @@
 				>
 			</File>
 			<File
+				RelativePath="$(IntDir)\DerivedSources\V8TextMetrics.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8TextMetrics.h"
+				>
+			</File>
+			<File
 				RelativePath="$(IntDir)\DerivedSources\V8TreeWalker.cpp"
 				>
 			</File>
@@ -2061,6 +2101,14 @@
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequest.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.h"
 				>
 			</File>
 			<File

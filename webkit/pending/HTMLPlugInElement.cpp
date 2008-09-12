@@ -100,6 +100,20 @@ KJS::Bindings::Instance* HTMLPlugInElement::getInstance() const
 
     return m_instance.get();
 }
+#elif USE(V8)
+JSInstance HTMLPlugInElement::getInstance() const
+{
+    // FIXME: what do we need to do here?
+    notImplemented();
+    return m_instance.Get();
+}
+
+void HTMLPlugInElement::detach()
+{
+    // FIXME: what do we need to do here?
+    notImplemented();
+    HTMLFrameOwnerElement::detach();
+}
 #endif
 
 String HTMLPlugInElement::align() const

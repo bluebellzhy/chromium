@@ -236,6 +236,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(BARINFO, BarInfo)                                                   \
   V(CANVASGRADIENT, CanvasGradient)                                     \
   V(CANVASPATTERN, CanvasPattern)                                       \
+  V(CANVASPIXELARRAY, CanvasPixelArray)                                 \
   V(CANVASRENDERINGCONTEXT2D, CanvasRenderingContext2D)                 \
   V(CLIPBOARD, Clipboard)                                               \
   V(CONSOLE, Console)                                                   \

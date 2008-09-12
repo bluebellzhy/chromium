@@ -639,6 +639,7 @@ all : \
     V8CSSValueList.h \
     V8CanvasGradient.h \
     V8CanvasPattern.h \
+    V8CanvasPixelArray.h \
     V8CanvasRenderingContext2D.h \
     V8CharacterData.h \
     V8Comment.h \

@@ -192,6 +192,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\port\page\Console.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\port\page\DragControllerWin.cpp"
 				>
 			</File>
