@@ -125,11 +125,83 @@
 			Name="page"
 			>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityImageMapLink.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityImageMapLink.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityListBox.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityListBox.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityListBoxOption.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityListBoxOption.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityObject.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityObject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityRenderObject.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityRenderObject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTable.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableCell.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableCell.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableColumn.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableColumn.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableHeaderContainer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableHeaderContainer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableRow.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\page\AccessibilityTableRow.h"
 				>
 			</File>
 			<File
