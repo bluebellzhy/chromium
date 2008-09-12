@@ -1083,6 +1083,20 @@ void GraphicsContext::setShouldDelete(bool should_delete)
         m_data->setShouldDelete(should_delete);
 }
 
+// TODO(eseidel): This is needed for image masking and complex text fills
+void GraphicsContext::clipToImageBuffer(const FloatRect& rect, const ImageBuffer* imageBuffer)
+{
+    if (paintingDisabled())
+        return;
+
+    notImplemented();
+}
+
+void GraphicsContext::setImageInterpolationQuality(InterpolationQuality)
+{
+    notImplemented();
+}
+
 // Skia platform gradients and patterns are handled at draw time
 // Upstream is considering removing these methods anyway
 void GraphicsContext::setPlatformStrokePattern(Pattern* pattern)
