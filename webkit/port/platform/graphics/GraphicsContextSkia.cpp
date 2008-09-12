@@ -832,9 +832,13 @@ void GraphicsContext::setPlatformShadow(const IntSize& size, int blur, const Col
                                                 SkIntToScalar(size.height()),
                                                 c);
         m_data->setDrawLooper(dl)->unref();
-    }
-    else
+    } else
         m_data->setDrawLooper(NULL);
+}
+
+void GraphicsContext::clearPlatformShadow()
+{
+    m_data->setDrawLooper(NULL);
 }
 
 void GraphicsContext::drawFocusRing(const Color& color)
@@ -1077,6 +1081,24 @@ void GraphicsContext::setShouldDelete(bool should_delete)
 {
     if (m_data)
         m_data->setShouldDelete(should_delete);
+}
+
+// Skia platform gradients and patterns are handled at draw time
+// Upstream is considering removing these methods anyway
+void GraphicsContext::setPlatformStrokePattern(Pattern* pattern)
+{
+}
+
+void GraphicsContext::setPlatformFillPattern(Pattern* pattern)
+{
+}
+
+void GraphicsContext::setPlatformStrokeGradient(Gradient*)
+{
+}
+
+void GraphicsContext::setPlatformFillGradient(Gradient*)
+{
 }
 
 }
