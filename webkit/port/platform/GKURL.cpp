@@ -559,6 +559,29 @@ String KURL::prettyURL() const
     return m_url.string();
 }
 
+// Copy the KURL version here on Sept 12, 2008 while doing the webkit merge.
+// 
+// TODO(erg): Somehow share this with KURL? Like we'd theoretically merge
+// with decodeURLEscapeSequences below?
+#ifdef KURL_DECORATE_GLOBALS
+String KURL::mimeTypeFromDataURL(const String& url)
+#else
+String mimeTypeFromDataURL(const String& url)
+#endif
+{
+    ASSERT(protocolIs(url, "data"));
+    int index = url.find(';');
+    if (index == -1)
+        index = url.find(',');
+    if (index != -1) {
+        int len = index - 5;
+        if (len > 0)
+            return url.substring(5, len);
+        return "text/plain"; // Data URLs with no MIME type are considered text/plain.
+    }
+    return "";
+}
+
 #ifdef KURL_DECORATE_GLOBALS
 String KURL::decodeURLEscapeSequences(const String& str)
 #else
