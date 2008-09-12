@@ -841,6 +841,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\FontDescription.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\pending\FontDescription.h"
 				>
 			</File>
