@@ -1204,6 +1204,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ResourceErrorBase.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ResourceErrorBase.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ResourceHandle.h"
 					>
 				</File>
