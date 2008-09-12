@@ -513,6 +513,13 @@ void KURL::setRef(const String& ref)
     replaceComponents(replacements);
 }
 
+void KURL::removeRef()
+{
+    Replacements replacements;
+    replacements.ClearRef();
+    replaceComponents(replacements);
+}
+
 void KURL::setQuery(const String& query)
 {
     Replacements replacements;
