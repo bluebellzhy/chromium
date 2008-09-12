@@ -950,7 +950,7 @@ void DOMWindow::setLocation(const String& v) {
 
     m_frame->loader()->scheduleLocationChange(completed_url,
         active_frame->loader()->outgoingReferrer(), false,
-        active_frame->script()->wasRunByUserGesture());
+        active_frame->script()->processingUserGesture());
   }
 }
 

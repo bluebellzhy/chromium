@@ -138,12 +138,34 @@ void ScriptController::resumeTimeouts(OwnPtr<PausedTimeouts>& timeouts)
 }
 
 ScriptController::ScriptController(Frame* frame)
+    : m_frame(frame)
+    , m_sourceURL(0)
+    , m_processingTimerCallback(false)
+    , m_paused(false)
+    , m_proxy(new V8Proxy(frame))
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    , m_windowScriptNPObject(0)
+#endif
 {
-    m_proxy.set(new V8Proxy(frame));
 }
 
 ScriptController::~ScriptController()
 {
+}
+
+void ScriptController::clearScriptObjects()
+{
+    // TODO(eseidel): JSC handles binding root objects here, why don't we?
+
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    if (m_windowScriptNPObject) {
+        // Call _NPN_DeallocateObject() instead of _NPN_ReleaseObject() so that we don't leak if a plugin fails to release the window
+        // script object properly.
+        // This shouldn't cause any problems for plugins since they should have already been stopped and destroyed at this point.
+        _NPN_DeallocateObject(m_windowScriptNPObject);
+        m_windowScriptNPObject = 0;
+    }
+#endif
 }
 
 void ScriptController::clearPluginObjects()
@@ -162,7 +184,7 @@ void ScriptController::disconnectFrame()
     m_proxy->disconnectFrame();
 }
 
-bool ScriptController::wasRunByUserGesture()
+bool ScriptController::processingUserGesture() const
 {
     Frame* active_frame = V8Proxy::retrieveActiveFrame();
     // No script is running, must be run by users.
@@ -348,38 +370,6 @@ NPRuntimeFunctions* ScriptController::functions()
     return &npruntime_functions;
 }
 
-NPObject* ScriptController::createScriptObject(Frame* frame)
-{
-    v8::HandleScope handle_scope;
-    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
-    if (context.IsEmpty())
-        return 0;
-
-    v8::Context::Scope scope(context);
-    DOMWindow *window = frame->domWindow();
-    v8::Handle<v8::Value> global =
-        V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, window);
-    ASSERT(global->IsObject());
-    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(global),
-                                window);
-}
-
-NPObject* ScriptController::createScriptObject(Frame* frame, HTMLPlugInElement* element)
-{
-    v8::HandleScope handle_scope;
-    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
-    if (context.IsEmpty())
-        return 0;
-    v8::Context::Scope scope(context);
-
-    DOMWindow *window = frame->domWindow();
-    v8::Handle<v8::Value> dom_win =
-    V8Proxy::ToV8Object(V8ClassIndex::HTMLEMBEDELEMENT, element);
-    if (!dom_win->IsObject())
-        return 0;
-
-    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(dom_win), window);
-}
 
 bool ScriptController::haveInterpreter() const
 {
@@ -455,6 +445,95 @@ JSInstance ScriptController::createScriptInstanceForWidget(Widget* widget)
     JSInstance instance = wrapper;
     return instance;
 #endif
+}
+
+void ScriptController::cleanupScriptObjectsForPlugin(void* nativeHandle)
+{
+    PluginObjectMap::iterator it = m_pluginObjects.find(nativeHandle);
+    if (it == m_pluginObjects.end())
+        return;
+    _NPN_UnregisterObject(it->second);
+    NPN_ReleaseObject(it->second);
+    m_pluginObjects.remove(it);
+}    
+
+static NPObject* createNoScriptObject()
+{
+    notImplemented();
+    return 0;
+}
+
+static NPObject* createScriptObject(Frame* frame)
+{
+    v8::HandleScope handleScope;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(frame);
+    if (context.IsEmpty())
+        return createNoScriptObject();
+
+    v8::Context::Scope scope(context);
+    DOMWindow* window = frame->domWindow();
+    v8::Handle<v8::Value> global = V8Proxy::ToV8Object(V8ClassIndex::DOMWINDOW, window);
+    ASSERT(global->IsObject());
+    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(global), window);
+}
+
+NPObject* ScriptController::windowScriptNPObject()
+{
+    if (m_windowScriptNPObject)
+        return m_windowScriptNPObject;
+
+    if (isEnabled()) {
+        // JavaScript is enabled, so there is a JavaScript window object.
+        // Return an NPObject bound to the window object.
+        m_windowScriptNPObject = createScriptObject(m_frame);
+        _NPN_RegisterObject(m_windowScriptNPObject, NULL);
+    } else {
+        // JavaScript is not enabled, so we cannot bind the NPObject to the
+        // JavaScript window object.  Instead, we create an NPObject of a
+        // different class, one which is not bound to a JavaScript object.
+        m_windowScriptNPObject = createNoScriptObject();
+    }
+    return m_windowScriptNPObject;
+}
+
+NPObject* ScriptController::createScriptObjectForPluginElement(HTMLPlugInElement* plugin)
+{
+    // Can't create NPObjects when JavaScript is disabled
+    if (!isEnabled())
+        return createNoScriptObject();
+
+    v8::HandleScope handleScope;
+    v8::Handle<v8::Context> context = V8Proxy::GetContext(m_frame);
+    if (context.IsEmpty())
+        return createNoScriptObject();
+    v8::Context::Scope scope(context);
+
+    DOMWindow* window = m_frame->domWindow();
+    v8::Handle<v8::Value> v8plugin = V8Proxy::ToV8Object(V8ClassIndex::HTMLEMBEDELEMENT, plugin);
+    if (!v8plugin->IsObject())
+        return createNoScriptObject();
+
+    return NPN_CreateScriptObject(0, v8::Handle<v8::Object>::Cast(v8plugin), window);
+}
+
+
+void ScriptController::clearWindowShell()
+{
+    // TODO(eseidel): we don't yet have a split window implementation
+    // we need to clear the window object here.
+    notImplemented();
+}
+
+void ScriptController::attachDebugger(void*)
+{
+    notImplemented();
+}
+
+void ScriptController::updateDocument()
+{
+    // TODO(eseidel): Should update document property on current window object
+    // and all previous window objects which may still be alive.
+    notImplemented();
 }
 
 

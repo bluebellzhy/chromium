@@ -168,8 +168,6 @@ public:
     // or this accessor should be made JSProxy*
     V8Proxy* proxy() { return m_proxy.get(); }
 
-    bool wasRunByUserGesture();
-
     // Evaluate a script file in the environment of this proxy.
     // If succeeded, 'succ' is set to true and result is returned
     // as a string.
@@ -195,10 +193,6 @@ public:
     void BindToWindowObject(Frame*, const String& key, NPObject*);
 
     NPRuntimeFunctions* functions();
-
-    // Create an NPObject for the window object.
-    NPObject* createScriptObject(Frame*);
-    NPObject* createScriptObject(Frame*, HTMLPlugInElement*);
 
     JSInstance createScriptInstanceForWidget(Widget*);
 
@@ -307,6 +301,9 @@ private:
     // invalidate all sub-objects which are associated with that plugin.
     // The frame keeps a NPObject reference for each item on the list.
     PluginObjectMap m_pluginObjects;
+#endif
+#if ENABLE(NETSCAPE_PLUGIN_API)
+    NPObject* m_windowScriptNPObject;
 #endif
 };
 

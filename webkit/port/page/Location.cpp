@@ -68,7 +68,7 @@ void Location::ChangeLocationTo(const KURL& url, bool lock_history) {
   if (!active_frame)
     return;
 
-  bool user_gesture = active_frame->script()->wasRunByUserGesture();
+  bool user_gesture = active_frame->script()->processingUserGesture();
   String referrer = active_frame->loader()->outgoingReferrer();
 
   m_frame->loader()->scheduleLocationChange(url.string(), referrer, lock_history, user_gesture);
@@ -232,7 +232,7 @@ void Location::reload(bool forceget)
     if (!ScriptController::isSafeScript(m_frame))
         return;
 
-    bool userGesture = active_frame->script()->wasRunByUserGesture();
+    bool userGesture = active_frame->script()->processingUserGesture();
     m_frame->loader()->scheduleRefresh(userGesture);
 }
 

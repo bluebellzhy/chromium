@@ -913,7 +913,7 @@ static bool allowPopUp() {
   Frame* frame = V8Proxy::retrieveActiveFrame();
 
   ASSERT(frame);
-  if (frame->script()->wasRunByUserGesture()) return true;
+  if (frame->script()->processingUserGesture()) return true;
   Settings* settings = frame->settings();
   return settings && settings->JavaScriptCanOpenWindowsAutomatically();
 }
@@ -997,7 +997,7 @@ static Frame* createWindow(Frame* opener_frame,
       ScriptController::isSafeScript(new_frame)) {
     String completed_url =
         url.isEmpty() ? url : active_frame->document()->completeURL(url);
-    bool user_gesture = active_frame->script()->wasRunByUserGesture();
+    bool user_gesture = active_frame->script()->processingUserGesture();
 
     if (created) {
       new_frame->loader()->changeLocation(
@@ -1168,7 +1168,7 @@ CALLBACK_FUNC_DECL(DOMWindowOpen) {
     if (!completed_url.isEmpty() &&
         (!parseURL(url_string).startsWith("javascript:", false) ||
          ScriptController::isSafeScript(frame))) {
-      bool user_gesture = active_frame->script()->wasRunByUserGesture();
+      bool user_gesture = active_frame->script()->processingUserGesture();
       frame->loader()->scheduleLocationChange(
           completed_url,
           active_frame->loader()->outgoingReferrer(),
