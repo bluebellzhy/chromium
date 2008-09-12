@@ -278,7 +278,23 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\Threading.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\pending\wtf\ThreadingWin.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\unicode\Collator.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\unicode\Unicode.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\unicode\icu\CollatorICU.cpp"
 			>
 		</File>
 		<File
