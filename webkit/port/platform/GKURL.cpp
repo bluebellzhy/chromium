@@ -559,6 +559,15 @@ String KURL::prettyURL() const
     return m_url.string();
 }
 
+#ifdef KURL_DECORATE_GLOBALS
+String KURL::decodeURLEscapeSequences(const String& str)
+#else
+String decodeURLEscapeSequences(const String& str)
+#endif
+{
+    return decodeURLEscapeSequences(str, UTF8Encoding());
+}
+
 // In WebKit's implementation, this is called by every component getter.
 // It will unescape every character, including NULL. This is scary, and may
 // cause security holes. We never call this function for components, and
