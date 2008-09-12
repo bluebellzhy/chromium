@@ -285,7 +285,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\page\Page.cpp"
+				RelativePath="..\..\pending\Page.cpp"
 				>
 			</File>
 			<File
