@@ -30,6 +30,7 @@
 #include "IntPoint.h"
 #include "NativeImageSkia.h"
 #include "webkit/glue/webkit_resources.h"
+#include "NotImplemented.h"
 
 #define ALPHA_CURSORS
 
@@ -185,6 +186,69 @@ const Cursor& columnResizeCursor()
 const Cursor& rowResizeCursor()
 {
     static Cursor c = WebCursor::ROWRESIZE;
+    return c;
+}
+
+const Cursor& middlePanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& eastPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& northPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& northEastPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& northWestPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& southPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& southEastPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& southWestPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
+    return c;
+}
+
+const Cursor& westPanningCursor()
+{
+    static Cursor c = WebCursor::ARROW;
+    notImplemented();
     return c;
 }
 
