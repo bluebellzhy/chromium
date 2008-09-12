@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\port\page\AccessibilityObjectWin.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\port\page\AXObjectCacheWin.cpp"
 				>
 			</File>
