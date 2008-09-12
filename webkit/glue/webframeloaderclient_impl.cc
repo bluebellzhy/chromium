@@ -1108,7 +1108,7 @@ ResourceError WebFrameLoaderClient::fileDoesNotExistError(const ResourceResponse
   return ResourceError();
 }
 
-ResourceError pluginWillHandleLoadError(const WebCore::ResourceResponse&) {
+ResourceError WebFrameLoaderClient::pluginWillHandleLoadError(const WebCore::ResourceResponse&) {
   // FIXME
   return ResourceError();
 }
