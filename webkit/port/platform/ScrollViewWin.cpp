@@ -69,6 +69,8 @@ public:
         , m_hScrollbarMode(ScrollbarAuto)
         , m_visible(false)
         , m_attachedToWindow(false)
+        , m_panScrollIconPoint(0,0)
+        , m_drawPanScrollIcon(false)
     {
     }
 
@@ -126,7 +128,11 @@ public:
     HashSet<Widget*> m_children;
     bool m_visible;
     bool m_attachedToWindow;
+    IntPoint m_panScrollIconPoint;
+    bool m_drawPanScrollIcon;
 };
+
+const int panIconSizeLength = 20;
 
 void ScrollView::ScrollViewPrivate::setHasHorizontalScrollbar(bool hasBar)
 {
@@ -1189,6 +1195,26 @@ void ScrollView::setAllowsScrolling(bool flag)
 bool ScrollView::allowsScrolling() const
 {
   return m_data->allowsScrolling();
+}
+
+void ScrollView::printPanScrollIcon(const IntPoint& iconPosition)
+{
+    m_data->m_drawPanScrollIcon = true;    
+    m_data->m_panScrollIconPoint = IntPoint(iconPosition.x() - panIconSizeLength / 2 , iconPosition.y() - panIconSizeLength / 2) ;
+
+    updateWindowRect(IntRect(m_data->m_panScrollIconPoint, IntSize(panIconSizeLength,panIconSizeLength)), true);    
+}
+
+void ScrollView::removePanScrollIcon()
+{
+    m_data->m_drawPanScrollIcon = false; 
+
+    updateWindowRect(IntRect(m_data->m_panScrollIconPoint, IntSize(panIconSizeLength, panIconSizeLength)), true);
+}
+
+bool ScrollView::isScrollable() 
+{ 
+    return m_data->m_vBar != 0 || m_data->m_hBar != 0;
 }
 
 } // namespace WebCore
