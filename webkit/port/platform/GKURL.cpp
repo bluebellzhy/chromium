@@ -160,23 +160,6 @@ KURL::KURL(const char *url)
 KURL::KURL(const String& url)
 {
     init(KURL(), url, NULL);
-
-    if (m_url.utf8String().isNull()) {
-        // See FIXME above.
-        //
-        // Bug-for-bug KURL compatibility for WebKit bug:
-        // http://bugs.webkit.org/show_bug.cgi?id=16487
-        //
-        // URLs created with NULL deprecated strings should be changed to be
-        // empty rather than NULL. This masks some crashes in WebKit. This
-        // special case should be removed when we bring in a WebKit version
-        // newer than r31089 which fixes
-        // http://bugs.webkit.org/show_bug.cgi?id=16485
-        //
-        // This extends to any String, even if it is invalid, and even
-        // though KURL(KURL(), <same string>) would give a NULL string. Gaa!
-        m_url.setUtf8("", 0);
-    }
 }
 
 // Constructs a new URL given a base URL and a possibly relative input URL.
