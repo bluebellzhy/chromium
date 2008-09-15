@@ -111,7 +111,7 @@ private:
         HFONT m_hfont;
     };
 
-    static RefCountedHFONT* hashTableDeletedFontValue() { return reinterpret_cast<RefCountedHFONT*>(-1); }
+    static RefCountedHFONT* hashTableDeletedFontValue();
 
     RefPtr<RefCountedHFONT> m_font;
     float m_size;  // Point size of the font in pixels.
