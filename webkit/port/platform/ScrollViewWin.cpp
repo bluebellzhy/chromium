@@ -532,8 +532,15 @@ void ScrollView::updateContents(const IntRect& rect, bool now)
     if (containingWindowRect.y() < 0)
         containingWindowRect.setY(0);
 
+    updateWindowRect(containingWindowRect, now);
+}
+
+void ScrollView::updateWindowRect(const IntRect& rect, bool now)
+{
+    // TODO(dglazkov): make sure this is actually the right way to do this
+
     // Cache the dirty spot.
-    addToDirtyRegion(containingWindowRect);
+    addToDirtyRegion(rect);
 
     // since painting always happens asynchronously, we don't have a way to
     // honor the "now" parameter.  it is unclear if it matters.
