@@ -44,7 +44,7 @@ namespace WTF {
 
 template<class T> class RefCounted : public WebCore::Peerable, Noncopyable {
 public:
-    RefCounted(int initialRefCount = 0)
+    RefCounted(int initialRefCount = 1)
         : m_refCount(initialRefCount)
         , m_peer(0)
 #ifndef NDEBUG
