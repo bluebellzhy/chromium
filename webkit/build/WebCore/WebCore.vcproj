@@ -5961,6 +5961,34 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\Plugin.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\Plugin.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginArray.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginArray.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginData.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginData.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginDatabase.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginDatabase.h"
 				>
 			</File>
@@ -5969,7 +5997,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginInfoStore.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginInfoStore.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginMainThreadScheduler.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginMainThreadScheduler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginPackage.cpp"
 				>
 			</File>
 			<File
@@ -5981,13 +6025,33 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginStream.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginStream.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginView.h"
+				RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\PluginStream.h"
 				>
 			</File>
+			<Filter
+				Name="win"
+				>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\win\PluginDatabaseWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\win\PluginDataWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\win\PluginMessageThrottlerWin.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\plugins\win\PluginMessageThrottlerWin.h"
+					>
+				</File>
+			</Filter>
 			<File
 				RelativePath="..\precompiled_webkit.cc"
 				>

@@ -63,6 +63,12 @@ bool getFileModificationTime(const String& /*path*/, time_t& /*result*/)
     return false;
 }
 
+bool fileExists(const String& path) 
+{
+    notImplemented();
+    return false;
+}
+
 bool getFileSize(const String&, long long& result)
 {
     notImplemented();
@@ -82,6 +88,12 @@ bool deleteFile(const String& /*path*/)
 }
 
 bool deleteEmptyDirectory(const String& /*path*/)
+{
+    notImplemented();
+    return false;
+}
+
+bool unloadModule(PlatformModule module)
 {
     notImplemented();
     return false;
