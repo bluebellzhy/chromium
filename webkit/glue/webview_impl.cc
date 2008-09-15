@@ -122,7 +122,8 @@ WebView* WebView::Create(WebViewDelegate* delegate,
   instance->delegate_ = delegate;
   // Restrict the access to the local file system
   // (see WebView.mm WebView::_commonInitializationWithFrameName).
-  FrameLoader::setRestrictAccessToLocal(true);
+  FrameLoader::setLocalLoadPolicy(
+      FrameLoader::AllowLocalLoadsForLocalOnly);
   return instance;
 }
 
