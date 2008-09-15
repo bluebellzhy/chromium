@@ -245,7 +245,8 @@ bool ScriptController::processingUserGesture() const
 String ScriptController::evaluate(const String& filename, int baseLine,
                           const String& code, Node* node, bool* succ)
 {
-    *succ = false;
+    if (succ)
+        *succ = false;
     String result;
 
     v8::HandleScope hs;
@@ -269,7 +270,8 @@ String ScriptController::evaluate(const String& filename, int baseLine,
     }
 
     result = ToWebCoreString(obj);
-    *succ = true;
+    if (succ)
+        *succ = true;
 
     return result;
 }
