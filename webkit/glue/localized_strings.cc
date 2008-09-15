@@ -31,7 +31,9 @@
 #undef LOG
 #include "webkit/glue/webkit_glue.h"
 #include "base/logging.h"
+#include "base/file_util.h"
 #include "base/string_util.h"
+#include "webkit/glue/glue_util.h"
 
 #include "webkit_strings.h"
 
@@ -128,6 +130,15 @@ String keygenMenuHighGradeKeySize() {
 String keygenMenuMediumGradeKeySize() {
   return GetLocalizedString(IDS_KEYGEN_MED_GRADE_KEY);
 }
+
+// Used in ImageDocument.cpp as the title for pages when that page is an image.
+String WebCore::imageTitle(const String& filename, const IntSize& size) {
+  // C3 97 is UTF-8 for U+00D7 (multiplication sign).
+  std::string size_str = StringPrintf(" (%d\xC3\x97%d)",
+                                      size.width(), size.height());
+  return filename + webkit_glue::StdStringToString(size_str);
+}
+
 } //namespace WebCore
 
 // We don't use these strings, so they return an empty String. We can't just
