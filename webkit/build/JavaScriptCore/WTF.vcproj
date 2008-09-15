@@ -258,7 +258,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\wtf\RefPtrHashMap.h"
+			RelativePath="..\..\pending\wtf\RefPtrHashMap.h"
 			>
 		</File>
 		<File
