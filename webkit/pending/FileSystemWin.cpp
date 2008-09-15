@@ -63,6 +63,12 @@ bool getFileModificationTime(const String& /*path*/, time_t& /*result*/)
     return false;
 }
 
+bool getFileSize(const String&, long long& result)
+{
+    notImplemented();
+    return false;
+}
+
 // delteFile() and deleteEmptyDirectory() are used by
 // FormData::removeGeneratedFilesIfNeeded() for uploading bundles:
 // http://trac.webkit.org/changeset/32666

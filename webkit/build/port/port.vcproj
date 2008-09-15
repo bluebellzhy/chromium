@@ -184,11 +184,11 @@
 			Name="page"
 			>
 			<File
-				RelativePath="..\..\port\page\AccessibilityObjectWrapperWin.h"
+				RelativePath="..\..\port\page\AccessibilityObjectWin.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\port\page\AccessibilityObjectWin.cpp"
+				RelativePath="..\..\port\page\AccessibilityObjectWrapperWin.h"
 				>
 			</File>
 			<File
@@ -1163,6 +1163,10 @@
 				Name="network"
 				>
 				<File
+					RelativePath="..\..\port\platform\network\AuthenticationChallenge.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\network\AuthenticationChallenge.h"
 					>
 				</File>
@@ -1171,15 +1175,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\port\platform\network\NetworkStateNotifierWin.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\network\ResourceError.h"
 					>
 				</File>
 				<File
 					RelativePath="..\..\port\platform\network\ResourceRequest.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\port\platform\network\NetworkStateNotifierWin.cpp"
 					>
 				</File>
 			</Filter>

@@ -2736,6 +2736,9 @@ void InspectorController::resourceRetrievedByXMLHttpRequest(unsigned long identi
 }
 #elif USE(V8)
 // TODO(ojan): Implement!
+void InspectorController::resourceRetrievedByXMLHttpRequest(unsigned long identifier, String& sourceString)
+{
+}
 #endif
 
 
