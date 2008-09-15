@@ -1272,6 +1272,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\NetworkStateNotifier.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pending\NetworkStateNotifier.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\ProtectionSpace.cpp"
 					>
 				</File>

@@ -1178,6 +1178,10 @@
 					RelativePath="..\..\port\platform\network\ResourceRequest.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\port\platform\network\NetworkStateNotifierWin.cpp"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
