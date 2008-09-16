@@ -196,7 +196,6 @@ public:
 
     JSInstance createScriptInstanceForWidget(Widget*);
 
-    void clear();
     void clearPluginObjects();
     void clearDocumentWrapper();
     void disconnectFrame();

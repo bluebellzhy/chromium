@@ -327,11 +327,6 @@ void ScriptController::finishedWithEvent(Event* evt)
     m_proxy->finishedWithEvent(evt);
 }
 
-void ScriptController::clear()
-{
-    m_proxy->clear();
-}
-
 void ScriptController::clearDocumentWrapper()
 {
     m_proxy->clearDocumentWrapper();
@@ -523,7 +518,7 @@ void ScriptController::clearWindowShell()
 {
     // TODO(eseidel): we don't yet have a split window implementation
     // we need to clear the window object here.
-    notImplemented();
+    m_proxy->clear();
 }
 
 void ScriptController::attachDebugger(void*)
