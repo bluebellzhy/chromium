@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/gears_integration.h"
 
@@ -154,7 +129,7 @@ static GURL ConvertSkBitmapToDataURL(const SkBitmap& icon) {
   std::string icon_data_str(reinterpret_cast<char*>(&icon_data[0]),
                             icon_data.size());
   std::string icon_base64_encoded;
-  Base64Encode(icon_data_str, &icon_base64_encoded);
+  net::Base64Encode(icon_data_str, &icon_base64_encoded);
   GURL icon_url("data:image/png;base64," + icon_base64_encoded);
 
   return icon_url;
@@ -165,12 +140,13 @@ static GURL ConvertSkBitmapToDataURL(const SkBitmap& icon) {
 class CreateShortcutCommand : public CPCommandInterface {
  public:
   CreateShortcutCommand(
-      const std::string& name, const std::string& url,
-      const std::string& description,
+      const std::string& name, const std::string& orig_name, 
+      const std::string& url, const std::string& description,
       const std::vector<webkit_glue::WebApplicationInfo::IconInfo> &icons,
       const SkBitmap& fallback_icon,
       GearsCreateShortcutCallback* callback)
-      : name_(name), url_(url), description_(description), callback_(callback),
+      : name_(name), url_(url), description_(description),
+        orig_name_(orig_name), callback_(callback),
         calling_loop_(MessageLoop::current()) {
     // shortcut_data_ has the same lifetime as our strings, so we just point it
     // at their internal data.
@@ -178,6 +154,7 @@ class CreateShortcutCommand : public CPCommandInterface {
     shortcut_data_.name = name_.c_str();
     shortcut_data_.url = url_.c_str();
     shortcut_data_.description = description_.c_str();
+    shortcut_data_.orig_name = orig_name_.c_str();
 
     // Search the icons array for Gears-supported sizes and copy the strings.
     bool has_icon = false;
@@ -225,7 +202,15 @@ class CreateShortcutCommand : public CPCommandInterface {
 
  private:
   void ReportResults(CPError retval) {
-    callback_->Run(shortcut_data_, retval == CPERR_SUCCESS);
+    // Other code only knows about the original GearsShortcutData.  Pass our
+    // GearsShortcutData2 off as one of those - but use the unmodified name.
+    // TODO(mpcomplete): this means that Gears will have stored its sanitized
+    // filename, but not expose it to us.  We will use the unsanitized version,
+    // so our name will potentially differ.  This is relevant because we store
+    // some prefs keyed off the webapp name.
+    shortcut_data_.name = shortcut_data_.orig_name;
+    callback_->Run(*reinterpret_cast<GearsShortcutData*>(&shortcut_data_),
+                   retval == CPERR_SUCCESS);
     delete this;
   }
 
@@ -241,6 +226,7 @@ class CreateShortcutCommand : public CPCommandInterface {
   std::string url_;
   std::string description_;
   std::string icon_urls_[NUM_GEARS_ICONS];
+  std::string orig_name_;
   scoped_ptr<GearsCreateShortcutCallback> callback_;
   MessageLoop* calling_loop_;
 };
@@ -262,6 +248,7 @@ void GearsCreateShortcut(
     GearsCreateShortcutCallback* callback) {
   std::wstring name =
       !app_info.title.empty() ? app_info.title : fallback_name;
+  std::string orig_name_utf8 = WideToUTF8(name);
   EnsureStringValidPathComponent(name);
 
   std::string name_utf8 = WideToUTF8(name);
@@ -270,7 +257,8 @@ void GearsCreateShortcut(
       !app_info.app_url.is_empty() ? app_info.app_url : fallback_url;
 
   CreateShortcutCommand* command =
-      new CreateShortcutCommand(name_utf8, url.spec(), description_utf8,
+      new CreateShortcutCommand(name_utf8, orig_name_utf8, url.spec(),
+                                description_utf8,
                                 app_info.icons, fallback_icon, callback);
   CPHandleCommand(GEARSPLUGINCOMMAND_CREATE_SHORTCUT, command, NULL);
 }
@@ -329,3 +317,4 @@ void GearsQueryShortcuts(GearsQueryShortcutsCallback* callback) {
       new QueryShortcutsCommand(callback),
       NULL);
 }
+

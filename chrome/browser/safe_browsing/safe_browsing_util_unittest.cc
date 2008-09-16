@@ -1,32 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "base/logging.h"
 #include "base/sha2.h"
@@ -257,5 +231,65 @@ TEST(SafeBrowsing, HostInfo) {
   full_hashes.push_back(CreateFullHash(0x2000));
   full_hashes.push_back(CreateFullHash(0x20000));
   full_hashes.push_back(CreateFullHash(0x200000));
+  EXPECT_FALSE(info.Contains(full_hashes, &list_id, &prefix_hits));
+}
+
+// Checks that if we have a hostname blacklisted and we get a sub prefix, the
+// hostname remains blacklisted.
+TEST(SafeBrowsing, HostInfo2) {
+  // Blacklist the entire hostname.
+  SBEntry* entry = SBEntry::Create(SBEntry::ADD_PREFIX, 0);
+  entry->set_list_id(1);
+  entry->set_chunk_id(1);
+
+  SBHostInfo info;
+  info.AddPrefixes(entry);
+  entry->Destroy();
+
+  int list_id;
+  std::vector<SBFullHash> full_hashes;
+  full_hashes.push_back(CreateFullHash(0x01000000));
+  std::vector<SBPrefix> prefix_hits;
+  EXPECT_TRUE(info.Contains(full_hashes, &list_id, &prefix_hits));
+
+  // Now add a sub prefix.
+  entry = SBEntry::Create(SBEntry::SUB_PREFIX, 1);
+  entry->SetPrefixAt(0, 0x02000000);
+  entry->SetChunkIdAtPrefix(0, 2);
+  entry->set_list_id(1);
+  info.RemovePrefixes(entry, true);
+  entry->Destroy();
+
+  // Any prefix except the one removed should still be blocked.
+  EXPECT_TRUE(info.Contains(full_hashes, &list_id, &prefix_hits));
+}
+
+// Checks that if we get a sub chunk with one prefix, then get the add chunk
+// for that same prefix afterwards, the entry becomes empty.
+TEST(SafeBrowsing, HostInfo3) { 
+  SBHostInfo info;
+
+  // Add a sub prefix.
+  SBEntry* entry = SBEntry::Create(SBEntry::SUB_PREFIX, 1);
+  entry->SetPrefixAt(0, 0x01000000);
+  entry->SetChunkIdAtPrefix(0, 1);
+  entry->set_list_id(1);
+  info.RemovePrefixes(entry, true);
+  entry->Destroy();
+
+  int list_id;
+  std::vector<SBFullHash> full_hashes;
+  full_hashes.push_back(CreateFullHash(0x01000000));
+  std::vector<SBPrefix> prefix_hits;
+  EXPECT_FALSE(info.Contains(full_hashes, &list_id, &prefix_hits));
+
+  // Now add the prefix.
+  entry = SBEntry::Create(SBEntry::ADD_PREFIX, 1);
+  entry->SetPrefixAt(0, 0x01000000);
+  entry->set_list_id(1);
+  entry->set_chunk_id(1);
+  info.AddPrefixes(entry);
+  entry->Destroy();
+
   EXPECT_FALSE(info.Contains(full_hashes, &list_id, &prefix_hits));
 }

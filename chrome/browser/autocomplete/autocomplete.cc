@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include <algorithm>
 
@@ -36,8 +11,10 @@
 #include "chrome/browser/autocomplete/history_contents_provider.h"
 #include "chrome/browser/autocomplete/keyword_provider.h"
 #include "chrome/browser/autocomplete/search_provider.h"
+#include "chrome/browser/bookmarks/bookmark_model.h"
 #include "chrome/browser/external_protocol_handler.h"
 #include "chrome/browser/history_tab_ui.h"
+#include "chrome/browser/profile.h"
 #include "chrome/browser/url_fixer_upper.h"
 #include "chrome/common/gfx/url_elider.h"
 #include "chrome/common/l10n_util.h"
@@ -62,8 +39,7 @@ AutocompleteInput::AutocompleteInput(const std::wstring& text,
   if (TrimWhitespace(text, TRIM_ALL, &text_) & TRIM_TRAILING)
     prevent_inline_autocomplete_ = true;
 
-  url_parse::Parsed parts;
-  type_ = Parse(text_, desired_tld, &parts, &scheme_);
+  type_ = Parse(text_, desired_tld, &parts_, &scheme_);
 
   if (type_ == INVALID)
     return;
@@ -150,7 +126,7 @@ AutocompleteInput::Type AutocompleteInput::Parse(const std::wstring& text,
   // the host's validity at this point.)
   const std::wstring host(text.substr(parts->host.begin, parts->host.len));
   const size_t registry_length =
-      RegistryControlledDomainService::GetRegistryLength(host, false);
+      net::RegistryControlledDomainService::GetRegistryLength(host, false);
   if (registry_length == std::wstring::npos)
     return QUERY;  // It's not clear to me that we can reach this...
 
@@ -169,7 +145,7 @@ AutocompleteInput::Type AutocompleteInput::Parse(const std::wstring& text,
 
   // See if the host is an IP address.
   bool is_ip_address;
-  net_util::CanonicalizeHost(host, &is_ip_address);
+  net::CanonicalizeHost(host, &is_ip_address);
   if (is_ip_address) {
     // If the user originally typed a host that looks like an IP address (a
     // dotted quad), they probably want to open it.  If the original input was
@@ -243,6 +219,7 @@ bool AutocompleteInput::Equals(const AutocompleteInput& other) const {
 void AutocompleteInput::Clear() {
   text_.clear();
   type_ = INVALID;
+  parts_ = url_parse::Parsed();
   scheme_.clear();
   desired_tld_.clear();
   prevent_inline_autocomplete_ = false;
@@ -409,6 +386,20 @@ std::wstring AutocompleteProvider::StringForURLDisplay(
   return gfx::ElideUrl(url, ChromeFont(), 0, check_accept_lang && profile_ ?
       profile_->GetPrefs()->GetString(prefs::kAcceptLanguages) :
       std::wstring());
+}
+
+void AutocompleteProvider::UpdateStarredStateOfMatches() {
+  if (matches_.empty())
+    return;
+
+  if (!profile_)
+    return;
+  BookmarkModel* bookmark_model = profile_->GetBookmarkModel();
+  if (!bookmark_model || !bookmark_model->IsLoaded())
+    return;
+
+  for (ACMatches::iterator i = matches_.begin(); i != matches_.end(); ++i)
+    i->starred = bookmark_model->IsBookmarked(GURL(i->destination_url));
 }
 
 // AutocompleteResult ---------------------------------------------------------

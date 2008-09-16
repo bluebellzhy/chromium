@@ -35,7 +35,7 @@
 
 #include "SkBitmap.h"
 
-#include "base/gfx/platform_canvas.h"
+#include "base/gfx/platform_canvas_win.h"
 
 using namespace std;
 
@@ -572,7 +572,7 @@ void GraphicsContext::strokeRect(const FloatRect& rect, float lineWidth)
 
 GraphicsContext* GraphicsContext::createOffscreenContext(int width, int height)
 {
-    gfx::PlatformCanvas* canvas = new gfx::PlatformCanvas(width, height, false);
+    gfx::PlatformCanvasWin* canvas = new gfx::PlatformCanvasWin(width, height, false);
     PlatformContextSkia* pgc = new PlatformContextSkia(canvas);
     canvas->drawARGB(0, 0, 0, 0, SkPorterDuff::kClear_Mode);
 
@@ -1074,7 +1074,7 @@ void GraphicsContext::setUseAntialiasing(bool enable)
 {
     if (paintingDisabled())
         return;
-    notImplemented();
+    m_data->setUseAntialiasing(enable);
 }
 
 void GraphicsContext::setShouldDelete(bool should_delete)

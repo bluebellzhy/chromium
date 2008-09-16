@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/views/location_bar_view.h"
 
@@ -38,23 +13,21 @@
 #include "chrome/browser/browser_list.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/navigation_entry.h"
-#include "chrome/browser/page_info_window.h"
 #include "chrome/browser/profile.h"
-#include "chrome/browser/ssl_error_info.h"
 #include "chrome/browser/template_url.h"
 #include "chrome/browser/template_url_model.h"
 #include "chrome/browser/view_ids.h"
 #include "chrome/browser/views/info_bubble.h"
 #include "chrome/browser/views/first_run_bubble.h"
+#include "chrome/browser/views/page_info_window.h"
 #include "chrome/common/l10n_util.h"
 #include "chrome/common/resource_bundle.h"
 #include "chrome/common/gfx/chrome_canvas.h"
 #include "chrome/common/win_util.h"
 #include "chrome/views/background.h"
 #include "chrome/views/border.h"
+#include "chrome/views/root_view.h"
 #include "chrome/views/view_container.h"
-#include "googleurl/src/gurl.h"
-#include "googleurl/src/url_canon.h"
 #include "generated_resources.h"
 
 using ChromeViews::View;
@@ -152,10 +125,10 @@ void LocationBarView::Init() {
   // URL edit field.
   ChromeViews::ViewContainer* vc = GetViewContainer();
   DCHECK(vc) << "LocationBarView::Init - vc is NULL!";
-  location_entry_.reset(new AutocompleteEdit(font_, this, model_, this,
-                                             vc->GetHWND(),
-                                             profile_, controller_,
-                                             popup_window_mode_));
+  location_entry_.reset(new AutocompleteEditView(font_, this, model_, this,
+                                                 vc->GetHWND(),
+                                                 profile_, controller_,
+                                                 popup_window_mode_));
 
   // View container for URL edit field.
   location_entry_view_ = new ChromeViews::HWNDView;
@@ -195,7 +168,7 @@ void LocationBarView::Init() {
   info_label_.SetParentOwned(false);
 
   // Notify us when any ancestor is resized.  In this case we want to tell the
-  // AutocompleteEdit to close its popup.
+  // AutocompleteEditView to close its popup.
   SetNotifyWhenVisibleBoundsInRootChanges(true);
 
   // Initialize the location entry. We do this to avoid a black flash which is
@@ -224,7 +197,7 @@ void LocationBarView::SetProfile(Profile* profile) {
   DCHECK(profile);
   if (profile_ != profile) {
     profile_ = profile;
-    location_entry_->SetProfile(profile);
+    location_entry_->model()->SetProfile(profile);
     selected_keyword_view_.set_profile(profile);
     keyword_hint_view_.set_profile(profile);
     security_image_view_.set_profile(profile);
@@ -361,9 +334,9 @@ void LocationBarView::OnAutocompleteAccept(
 
     scoped_ptr<AlternateNavURLFetcher> fetcher(
         new AlternateNavURLFetcher(alternate_nav_url));
-    // The AlternateNavURLFetcher will listen for the next navigation state
-    // update notification (expecting it to be a new page load) and hook
-    // itself in to that loading process.
+    // The AlternateNavURLFetcher will listen for the pending navigation
+    // notification that will be issued as a result of the "open URL." It
+    // will automatically install itself into that navigation controller.
     controller_->ExecuteCommand(IDC_OPENURL);
     if (fetcher->state() == AlternateNavURLFetcher::NOT_STARTED) {
       // I'm not sure this should be reachable, but I'm not also sure enough
@@ -425,7 +398,9 @@ void LocationBarView::DoLayout(const bool force_layout) {
     return;
 
   // TODO(sky): baseline layout.
-  int bh = kBackground->height();
+  const SkBitmap* background = popup_window_mode_ ? kPopupBackgroundCenter
+                                                  : kBackground;
+  int bh = background->height();
   int location_y = ((GetHeight() - bh) / 2) + kTextVertMargin;
   int location_height = bh - (2 * kTextVertMargin);
   if (info_label_.IsVisible()) {
@@ -488,11 +463,11 @@ bool LocationBarView::NeedsResize(View* view, int text_width, int max_width) {
 }
 
 bool LocationBarView::AdjustHints(int text_width, int max_width) {
-  const std::wstring keyword(location_entry_->keyword());
-  const bool is_keyword_hint(location_entry_->is_keyword_hint());
+  const std::wstring keyword(location_entry_->model()->keyword());
+  const bool is_keyword_hint(location_entry_->model()->is_keyword_hint());
   const bool show_selected_keyword = !keyword.empty() && !is_keyword_hint;
   const bool show_keyword_hint = !keyword.empty() && is_keyword_hint;
-  bool show_search_hint(location_entry_->show_search_hint());
+  bool show_search_hint(location_entry_->model()->show_search_hint());
   DCHECK(keyword.empty() || !show_search_hint);
 
   if (show_search_hint) {
@@ -601,7 +576,7 @@ void LocationBarView::OnMouseEvent(const ChromeViews::MouseEvent& event,
   if (event.IsRightMouseButton())
     flags |= MK_RBUTTON;
 
-  CPoint screen_point(event.GetLocation());
+  CPoint screen_point(event.GetX(), event.GetY());
   ConvertPointToScreen(this, &screen_point);
 
   location_entry_->HandleExternalMsg(msg, flags, screen_point);
@@ -1046,3 +1021,4 @@ bool LocationBarView::OverrideAccelerator(
     const ChromeViews::Accelerator& accelerator)  {
   return location_entry_->OverrideAccelerator(accelerator);
 }
+

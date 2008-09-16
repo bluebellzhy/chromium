@@ -143,6 +143,12 @@
 #include "SVGStyleElement.h"
 #endif
 
+#if defined(__APPLE__)
+// we need to be PLATFORM(CHROMIUM) for this file, even if we're not building
+// that particular target, for the a11y ifdefs.
+#define WTF_PLATFORM_CHROMIUM 1
+#endif
+
 using namespace std;
 using namespace WTF;
 using namespace Unicode;
@@ -271,12 +277,12 @@ Document::Document(Frame* frame, bool isXHTML)
     , m_titleSetExplicitly(false)
     , m_imageLoadEventTimer(this, &Document::imageLoadEventTimerFired)
     , m_updateFocusAppearanceTimer(this, &Document::updateFocusAppearanceTimerFired)
-    , m_dominantScript(USCRIPT_INVALID_CODE)
 #if ENABLE(XSLT)
     , m_transformSource(0)
 #endif
     , m_xmlVersion("1.0")
     , m_xmlStandalone(false)
+    , m_dominantScript(USCRIPT_INVALID_CODE)
 #if ENABLE(XBL)
     , m_bindingManager(new XBLBindingManager(this))
 #endif
@@ -2059,7 +2065,7 @@ void Document::processHttpEquiv(const String &equiv, const String &content)
             static_cast<HTMLDocument*>(this)->setCookie(content);
     } else if (equalIgnoringCase(equiv, "content-language"))
         setContentLanguage(content);
-    else if (equalIgnoringCase(equiv, "dns-prefetch-control"))
+    else if (equalIgnoringCase(equiv, "x-dns-prefetch-control"))
         setDNSPrefetchControl(content);
 }
 
@@ -2603,7 +2609,7 @@ bool Document::setFocusedNode(PassRefPtr<Node> newFocusedNode)
         }
    }
 
-#if PLATFORM(MAC)
+#if PLATFORM(MAC) && !PLATFORM(CHROMIUM)
     if (!focusChangeBlocked && m_focusedNode && AXObjectCache::accessibilityEnabled())
         axObjectCache()->handleFocusedUIElementChanged();
 #endif

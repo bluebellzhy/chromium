@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/dom_ui/new_tab_ui.h"
 
@@ -43,10 +18,13 @@
 #include "chrome/browser/template_url.h"
 #include "chrome/browser/user_metrics.h"
 #include "chrome/browser/views/keyword_editor_view.h"
-#include "chrome/common/l10n_util.h"
 #include "chrome/common/jstemplate_builder.h"
+#include "chrome/common/l10n_util.h"
+#include "chrome/common/pref_names.h"
+#include "chrome/common/pref_service.h"
 #include "chrome/common/resource_bundle.h"
 
+#include "chromium_strings.h"
 #include "generated_resources.h"
 
 // The URL scheme used for the new tab.
@@ -71,6 +49,8 @@ static const int kRecentBookmarks = 9;
 // HTML document based on locale.
 static const wchar_t kRTLHtmlTextDirection[] = L"rtl";
 static const wchar_t kDefaultHtmlTextDirection[] = L"ltr";
+
+bool NewTabHTMLSource::first_view_ = true;
 
 namespace {
 
@@ -166,9 +146,8 @@ void SetURLAndTitle(DictionaryValue* dictionary, std::wstring title,
 
 }  // end anonymous namespace
 
-NewTabHTMLSource::NewTabHTMLSource(int message_id)
-    : DataSource("new-tab", MessageLoop::current()),
-      message_id_(message_id) {
+NewTabHTMLSource::NewTabHTMLSource()
+    : DataSource("new-tab", MessageLoop::current()) {
 }
 
 void NewTabHTMLSource::StartDataRequest(const std::string& path,
@@ -202,17 +181,10 @@ void NewTabHTMLSource::StartDataRequest(const std::string& path,
       (l10n_util::GetTextDirection() == l10n_util::RIGHT_TO_LEFT) ?
        kRTLHtmlTextDirection : kDefaultHtmlTextDirection);
 
-  // Let the page know whether this is the first New Tab view for
-  // this session (and let it trigger all manner of fancy).
-  static bool new_session = true;
-  localized_strings.SetString(L"newsession",
-                              new_session ? L"true" : std::wstring());
-  new_session = false;
-
-  if (message_id_)
-    localized_strings.SetString(L"motd", l10n_util::GetString(message_id_));
-  else
-    localized_strings.SetString(L"motd", std::wstring());
+  // Let the tab know whether it's the first tab being viewed.
+  localized_strings.SetString(L"firstview",
+                              first_view_ ? L"true" : std::wstring());
+  first_view_ = false;
 
   static const StringPiece new_tab_html(
       ResourceBundle::GetSharedInstance().GetRawDataResource(
@@ -522,35 +494,61 @@ void TemplateURLHandler::OnTemplateURLModelChanged() {
 }
 
 RecentlyBookmarkedHandler::RecentlyBookmarkedHandler(DOMUIHost* dom_ui_host)
-    : dom_ui_host_(dom_ui_host) {
+    : dom_ui_host_(dom_ui_host),
+      model_(NULL) {
   dom_ui_host->RegisterMessageCallback("getRecentlyBookmarked",
       NewCallback(this,
                   &RecentlyBookmarkedHandler::HandleGetRecentlyBookmarked));
 }
 
-void RecentlyBookmarkedHandler::HandleGetRecentlyBookmarked(const Value*) {
-  HistoryService* hs =
-      dom_ui_host_->profile()->GetHistoryService(Profile::EXPLICIT_ACCESS);
-  if (hs) {
-    HistoryService::Handle handle = hs->GetMostRecentStarredEntries(
-        kRecentBookmarks,
-        &cancelable_consumer_,
-        NewCallback(this,
-            &RecentlyBookmarkedHandler::OnMostRecentStarredEntries));
-  }
+RecentlyBookmarkedHandler::~RecentlyBookmarkedHandler() {
+  if (model_)
+    model_->RemoveObserver(this);
 }
 
-void RecentlyBookmarkedHandler::OnMostRecentStarredEntries(
-    HistoryService::Handle request_handle,
-    std::vector<history::StarredEntry>* entries) {
+void RecentlyBookmarkedHandler::HandleGetRecentlyBookmarked(const Value*) {
+  if (!model_) {
+    model_ = dom_ui_host_->profile()->GetBookmarkModel();
+    model_->AddObserver(this);
+  }
+  // If the model is loaded, synchronously send the bookmarks down. Otherwise
+  // when the model loads we'll send the bookmarks down.
+  if (model_->IsLoaded())
+    SendBookmarksToPage();
+}
+
+void RecentlyBookmarkedHandler::SendBookmarksToPage() {
+  std::vector<BookmarkNode*> recently_bookmarked;
+  model_->GetMostRecentlyAddedEntries(kRecentBookmarks, &recently_bookmarked);
   ListValue list_value;
-  for (size_t i = 0; i < entries->size(); ++i) {
-    const history::StarredEntry& entry = (*entries)[i];
+  for (size_t i = 0; i < recently_bookmarked.size(); ++i) {
+    BookmarkNode* node = recently_bookmarked[i];
     DictionaryValue* entry_value = new DictionaryValue;
-    SetURLAndTitle(entry_value, entry.title, entry.url);
+    SetURLAndTitle(entry_value, node->GetTitle(), node->GetURL());
     list_value.Append(entry_value);
   }
   dom_ui_host_->CallJavascriptFunction(L"recentlyBookmarked", list_value);
+}
+
+void RecentlyBookmarkedHandler::Loaded(BookmarkModel* model) {
+  SendBookmarksToPage();
+}
+
+void RecentlyBookmarkedHandler::BookmarkNodeAdded(BookmarkModel* model,
+                                                  BookmarkNode* parent,
+                                                  int index) {
+  SendBookmarksToPage();
+}
+
+void RecentlyBookmarkedHandler::BookmarkNodeRemoved(BookmarkModel* model,
+                                                    BookmarkNode* parent,
+                                                    int index) {
+  SendBookmarksToPage();
+}
+
+void RecentlyBookmarkedHandler::BookmarkNodeChanged(BookmarkModel* model,
+                                                    BookmarkNode* node) {
+  SendBookmarksToPage();
 }
 
 RecentlyClosedTabsHandler::RecentlyClosedTabsHandler(DOMUIHost* dom_ui_host)
@@ -751,6 +749,13 @@ NewTabUIContents::NewTabUIContents(Profile* profile,
   if (profile->IsOffTheRecord())
     incognito_ = true;
 
+  if (NewTabHTMLSource::first_view() && 
+      (profile->GetPrefs()->GetInteger(prefs::kRestoreOnStartup) != 0 ||
+       !profile->GetPrefs()->GetBoolean(prefs::kHomePageIsNewTabPage))
+     ) {
+    NewTabHTMLSource::set_first_view(false);
+  }
+
   render_view_host()->SetPaintObserver(new PaintTimer);
 }
 
@@ -783,7 +788,7 @@ void NewTabUIContents::AttachMessageHandlers() {
     AddMessageHandler(new RecentlyClosedTabsHandler(this));
     AddMessageHandler(new HistoryHandler(this));
 
-    NewTabHTMLSource* html_source = new NewTabHTMLSource(0);
+    NewTabHTMLSource* html_source = new NewTabHTMLSource();
 
     g_browser_process->io_thread()->message_loop()->PostTask(FROM_HERE,
         NewRunnableMethod(&chrome_url_data_manager,
@@ -792,15 +797,9 @@ void NewTabUIContents::AttachMessageHandlers() {
   }
 }
 
-bool NewTabUIContents::Navigate(const NavigationEntry& entry, bool reload) {
-  const bool result = WebContents::Navigate(entry, reload);
-
-  // Force the title to say 'New tab', even when loading. The supplied entry is
-  // also the pending entry.
-  NavigationEntry* pending_entry = controller()->GetPendingEntry();
-  DCHECK(pending_entry && pending_entry == &entry);
-  pending_entry->SetTitle(forced_title_);
-
+bool NewTabUIContents::NavigateToPendingEntry(bool reload) {
+  const bool result = WebContents::NavigateToPendingEntry(reload);
+  controller()->GetPendingEntry()->set_title(forced_title_);
   return result;
 }
 
@@ -850,3 +849,4 @@ void NewTabUIContents::RequestOpenURL(const GURL& url,
     }
   }
 }
+

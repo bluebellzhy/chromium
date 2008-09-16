@@ -146,6 +146,10 @@ public:
     virtual void destroyDecodedData() {};
 
     void setDocLoader(DocLoader* docLoader) { m_docLoader = docLoader; }
+
+#if PLATFORM(MAC)
+    SharedBuffer* data() const { return m_data.get(); }
+#endif
     
     bool isPreloaded() const { return m_preloadCount; }
     void increasePreloadCount() { ++m_preloadCount; }

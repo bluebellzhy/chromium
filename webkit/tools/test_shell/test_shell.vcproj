@@ -25,9 +25,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="Font file copy"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -87,9 +84,6 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="Font file copy"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -170,44 +164,6 @@
 			</File>
 			<File
 				RelativePath="$(IntDir)\..\localized_strings\webkit_strings_en-US.rc"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="temp"
-			>
-			<File
-				RelativePath=".\temp\navigation_controller_base.cc"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\$(InputName)1.obj"
-						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\temp\navigation_controller_base.h"
-				>
-			</File>
-			<File
-				RelativePath=".\temp\navigation_entry.h"
-				>
-			</File>
-			<File
-				RelativePath=".\temp\page_transition_types.h"
 				>
 			</File>
 		</Filter>

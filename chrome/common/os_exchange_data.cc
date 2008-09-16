@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include <shlobj.h>
 
@@ -45,7 +20,9 @@
 #include "generated_resources.h"
 
 // Creates a new STGMEDIUM object to hold the specified text. The caller
-// owns the resulting object.
+// owns the resulting object. The "Bytes" version does not NULL terminate, the
+// string version does.
+static STGMEDIUM* GetStorageForBytes(const char* data, size_t bytes);
 static STGMEDIUM* GetStorageForWString(const std::wstring& data);
 static STGMEDIUM* GetStorageForString(const std::string& data);
 // Creates the contents of an Internet Shortcut file for the given URL.
@@ -359,7 +336,8 @@ void OSExchangeData::SetFileContents(const std::wstring& filename,
 }
 
 void OSExchangeData::SetCFHtml(const std::wstring& cf_html) {
-  STGMEDIUM* storage = GetStorageForString(WideToUTF8(cf_html));
+  std::string utf8 = WideToUTF8(cf_html);
+  STGMEDIUM* storage = GetStorageForBytes(utf8.c_str(), utf8.size());
   contents_.push_back(new StoredDataInfo(
       ClipboardUtil::GetHtmlFormat()->cfFormat, storage));
 }
@@ -620,6 +598,19 @@ ULONG OSExchangeData::Release() {
 ///////////////////////////////////////////////////////////////////////////////
 // OSExchangeData, private:
 
+static STGMEDIUM* GetStorageForBytes(const char* data, size_t bytes) {
+  HANDLE handle = GlobalAlloc(GPTR, static_cast<int>(bytes));
+  ScopedHGlobal<char> scoped(handle);
+  size_t allocated = static_cast<size_t>(GlobalSize(handle));
+  memcpy(scoped.get(), data, allocated);
+
+  STGMEDIUM* storage = new STGMEDIUM;
+  storage->hGlobal = handle;
+  storage->tymed = TYMED_HGLOBAL;
+  storage->pUnkForRelease = NULL;
+  return storage;
+}
+
 template<class T>
 static HGLOBAL CopyStringToGlobalHandle(const T& payload) {
   int bytes = static_cast<int>(payload.size() + 1) * sizeof(T::value_type);
@@ -663,8 +654,8 @@ static void CreateValidFileNameFromTitle(const GURL& url,
                                          std::wstring* validated) {
   if (title.empty()) {
     if (url.is_valid()) {
-      *validated = net_util::GetSuggestedFilename(url, std::wstring(),
-                                                  std::wstring());
+      *validated = net::GetSuggestedFilename(
+          url, std::wstring(), std::wstring());
     } else {
       // Nothing else can be done, just use a default.
       *validated = l10n_util::GetString(IDS_UNTITLED_SHORTCUT_FILE_NAME);
@@ -701,3 +692,4 @@ static STGMEDIUM* GetStorageForFileDescriptor(
   storage->pUnkForRelease = NULL;
   return storage;
 }
+

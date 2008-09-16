@@ -1,38 +1,15 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "net/disk_cache/entry_impl.h"
 
+#include "base/histogram.h"
 #include "base/message_loop.h"
 #include "base/string_util.h"
 #include "net/base/net_errors.h"
 #include "net/disk_cache/backend_impl.h"
+#include "net/disk_cache/cache_util.h"
 
 namespace {
 
@@ -122,6 +99,8 @@ EntryImpl::EntryImpl(BackendImpl* backend, Addr address)
 // written before).
 EntryImpl::~EntryImpl() {
   if (doomed_) {
+    UMA_HISTOGRAM_COUNTS(L"DiskCache.DeleteHeader", GetDataSize(0));
+    UMA_HISTOGRAM_COUNTS(L"DiskCache.DeleteData", GetDataSize(1));
     for (int index = 0; index < kKeyFileIndex; index++) {
       Addr address(entry_.Data()->data_addr[index]);
       if (address.is_initialized()) {
@@ -174,70 +153,6 @@ EntryImpl::~EntryImpl() {
   backend_->CacheEntryDestroyed();
 }
 
-void EntryImpl::DeleteData(Addr address, int index) {
-  if (!address.is_initialized())
-    return;
-  if (address.is_separate_file()) {
-    if (files_[index])
-      files_[index] = NULL;  // Releases the object.
-
-    if (!DeleteFile(backend_->GetFileName(address).c_str()))
-      LOG(ERROR) << "Failed to delete " << backend_->GetFileName(address) <<
-                    " from the cache.";
-  } else {
-    backend_->DeleteBlock(address, true);
-  }
-}
-
-bool EntryImpl::CreateEntry(Addr node_address, const std::string& key,
-                            uint32 hash) {
-  Trace("Create entry In");
-  EntryStore* entry_store = entry_.Data();
-  RankingsNode* node = node_.Data();
-  memset(entry_store, 0, sizeof(EntryStore) * entry_.address().num_blocks());
-  memset(node, 0, sizeof(RankingsNode));
-  if (!node_.LazyInit(backend_->File(node_address), node_address))
-    return false;
-
-  entry_store->rankings_node = node_address.value();
-  node->contents = entry_.address().value();
-  node->pointer = this;
-
-  entry_store->hash = hash;
-  entry_store->key_len = static_cast<int32>(key.size());
-  if (entry_store->key_len > kMaxInternalKeyLength) {
-    Addr address(0);
-    if (!CreateBlock(entry_store->key_len + 1, &address))
-      return false;
-
-    entry_store->long_key = address.value();
-    File* file = GetBackingFile(address, kKeyFileIndex);
-
-    size_t offset = 0;
-    if (address.is_block_file())
-      offset = address.start_block() * address.BlockSize() + kBlockHeaderSize;
-
-    if (!file || !file->Write(key.data(), key.size(), offset)) {
-      DeleteData(address, kKeyFileIndex);
-      return false;
-    }
-
-    if (address.is_separate_file())
-      file->SetLength(key.size() + 1);
-  } else {
-    memcpy(entry_store->key, key.data(), key.size());
-    entry_store->key[key.size()] = '\0';
-  }
-  backend_->ModifyStorageSize(0, static_cast<int32>(key.size()));
-  node->dirty = backend_->GetCurrentEntryId();
-  Log("Create Entry ");
-  return true;
-}
-
-void EntryImpl::Close() {
-  Release();
-}
-
 void EntryImpl::Doom() {
   if (doomed_)
     return;
@@ -246,13 +161,8 @@ void EntryImpl::Doom() {
   backend_->InternalDoomEntry(this);
 }
 
-void EntryImpl::InternalDoom() {
-  DCHECK(node_.HasData());
-  if (!node_.Data()->dirty) {
-    node_.Data()->dirty = backend_->GetCurrentEntryId();
-    node_.Store();
-  }
-  doomed_ = true;
+void EntryImpl::Close() {
+  Release();
 }
 
 std::string EntryImpl::GetKey() const {
@@ -308,6 +218,11 @@ int EntryImpl::ReadData(int index, int offset, char* buf, int buf_len,
   if (buf_len < 0)
     return net::ERR_INVALID_ARGUMENT;
 
+  Time start = Time::Now();
+  static Histogram stats(L"DiskCache.ReadTime", TimeDelta::FromMilliseconds(1),
+                         TimeDelta::FromSeconds(10), 50);
+  stats.SetFlags(kUmaTargetedHistogramFlag);
+
   if (offset + buf_len > entry_size)
     buf_len = entry_size - offset;
 
@@ -319,6 +234,7 @@ int EntryImpl::ReadData(int index, int offset, char* buf, int buf_len,
     // Complete the operation locally.
     DCHECK(kMaxBlockSize >= offset + buf_len);
     memcpy(buf , user_buffers_[index].get() + offset, buf_len);
+    stats.AddTime(Time::Now() - start);
     return buf_len;
   }
 
@@ -350,6 +266,7 @@ int EntryImpl::ReadData(int index, int offset, char* buf, int buf_len,
   if (io_callback && completed)
     io_callback->Discard();
 
+  stats.AddTime(Time::Now() - start);
   return (completed || !completion_callback) ? buf_len : net::ERR_IO_PENDING;
 }
 
@@ -375,6 +292,11 @@ int EntryImpl::WriteData(int index, int offset, const char* buf, int buf_len,
     return net::ERR_FAILED;
   }
 
+  Time start = Time::Now();
+  static Histogram stats(L"DiskCache.WriteTime", TimeDelta::FromMilliseconds(1),
+                         TimeDelta::FromSeconds(10), 50);
+  stats.SetFlags(kUmaTargetedHistogramFlag);
+
   // Read the size at this point (it may change inside prepare).
   int entry_size = entry_.Data()->data_size[index];
   if (!PrepareTarget(index, offset, buf_len, truncate))
@@ -384,6 +306,8 @@ int EntryImpl::WriteData(int index, int offset, const char* buf, int buf_len,
     unreported_size_[index] += offset + buf_len - entry_size;
     entry_.Data()->data_size[index] = offset + buf_len;
     entry_.set_modified();
+    if (!buf_len)
+      truncate = true;  // Force file extension.
   } else if (truncate) {
       // If the size was modified inside PrepareTarget, we should not do
       // anything here.
@@ -406,6 +330,7 @@ int EntryImpl::WriteData(int index, int offset, const char* buf, int buf_len,
     // Complete the operation locally.
     DCHECK(kMaxBlockSize >= offset + buf_len);
     memcpy(user_buffers_[index].get() + offset, buf, buf_len);
+    stats.AddTime(Time::Now() - start);
     return buf_len;
   }
 
@@ -440,7 +365,234 @@ int EntryImpl::WriteData(int index, int offset, const char* buf, int buf_len,
   if (io_callback && completed)
     io_callback->Discard();
 
+  stats.AddTime(Time::Now() - start);
   return (completed || !completion_callback) ? buf_len : net::ERR_IO_PENDING;
+}
+
+uint32 EntryImpl::GetHash() {
+  return entry_.Data()->hash;
+}
+
+bool EntryImpl::CreateEntry(Addr node_address, const std::string& key,
+                            uint32 hash) {
+  Trace("Create entry In");
+  EntryStore* entry_store = entry_.Data();
+  RankingsNode* node = node_.Data();
+  memset(entry_store, 0, sizeof(EntryStore) * entry_.address().num_blocks());
+  memset(node, 0, sizeof(RankingsNode));
+  if (!node_.LazyInit(backend_->File(node_address), node_address))
+    return false;
+
+  entry_store->rankings_node = node_address.value();
+  node->contents = entry_.address().value();
+  node->pointer = this;
+
+  entry_store->hash = hash;
+  entry_store->key_len = static_cast<int32>(key.size());
+  if (entry_store->key_len > kMaxInternalKeyLength) {
+    Addr address(0);
+    if (!CreateBlock(entry_store->key_len + 1, &address))
+      return false;
+
+    entry_store->long_key = address.value();
+    File* file = GetBackingFile(address, kKeyFileIndex);
+
+    size_t offset = 0;
+    if (address.is_block_file())
+      offset = address.start_block() * address.BlockSize() + kBlockHeaderSize;
+
+    if (!file || !file->Write(key.data(), key.size(), offset)) {
+      DeleteData(address, kKeyFileIndex);
+      return false;
+    }
+
+    if (address.is_separate_file())
+      file->SetLength(key.size() + 1);
+  } else {
+    memcpy(entry_store->key, key.data(), key.size());
+    entry_store->key[key.size()] = '\0';
+  }
+  backend_->ModifyStorageSize(0, static_cast<int32>(key.size()));
+  node->dirty = backend_->GetCurrentEntryId();
+  Log("Create Entry ");
+  return true;
+}
+
+bool EntryImpl::IsSameEntry(const std::string& key, uint32 hash) {
+  if (entry_.Data()->hash != hash ||
+      static_cast<size_t>(entry_.Data()->key_len) != key.size())
+    return false;
+
+  std::string my_key = GetKey();
+  return key.compare(my_key) ? false : true;
+}
+
+void EntryImpl::InternalDoom() {
+  DCHECK(node_.HasData());
+  if (!node_.Data()->dirty) {
+    node_.Data()->dirty = backend_->GetCurrentEntryId();
+    node_.Store();
+  }
+  doomed_ = true;
+}
+
+CacheAddr EntryImpl::GetNextAddress() {
+  return entry_.Data()->next;
+}
+
+void EntryImpl::SetNextAddress(Addr address) {
+  entry_.Data()->next = address.value();
+  bool success = entry_.Store();
+  DCHECK(success);
+}
+
+bool EntryImpl::LoadNodeAddress() {
+  Addr address(entry_.Data()->rankings_node);
+  if (!node_.LazyInit(backend_->File(address), address))
+    return false;
+  return node_.Load();
+}
+
+EntryImpl* EntryImpl::Update(EntryImpl* entry) {
+  DCHECK(entry->rankings()->HasData());
+
+  RankingsNode* rankings = entry->rankings()->Data();
+  if (rankings->pointer) {
+    // Already in memory. Prevent clearing the dirty flag on the destructor.
+    rankings->dirty = 0;
+    EntryImpl* real_node = reinterpret_cast<EntryImpl*>(rankings->pointer);
+    real_node->AddRef();
+    entry->Release();
+    return real_node;
+  } else {
+    rankings->dirty = entry->backend_->GetCurrentEntryId();
+    rankings->pointer = entry;
+    if (!entry->rankings()->Store()) {
+      entry->Release();
+      return NULL;
+    }
+    return entry;
+  }
+}
+
+bool EntryImpl::IsDirty(int32 current_id) {
+  DCHECK(node_.HasData());
+  return node_.Data()->dirty && current_id != node_.Data()->dirty;
+}
+
+void EntryImpl::ClearDirtyFlag() {
+  node_.Data()->dirty = 0;
+}
+
+void EntryImpl::SetPointerForInvalidEntry(int32 new_id) {
+  node_.Data()->dirty = new_id;
+  node_.Data()->pointer = this;
+  node_.Store();
+}
+
+bool EntryImpl::SanityCheck() {
+  if (!entry_.Data()->rankings_node || !entry_.Data()->key_len)
+    return false;
+
+  Addr rankings_addr(entry_.Data()->rankings_node);
+  if (!rankings_addr.is_initialized() || rankings_addr.is_separate_file() ||
+      rankings_addr.file_type() != RANKINGS)
+    return false;
+
+  Addr next_addr(entry_.Data()->next);
+  if (next_addr.is_initialized() &&
+      (next_addr.is_separate_file() || next_addr.file_type() != BLOCK_256))
+    return false;
+
+  return true;
+}
+
+void EntryImpl::IncrementIoCount() {
+  backend_->IncrementIoCount();
+}
+
+void EntryImpl::DecrementIoCount() {
+  backend_->DecrementIoCount();
+}
+
+bool EntryImpl::CreateDataBlock(int index, int size) {
+  Addr address(entry_.Data()->data_addr[index]);
+  DCHECK(0 == index || 1 == index);
+
+  if (!CreateBlock(size, &address))
+    return false;
+
+  entry_.Data()->data_addr[index] = address.value();
+  entry_.Store();
+  return true;
+}
+
+bool EntryImpl::CreateBlock(int size, Addr* address) {
+  DCHECK(!address->is_initialized());
+
+  FileType file_type = Addr::RequiredFileType(size);
+  if (EXTERNAL == file_type) {
+    if (size > backend_->MaxFileSize())
+      return false;
+    if (!backend_->CreateExternalFile(address))
+      return false;
+  } else {
+    int num_blocks = (size + Addr::BlockSizeForFileType(file_type) - 1) /
+                     Addr::BlockSizeForFileType(file_type);
+
+    if (!backend_->CreateBlock(file_type, num_blocks, address))
+      return false;
+  }
+  return true;
+}
+
+void EntryImpl::DeleteData(Addr address, int index) {
+  if (!address.is_initialized())
+    return;
+  if (address.is_separate_file()) {
+    if (files_[index])
+      files_[index] = NULL;  // Releases the object.
+
+    if (!DeleteCacheFile(backend_->GetFileName(address)))
+      LOG(ERROR) << "Failed to delete " << backend_->GetFileName(address) <<
+                    " from the cache.";
+  } else {
+    backend_->DeleteBlock(address, true);
+  }
+}
+
+void EntryImpl::UpdateRank(bool modified) {
+  if (!doomed_) {
+    // Everything is handled by the backend.
+    backend_->UpdateRank(&node_, true);
+    return;
+  }
+
+  Time current = Time::Now();
+  node_.Data()->last_used = current.ToInternalValue();
+
+  if (modified)
+    node_.Data()->last_modified = current.ToInternalValue();
+}
+
+File* EntryImpl::GetBackingFile(Addr address, int index) {
+  File* file;
+  if (address.is_separate_file())
+    file = GetExternalFile(address, index);
+  else
+    file = backend_->File(address);
+  return file;
+}
+
+File* EntryImpl::GetExternalFile(Addr address, int index) {
+  DCHECK(index >= 0 && index <= 2);
+  if (!files_[index].get()) {
+    // For a key file, use mixed mode IO.
+    scoped_refptr<File> file(new File(2 == index));
+    if (file->Init(backend_->GetFileName(address)))
+      files_[index].swap(file);
+  }
+  return files_[index].get();
 }
 
 bool EntryImpl::PrepareTarget(int index, int offset, int buf_len,
@@ -512,26 +664,11 @@ bool EntryImpl::GrowUserBuffer(int index, int offset, int buf_len,
   return true;
 }
 
-bool EntryImpl::ImportSeparateFile(int index, int offset, int buf_len) {
-  if (entry_.Data()->data_size[index] > offset + buf_len) {
-    entry_.Data()->data_size[index] = offset + buf_len;
-    unreported_size_[index] += offset + buf_len -
-                               entry_.Data()->data_size[index];
-  }
-
-  if (!MoveToLocalBuffer(index))
-    return false;
-
-  // Clear the end of the buffer.
-  ClearInvalidData(user_buffers_[index].get(), 0, offset + buf_len);
-  return true;
-}
-
 bool EntryImpl::MoveToLocalBuffer(int index) {
   Addr address(entry_.Data()->data_addr[index]);
   DCHECK(!user_buffers_[index].get());
   DCHECK(address.is_initialized());
-  scoped_ptr<char> buffer(new char[kMaxBlockSize]);
+  scoped_array<char> buffer(new char[kMaxBlockSize]);
 
   File* file = GetBackingFile(address, index);
   size_t len = entry_.Data()->data_size[index];
@@ -555,6 +692,22 @@ bool EntryImpl::MoveToLocalBuffer(int index) {
   user_buffers_[index].swap(buffer);
   return true;
 }
+
+bool EntryImpl::ImportSeparateFile(int index, int offset, int buf_len) {
+  if (entry_.Data()->data_size[index] > offset + buf_len) {
+    unreported_size_[index] += offset + buf_len -
+                               entry_.Data()->data_size[index];
+    entry_.Data()->data_size[index] = offset + buf_len;
+  }
+
+  if (!MoveToLocalBuffer(index))
+    return false;
+
+  // Clear the end of the buffer.
+  ClearInvalidData(user_buffers_[index].get(), 0, offset + buf_len);
+  return true;
+}
+
 
 // The common scenario is that this is called from the destructor of the entry,
 // to write to disk what we have buffered. We don't want to hold the destructor
@@ -581,7 +734,7 @@ bool EntryImpl::Flush(int index, int size, bool async) {
     offset = address.start_block() * address.BlockSize() + kBlockHeaderSize;
 
   // We just told the backend to store len bytes for real.
-  DCHECK(len == unreported_size_[index]);
+  DCHECK(len == static_cast<size_t>(unreported_size_[index]));
   backend_->ModifyStorageSize(0, static_cast<int>(len));
   unreported_size_[index] = 0;
 
@@ -603,162 +756,6 @@ bool EntryImpl::Flush(int index, int size, bool async) {
   return true;
 }
 
-bool EntryImpl::LoadNodeAddress() {
-  Addr address(entry_.Data()->rankings_node);
-  if (!node_.LazyInit(backend_->File(address), address))
-    return false;
-  return node_.Load();
-}
-
-EntryImpl* EntryImpl::Update(EntryImpl* entry) {
-  DCHECK(entry->rankings()->HasData());
-
-  RankingsNode* rankings = entry->rankings()->Data();
-  if (rankings->pointer) {
-    // Already in memory. Prevent clearing the dirty flag on the destructor.
-    rankings->dirty = 0;
-    EntryImpl* real_node = reinterpret_cast<EntryImpl*>(rankings->pointer);
-    real_node->AddRef();
-    entry->Release();
-    return real_node;
-  } else {
-    rankings->dirty = entry->backend_->GetCurrentEntryId();
-    rankings->pointer = entry;
-    if (!entry->rankings()->Store()) {
-      entry->Release();
-      return NULL;
-    }
-    return entry;
-  }
-}
-
-bool EntryImpl::CreateDataBlock(int index, int size) {
-  Addr address(entry_.Data()->data_addr[index]);
-  DCHECK(0 == index || 1 == index);
-
-  if (!CreateBlock(size, &address))
-    return false;
-
-  entry_.Data()->data_addr[index] = address.value();
-  entry_.Store();
-  return true;
-}
-
-bool EntryImpl::CreateBlock(int size, Addr* address) {
-  DCHECK(!address->is_initialized());
-
-  FileType file_type = Addr::RequiredFileType(size);
-  if (EXTERNAL == file_type) {
-    if (size > backend_->MaxFileSize())
-      return false;
-    if (!backend_->CreateExternalFile(address))
-      return false;
-  } else {
-    int num_blocks = (size + Addr::BlockSizeForFileType(file_type) - 1) /
-                     Addr::BlockSizeForFileType(file_type);
-
-    if (!backend_->CreateBlock(file_type, num_blocks, address))
-      return false;
-  }
-  return true;
-}
-
-bool EntryImpl::IsSameEntry(const std::string& key, uint32 hash) {
-  if (entry_.Data()->hash != hash || entry_.Data()->key_len != key.size())
-    return false;
-
-  std::string my_key = GetKey();
-  return key.compare(my_key) ? false : true;
-}
-
-CacheAddr EntryImpl::GetNextAddress() {
-  return entry_.Data()->next;
-}
-
-void EntryImpl::SetNextAddress(Addr address) {
-  entry_.Data()->next = address.value();
-  bool success = entry_.Store();
-  DCHECK(success);
-}
-
-void EntryImpl::UpdateRank(bool modified) {
-  if (!doomed_) {
-    // Everything is handled by the backend.
-    backend_->UpdateRank(&node_, true);
-    return;
-  }
-
-  Time current = Time::Now();
-  node_.Data()->last_used = current.ToInternalValue();
-
-  if (modified)
-    node_.Data()->last_modified = current.ToInternalValue();
-}
-
-File* EntryImpl::GetBackingFile(Addr address, int index) {
-  File* file;
-  if (address.is_separate_file())
-    file = GetExternalFile(address, index);
-  else
-    file = backend_->File(address);
-  return file;
-}
-
-File* EntryImpl::GetExternalFile(Addr address, int index) {
-  DCHECK(index >= 0 && index <= 2);
-  if (!files_[index].get()) {
-    // For a key file, use mixed mode IO.
-    scoped_refptr<File> file(new File(2 == index));
-    if (file->Init(backend_->GetFileName(address)))
-      files_[index].swap(file);
-  }
-  return files_[index].get();
-}
-
-uint32 EntryImpl::GetHash() {
-  return entry_.Data()->hash;
-}
-
-bool EntryImpl::IsDirty(int32 current_id) {
-  DCHECK(node_.HasData());
-  return node_.Data()->dirty && current_id != node_.Data()->dirty;
-}
-
-void EntryImpl::ClearDirtyFlag() {
-  node_.Data()->dirty = 0;
-}
-
-void EntryImpl::SetPointerForInvalidEntry(int32 new_id) {
-  node_.Data()->dirty = new_id;
-  node_.Data()->pointer = this;
-  node_.Store();
-}
-
-bool EntryImpl::SanityCheck() {
-  if (!entry_.Data()->rankings_node || !entry_.Data()->key_len)
-    return false;
-
-  Addr rankings_addr(entry_.Data()->rankings_node);
-  if (!rankings_addr.is_initialized() || rankings_addr.is_separate_file() ||
-      rankings_addr.file_type() != RANKINGS)
-    return false;
-
-  Addr next_addr(entry_.Data()->next);
-  if (next_addr.is_initialized() &&
-      (next_addr.is_separate_file() || next_addr.file_type() != BLOCK_256))
-    return false;
-
-  return true;
-}
-
-void EntryImpl::IncrementIoCount() {
-  backend_->IncrementIoCount();
-}
-
-void EntryImpl::DecrementIoCount() {
-  backend_->DecrementIoCount();
-}
-
 void EntryImpl::Log(const char* msg) {
   void* pointer = NULL;
   int dirty = 0;
@@ -777,3 +774,4 @@ void EntryImpl::Log(const char* msg) {
 }
 
 }  // namespace disk_cache
+

@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/views/options/general_page_view.h"
 
@@ -42,15 +17,16 @@
 #include "chrome/browser/profile.h"
 #include "chrome/browser/shell_integration.h"
 #include "chrome/browser/session_startup_pref.h"
-#include "chrome/browser/standard_layout.h"
 #include "chrome/browser/template_url.h"
 #include "chrome/browser/template_url_model.h"
 #include "chrome/browser/url_fixer_upper.h"
 #include "chrome/browser/views/keyword_editor_view.h"
 #include "chrome/browser/views/options/options_group_view.h"
+#include "chrome/browser/views/standard_layout.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/common/l10n_util.h"
 #include "chrome/common/pref_names.h"
+#include "chrome/common/pref_service.h"
 #include "chrome/common/resource_bundle.h"
 #include "chrome/views/checkbox.h"
 #include "chrome/views/grid_layout.h"
@@ -58,8 +34,10 @@
 #include "chrome/views/radio_button.h"
 #include "chrome/views/table_view.h"
 #include "chrome/views/text_field.h"
-#include "generated_resources.h"
 #include "skia/include/SkBitmap.h"
+
+#include "chromium_strings.h"
+#include "generated_resources.h"
 
 static const int kStartupRadioGroup = 1;
 static const int kHomePageRadioGroup = 2;
@@ -170,8 +148,10 @@ void GeneralPageView::DefaultBrowserWorker::ExecuteSetAsDefaultBrowser() {
 
 void GeneralPageView::DefaultBrowserWorker::CompleteSetAsDefaultBrowser() {
   DCHECK(MessageLoop::current() == ui_loop_);
-  // Set as default completed, check again to make sure it stuck...
-  StartCheckDefaultBrowser();
+  if (general_page_view_) {
+    // Set as default completed, check again to make sure it stuck...
+    StartCheckDefaultBrowser();
+  }
 }
 
 void GeneralPageView::DefaultBrowserWorker::UpdateUI(bool is_default) {
@@ -578,15 +558,12 @@ void GeneralPageView::ButtonPressed(ChromeViews::NativeButton* sender) {
   } else if (sender == homepage_use_newtab_radio_) {
     UserMetricsRecordAction(L"Options_Homepage_UseNewTab",
                             profile()->GetPrefs());
-    homepage_.SetValue(GetNewTabUIURLString());
+    SetHomepage(GetNewTabUIURLString());
     EnableHomepageURLField(false);
   } else if (sender == homepage_use_url_radio_) {
     UserMetricsRecordAction(L"Options_Homepage_UseURL",
                             profile()->GetPrefs());
-    std::wstring home_page_url = homepage_use_url_textfield_->GetText();
-    if (home_page_url.empty())
-      home_page_url = GetNewTabUIURLString();
-    homepage_.SetValue(home_page_url);
+    SetHomepage(homepage_use_url_textfield_->GetText());
     EnableHomepageURLField(true);
   } else if (sender == homepage_show_home_button_checkbox_) {
     bool show_button = homepage_show_home_button_checkbox_->IsSelected();
@@ -630,7 +607,7 @@ void GeneralPageView::ContentsChanged(ChromeViews::TextField* sender,
     std::wstring url_string = URLFixerUpper::FixupURL(
         homepage_use_url_textfield_->GetText(), std::wstring());
     if (GURL(url_string).is_valid())
-      homepage_.SetValue(url_string);
+      SetHomepage(url_string);
   }
 }
 
@@ -679,6 +656,8 @@ void GeneralPageView::InitControlLayout() {
   profile()->GetPrefs()->AddPrefObserver(prefs::kRestoreOnStartup, this);
   profile()->GetPrefs()->AddPrefObserver(prefs::kURLsToRestoreOnStartup, this);
 
+  new_tab_page_is_home_page_.Init(prefs::kHomePageIsNewTabPage,
+      profile()->GetPrefs(), this);
   homepage_.Init(prefs::kHomePage, profile()->GetPrefs(), this);
   show_home_button_.Init(prefs::kShowHomeButton, profile()->GetPrefs(), this);
 }
@@ -719,15 +698,20 @@ void GeneralPageView::NotifyPrefChanged(const std::wstring* pref_name) {
     startup_custom_pages_table_model_->SetURLs(startup_pref.urls);
   }
 
+  if (!pref_name || *pref_name == prefs::kHomePageIsNewTabPage) {
+    if (new_tab_page_is_home_page_.GetValue()) {
+      homepage_use_newtab_radio_->SetIsSelected(true);
+      EnableHomepageURLField(false);
+    } else {
+      homepage_use_url_radio_->SetIsSelected(true);
+      EnableHomepageURLField(true);
+    }
+  }
+
   if (!pref_name || *pref_name == prefs::kHomePage) {
     bool enabled = homepage_.GetValue() != GetNewTabUIURLString();
-    if (enabled) {
-      homepage_use_url_radio_->SetIsSelected(true);
+    if (enabled)
       homepage_use_url_textfield_->SetText(homepage_.GetValue());
-    } else {
-      homepage_use_newtab_radio_->SetIsSelected(true);
-    }
-    EnableHomepageURLField(enabled);
   }
 
   if (!pref_name || *pref_name == prefs::kShowHomeButton) {
@@ -1072,6 +1056,15 @@ void GeneralPageView::AddBookmark(ShelfItemDialog* dialog,
   SaveStartupPref();
 }
 
+void GeneralPageView::SetHomepage(const std::wstring& homepage) {
+  if (homepage.empty() || homepage == GetNewTabUIURLString()) {
+    new_tab_page_is_home_page_.SetValue(true);
+  } else {
+    new_tab_page_is_home_page_.SetValue(false);
+    homepage_.SetValue(homepage);
+  }
+}
+
 void GeneralPageView::OnSelectionChanged() {
   startup_remove_custom_page_button_->SetEnabled(
       startup_custom_pages_table_->SelectedRowCount() > 0);
@@ -1092,3 +1085,4 @@ void GeneralPageView::SetDefaultSearchProvider() {
   default_search_engines_model_->model()->SetDefaultSearchProvider(
       default_search_engines_model_->GetTemplateURLAt(index));
 }
+

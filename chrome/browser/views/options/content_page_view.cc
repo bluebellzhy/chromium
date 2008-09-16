@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include <windows.h>
 #include <shlobj.h>
@@ -40,10 +15,10 @@
 #include "chrome/app/theme/theme_resources.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/shell_dialogs.h"
-#include "chrome/browser/standard_layout.h"
 #include "chrome/browser/views/options/fonts_languages_window_view.h"
 #include "chrome/browser/views/options/options_group_view.h"
 #include "chrome/browser/views/password_manager_view.h"
+#include "chrome/browser/views/standard_layout.h"
 #include "chrome/common/gfx/chrome_canvas.h"
 #include "chrome/common/l10n_util.h"
 #include "chrome/common/pref_names.h"
@@ -249,11 +224,10 @@ void ContentPageView::ButtonPressed(ChromeViews::NativeButton* sender) {
     UserMetricsRecordAction(L"Options_ShowPasswordManager", NULL);
     PasswordManagerView::Show(profile());
   } else if (sender == change_content_fonts_button_) {
-    FontsLanguagesWindowView* flwv = new FontsLanguagesWindowView(profile());
-    ChromeViews::Window* w =
-        ChromeViews::Window::CreateChromeWindow(GetRootWindow(), gfx::Rect(),
-                                                flwv, flwv);
-    w->Show();
+    ChromeViews::Window::CreateChromeWindow(
+        GetRootWindow(),
+        gfx::Rect(),
+        new FontsLanguagesWindowView(profile()))->Show();
   }
 }
 
@@ -329,6 +303,8 @@ void ContentPageView::Layout() {
       0, 0, passwords_group_->GetContentsWidth(), 0);
   passwords_neversave_radio_->SetBounds(
       0, 0, passwords_group_->GetContentsWidth(), 0);
+  fonts_and_languages_label_->SetBounds(
+      0, 0, fonts_lang_group_->GetContentsWidth(), 0);
   // ... and twice to get the height of multi-line items correct.
   View::Layout();
 }
@@ -430,6 +406,7 @@ void ContentPageView::InitFontsLangGroup() {
       l10n_util::GetString(IDS_OPTIONS_FONTSETTINGS_INFO));
   fonts_and_languages_label_->SetHorizontalAlignment(
       ChromeViews::Label::ALIGN_LEFT);
+  fonts_and_languages_label_->SetMultiLine(true);
   change_content_fonts_button_ = new ChromeViews::NativeButton(
       l10n_util::GetString(IDS_OPTIONS_FONTSETTINGS_CONFIGUREFONTS_BUTTON));
   change_content_fonts_button_->SetListener(this);
@@ -462,3 +439,4 @@ void ContentPageView::UpdateDownloadDirectoryDisplay() {
   download_default_download_location_display_->SetFile(
       default_download_location_.GetValue());
 }
+

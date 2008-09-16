@@ -618,7 +618,7 @@ String decodeURLEscapeSequences(const String& str, const TextEncoding& encoding)
     url_canon::RawCanonOutputT<char> unescaped;
     for (int i = 0; i < input_length; i++) {
         if (input[i] == '%') {
-            char ch;
+            unsigned char ch;
             if (url_canon::DecodeEscaped(input, &i, input_length, &ch)) {
                 if (ch == 0) {
                     // Never unescape NULLs.

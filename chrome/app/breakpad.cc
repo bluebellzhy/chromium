@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/app/breakpad.h"
 
@@ -41,6 +16,8 @@
 #include "base/string_util.h"
 #include "base/win_util.h"
 #include "chrome/app/google_update_client.h"
+#include "chrome/common/env_vars.h"
+#include "chrome/installer/util/google_update_settings.h"
 #include "breakpad/src/client/windows/handler/exception_handler.h"
 
 namespace {
@@ -99,17 +76,6 @@ struct CrashReporterInfo {
   std::wstring process_type;
 };
 
-// Environment variable name that has the actual dialog strings.
-const wchar_t kEnvRestartInfo[] = L"CHROME_RESTART";
-// If this environment variable is present, chrome has crashed.
-const wchar_t kEnvShowRestart[] = L"CHROME_CRASHED";
-// The following two names correspond to the text directionality for the
-// current locale.
-const wchar_t kRtlLocaleDirection[] = L"RIGHT_TO_LEFT";
-const wchar_t kLtrLocaleDirection[] = L"LEFT_TO_RIGHT";
-
-}  // namespace
-
 // This callback is executed when the browser process has crashed, after
 // the crash dump has been created. We need to minimize the amount of work
 // done here since we have potentially corrupted process. Our job is to
@@ -121,9 +87,9 @@ bool DumpDoneCallback(const wchar_t*, const wchar_t*, void*,
                       MDRawAssertionInfo*, bool) {
   // We set CHROME_CRASHED env var. If the CHROME_RESTART is present.
   // This signals the child process to show the 'chrome has crashed' dialog.
-  if (!::GetEnvironmentVariableW(kEnvRestartInfo, NULL, 0))
+  if (!::GetEnvironmentVariableW(env_vars::kRestartInfo, NULL, 0))
     return true;
-  ::SetEnvironmentVariableW(kEnvShowRestart, L"1");
+  ::SetEnvironmentVariableW(env_vars::kShowRestart, L"1");
   // Now we just start chrome browser with the same command line.
   STARTUPINFOW si = {sizeof(si)};
   PROCESS_INFORMATION pi;
@@ -137,17 +103,34 @@ bool DumpDoneCallback(const wchar_t*, const wchar_t*, void*,
   return true;
 }
 
+// Previous unhandled filter. Will be called if not null when we
+// intercept a crash.
+LPTOP_LEVEL_EXCEPTION_FILTER previous_filter = NULL;
+
+// Exception filter used when breakpad is not enabled. We just display
+// the "Do you want to restart" message and then we call the previous filter.
+long WINAPI ChromeExceptionFilter(EXCEPTION_POINTERS* info) {
+  DumpDoneCallback(NULL, NULL, NULL, info, NULL, false);
+
+  if (previous_filter)
+    return previous_filter(info);
+
+  return EXCEPTION_EXECUTE_HANDLER;
+}
+
+}  // namespace
+
 // This function is executed by the child process that DumpDoneCallback()
 // spawned and basically just shows the 'chrome has crashed' dialog if
 // the CHROME_CRASHED environment variable is present.
 bool ShowRestartDialogIfCrashed(bool* exit_now) {
-  if (!::GetEnvironmentVariableW(kEnvShowRestart, NULL, 0))
+  if (!::GetEnvironmentVariableW(env_vars::kShowRestart, NULL, 0))
     return false;
-  DWORD len = ::GetEnvironmentVariableW(kEnvRestartInfo, NULL, 0);
+  DWORD len = ::GetEnvironmentVariableW(env_vars::kRestartInfo, NULL, 0);
   if (!len)
     return false;
   wchar_t* restart_data = new wchar_t[len + 1];
-  ::GetEnvironmentVariableW(kEnvRestartInfo, restart_data, len);
+  ::GetEnvironmentVariableW(env_vars::kRestartInfo, restart_data, len);
   restart_data[len] = 0;
   // The CHROME_RESTART var contains the dialog strings separated by '|'.
   // See PrepareRestartOnCrashEnviroment() function for details.
@@ -160,7 +143,7 @@ bool ShowRestartDialogIfCrashed(bool* exit_now) {
   // If the UI layout is right-to-left, we need to pass the appropriate MB_XXX
   // flags so that an RTL message box is displayed.
   UINT flags = MB_OKCANCEL | MB_ICONWARNING;
-  if (dlg_strings[2] == kRtlLocaleDirection)
+  if (dlg_strings[2] == env_vars::kRtlLocale)
     flags |= MB_RIGHT | MB_RTLREADING;
 
   // Show the dialog now. It is ok if another chrome is started by the
@@ -190,6 +173,16 @@ unsigned __stdcall InitCrashReporterThread(void* param)  {
   if (use_crash_service) {
     pipe_name = kChromePipeName;
   } else {
+    // We want to use the Google Update crash reporting. We need to check if the
+    // user allows it first.
+    if (!GoogleUpdateSettings::GetCollectStatsConsent()) {
+      // The user did not allow Google Update to send crashes, we need to use
+      // our default crash handler instead, but only for the browser process.
+      if (callback)
+        InitDefaultCrashCallback();
+      return 0;
+    }
+
     // Build the pipe name.
     std::wstring user_sid;
     if (!win_util::GetUserSidString(&user_sid)) {
@@ -211,19 +204,31 @@ unsigned __stdcall InitCrashReporterThread(void* param)  {
                    NULL, google_breakpad::ExceptionHandler::HANDLER_ALL,
                    dump_type, pipe_name.c_str(), info->custom_info);
 
-  // Tells breakpad to handle breakpoint and single step exceptions.
-  // This might break JIT debuggers, but at least it will always
-  // generate a crashdump for these exceptions.
-  g_breakpad->set_handle_debug_exceptions(true);
+  if (!g_breakpad->IsOutOfProcess()) {
+    // The out-of-process handler is unavailable.
+    ::SetEnvironmentVariable(env_vars::kNoOOBreakpad,
+                             info->process_type.c_str());
+  } else {
+    // Tells breakpad to handle breakpoint and single step exceptions.
+    // This might break JIT debuggers, but at least it will always
+    // generate a crashdump for these exceptions.
+    g_breakpad->set_handle_debug_exceptions(true);
+  }
 
   delete info;
-
   return 0;
+}
+
+void InitDefaultCrashCallback() {
+  previous_filter = SetUnhandledExceptionFilter(ChromeExceptionFilter);
 }
 
 void InitCrashReporter(std::wstring dll_path) {
   CommandLine command;
   if (!command.HasSwitch(switches::kDisableBreakpad)) {
+    // Disable the message box for assertions.
+    _CrtSetReportMode(_CRT_ASSERT, 0);
+
     // Query the custom_info now because if we do it in the thread it's going to
     // fail in the sandbox. The thread will delete this object.
     CrashReporterInfo* info = new CrashReporterInfo;
@@ -249,3 +254,4 @@ void InitCrashReporter(std::wstring dll_path) {
     }
   }
 }
+

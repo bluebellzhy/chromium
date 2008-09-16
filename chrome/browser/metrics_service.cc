@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 
 
@@ -187,8 +162,7 @@
 #include "base/path_service.h"
 #include "base/string_util.h"
 #include "base/task.h"
-#include "chrome/app/google_update_settings.h"
-#include "chrome/browser/bookmark_bar_model.h"
+#include "chrome/browser/bookmarks/bookmark_model.h"
 #include "chrome/browser/browser.h"
 #include "chrome/browser/browser_list.h"
 #include "chrome/browser/browser_process.h"
@@ -201,8 +175,10 @@
 #include "chrome/browser/template_url.h"
 #include "chrome/browser/template_url_model.h"
 #include "chrome/common/chrome_paths.h"
+#include "chrome/common/libxml_utils.h"
 #include "chrome/common/pref_names.h"
 #include "chrome/common/pref_service.h"
+#include "chrome/installer/util/google_update_settings.h"
 #include "googleurl/src/gurl.h"
 #include "net/base/load_flags.h"
 #include "third_party/bzip2/bzlib.h"
@@ -216,7 +192,17 @@ static const char kMetricsURL[] =
 static const char kMetricsType[] = "application/vnd.mozilla.metrics.bz2";
 
 // The delay, in seconds, after startup before sending the first log message.
-static const int kInitialLogDelay = 60;  // one minute
+static const int kInitialInterlogDuration = 60;  // one minute
+
+// The default maximum number of events in a log uploaded to the UMA server.
+// TODO(petersont): Honor the limit when the log is actually sent.
+static const int kInitialEventLimit = 600;
+
+// If an upload fails, and the transmission was over this byte count, then we
+// will discard the log, and not try to retransmit it.  We also don't persist
+// the log to the prefs for transmission during the next chrome session if this
+// limit is exceeded.
+static const int kUploadLogAvoidRetransmitSize = 50000;
 
 // When we have logs from previous Chrome sessions to send, how long should we
 // delay (in seconds) between each log transmission.
@@ -322,6 +308,13 @@ void MetricsService::RegisterPrefs(PrefService* local_state) {
   local_state->RegisterIntegerPref(prefs::kSecurityRendererOnDefaultDesktop, 0);
   local_state->RegisterIntegerPref(prefs::kStabilityRendererCrashCount, 0);
   local_state->RegisterIntegerPref(prefs::kStabilityRendererHangCount, 0);
+  local_state->RegisterIntegerPref(prefs::kStabilityBreakpadRegistrationFail,
+                                   0);
+  local_state->RegisterIntegerPref(prefs::kStabilityBreakpadRegistrationSuccess,
+                                   0);
+  local_state->RegisterIntegerPref(prefs::kStabilityDebuggerPresent, 0);
+  local_state->RegisterIntegerPref(prefs::kStabilityDebuggerNotPresent, 0);
+
   local_state->RegisterDictionaryPref(prefs::kProfileMetrics);
   local_state->RegisterIntegerPref(prefs::kNumBookmarksOnBookmarkBar, 0);
   local_state->RegisterIntegerPref(prefs::kNumFoldersOnBookmarkBar, 0);
@@ -345,7 +338,8 @@ MetricsService::MetricsService()
       log_sender_factory_(this),
       state_saver_factory_(this),
       logged_samples_(),
-      interlog_duration_(TimeDelta::FromSeconds(kInitialLogDelay)),
+      interlog_duration_(TimeDelta::FromSeconds(kInitialInterlogDuration)),
+      event_limit_(kInitialEventLimit),
       timer_pending_(false) {
   DCHECK(IsSingleThreaded());
   InitializeMetricsState();
@@ -416,7 +410,7 @@ void MetricsService::Observe(NotificationType type,
       LogWindowChange(type, source, details);
       break;
 
-    case NOTIFY_TAB_APPENDED:
+    case NOTIFY_TAB_PARENTED:
     case NOTIFY_TAB_CLOSING:
       LogWindowChange(type, source, details);
       break;
@@ -458,7 +452,7 @@ void MetricsService::Observe(NotificationType type,
       break;
 
     case NOTIFY_BOOKMARK_MODEL_LOADED:
-      LogBookmarks(Source<Profile>(source)->GetBookmarkBarModel());
+      LogBookmarks(Source<Profile>(source)->GetBookmarkModel());
       break;
 
     default:
@@ -478,6 +472,20 @@ void MetricsService::RecordStartOfSessionEnd() {
 
 void MetricsService::RecordCompletedSessionEnd() {
   RecordBooleanPrefValue(prefs::kStabilitySessionEndCompleted, true);
+}
+
+void MetricsService:: RecordBreakpadRegistration(bool success) {
+  if (!success)
+    IncrementPrefValue(prefs::kStabilityBreakpadRegistrationFail);
+  else
+    IncrementPrefValue(prefs::kStabilityBreakpadRegistrationSuccess);
+}
+
+void MetricsService::RecordBreakpadHasDebugger(bool has_debugger) {
+  if (!has_debugger)
+    IncrementPrefValue(prefs::kStabilityDebuggerNotPresent);
+  else
+    IncrementPrefValue(prefs::kStabilityDebuggerPresent);
 }
 
 //------------------------------------------------------------------------------
@@ -511,23 +519,17 @@ void MetricsService::InitializeMetricsState() {
   DCHECK(done);
 
   // Stability bookkeeping
-  int launches = pref->GetInteger(prefs::kStabilityLaunchCount);
-  pref->SetInteger(prefs::kStabilityLaunchCount, launches + 1);
+  IncrementPrefValue(prefs::kStabilityLaunchCount);
 
-  bool exited_cleanly = pref->GetBoolean(prefs::kStabilityExitedCleanly);
-  if (!exited_cleanly) {
-    int crashes = pref->GetInteger(prefs::kStabilityCrashCount);
-    pref->SetInteger(prefs::kStabilityCrashCount, crashes + 1);
+  if (!pref->GetBoolean(prefs::kStabilityExitedCleanly)) {
+    IncrementPrefValue(prefs::kStabilityCrashCount);
   }
+
+  // This will be set to 'true' if we exit cleanly.
   pref->SetBoolean(prefs::kStabilityExitedCleanly, false);
 
-  bool shutdown_cleanly =
-      pref->GetBoolean(prefs::kStabilitySessionEndCompleted);
-  if (!shutdown_cleanly) {
-    int incomplete_session_end_count = pref->GetInteger(
-        prefs::kStabilityIncompleteSessionEndCount);
-    pref->SetInteger(prefs::kStabilityIncompleteSessionEndCount,
-                     incomplete_session_end_count + 1);
+  if (!pref->GetBoolean(prefs::kStabilitySessionEndCompleted)) {
+    IncrementPrefValue(prefs::kStabilityIncompleteSessionEndCount);
   }
   // This is marked false when we get a WM_ENDSESSION.
   pref->SetBoolean(prefs::kStabilitySessionEndCompleted, true);
@@ -631,13 +633,23 @@ void MetricsService::StartRecording() {
     // that the main thread isn't blocked generating the list.
     g_browser_process->file_thread()->message_loop()->PostDelayedTask(FROM_HERE,
         new GetPluginListTask(MessageLoop::current()),
-        kInitialLogDelay * 1000 / 2);
+        kInitialInterlogDuration * 1000 / 2);
   }
 }
 
 void MetricsService::StopRecording(MetricsLog** log) {
   if (!current_log_)
     return;
+
+  // TODO(jar): Integrate bounds on log recording more consistently, so that we
+  // can stop recording logs that are too big much sooner.
+  if (current_log_->num_events() > kInitialEventLimit) {
+    UMA_HISTOGRAM_COUNTS(L"UMA.Discarded Log Events",
+                         current_log_->num_events());
+    current_log_->CloseLog();
+    delete current_log_;
+    StartRecording();  // Start trivial log to hold our histograms.
+  }
 
   // Put incremental histogram data at the end of every log transmission.
   // Don't bother if we're going to discard current_log_.
@@ -657,7 +669,7 @@ void MetricsService::ListenerRegistration(bool start_listening) {
   AddOrRemoveObserver(this, NOTIFY_BROWSER_OPENED, start_listening);
   AddOrRemoveObserver(this, NOTIFY_BROWSER_CLOSED, start_listening);
   AddOrRemoveObserver(this, NOTIFY_USER_ACTION, start_listening);
-  AddOrRemoveObserver(this, NOTIFY_TAB_APPENDED, start_listening);
+  AddOrRemoveObserver(this, NOTIFY_TAB_PARENTED, start_listening);
   AddOrRemoveObserver(this, NOTIFY_TAB_CLOSING, start_listening);
   AddOrRemoveObserver(this, NOTIFY_LOAD_START, start_listening);
   AddOrRemoveObserver(this, NOTIFY_LOAD_STOP, start_listening);
@@ -698,16 +710,25 @@ void MetricsService::PushPendingLogsToUnsentLists() {
       unsent_initial_logs_.push_back(pending_log_text_);
       state_ = SENDING_CURRENT_LOGS;
     } else {
-      unsent_ongoing_logs_.push_back(pending_log_text_);
+      PushPendingLogTextToUnsentOngoingLogs();
     }
     DiscardPendingLog();
   }
   DCHECK(!pending_log());
   StopRecording(&pending_log_);
   PreparePendingLogText();
-  unsent_ongoing_logs_.push_back(pending_log_text_);
+  PushPendingLogTextToUnsentOngoingLogs();
   DiscardPendingLog();
   StoreUnsentLogs();
+}
+
+void MetricsService::PushPendingLogTextToUnsentOngoingLogs() {
+  if (pending_log_text_.length() > kUploadLogAvoidRetransmitSize) {
+    UMA_HISTOGRAM_COUNTS(L"UMA.Large Accumulated Log Not Persisted",
+                         static_cast<int>(pending_log_text_.length()));
+    return;
+  }
+  unsent_ongoing_logs_.push_back(pending_log_text_);
 }
 
 //------------------------------------------------------------------------------
@@ -1007,7 +1028,19 @@ void MetricsService::OnURLFetchComplete(const URLFetcher* source,
   // Confirm send so that we can move on.
   DLOG(INFO) << "METRICS RESPONSE CODE: " << response_code
       << " status=" << StatusToString(status);
-  if (response_code == 200) {  // Success.
+
+  // TODO(petersont): Refactor or remove the following so that we don't have to
+  // fake a valid response code.
+  if (response_code != 200 &&
+      pending_log_text_.length() > kUploadLogAvoidRetransmitSize) {
+    UMA_HISTOGRAM_COUNTS(L"UMA.Large Rejected Log was Discarded",
+                         static_cast<int>(pending_log_text_.length()));
+    response_code = 200;  // Simulate transmission so we will discard log.
+  }
+
+  if (response_code != 200) {
+    HandleBadResponseCode();
+  } else {  // Success.
     switch (state_) {
       case INITIAL_LOG_READY:
         state_ = SEND_OLD_INITIAL_LOGS;
@@ -1032,92 +1065,150 @@ void MetricsService::OnURLFetchComplete(const URLFetcher* source,
         DCHECK(false);
         break;
     }
-
     DLOG(INFO) << "METRICS RESPONSE DATA: " << data;
     DiscardPendingLog();
+    // Since we sent a log, make sure our in-memory state is recorded to disk.
+    PrefService* local_state = g_browser_process->local_state();
+    DCHECK(local_state);
+    if (local_state)
+      local_state->ScheduleSavePersistentPrefs(
+          g_browser_process->file_thread());
+
+    GetSettingsFromResponseData(data);
+    // Override server specified interlog delay if there are unsent logs to
+    // transmit.
     if (unsent_logs()) {
       DCHECK(state_ < SENDING_CURRENT_LOGS);
       interlog_duration_ = TimeDelta::FromSeconds(kUnsentLogDelay);
-    } else {
-      GetSuggestedInterlogTime(data);
-    }
-  } else {
-    DLOG(INFO) << "METRICS: transmission attempt returned a failure code.  "
-        "Verify network connectivity";
-#ifndef NDEBUG
-    DLOG(INFO) << "Verify your metrics logs are formatted correctly."
-        "  Verify server is active at "  << kMetricsURL;
-#endif
-    if (!pending_log()) {
-      DLOG(INFO) << "METRICS: Recorder shutdown during log transmission.";
-    } else {
-      // Send progressively less frequently.
-      DCHECK(kBackoff > 1.0);
-      interlog_duration_ = TimeDelta::FromMicroseconds(
-          static_cast<int64>(kBackoff * interlog_duration_.InMicroseconds()));
-
-      if (kMaxBackoff * TimeDelta::FromSeconds(kMinSecondsPerLog) <
-          interlog_duration_)
-        interlog_duration_ = kMaxBackoff *
-            TimeDelta::FromSeconds(kMinSecondsPerLog);
-
-      DLOG(INFO) << "METRICS: transmission retry being scheduled in " <<
-          interlog_duration_.InSeconds() << " seconds for " <<
-          pending_log_text_;
     }
   }
+
   StartLogTransmissionTimer();
 }
 
-// TODO(JAR): Carfully parse XML, rather than hacking.
-void MetricsService::GetSuggestedInterlogTime(const std::string& server_data) {
-  int interlog_seconds = kMinSecondsPerLog;
-  const char* prefix = "<upload interval=\"";
-  size_t seconds_indent = server_data.find(prefix);
-  if (std::string::npos != seconds_indent) {
-    int seconds;
-    int result = sscanf(server_data.c_str() + seconds_indent + strlen(prefix),
-                        "%d", &seconds);
-    if (1 == result && seconds > kMinSuggestedSecondsPerLog)
-      interlog_seconds = seconds;
+void MetricsService::HandleBadResponseCode() {
+  DLOG(INFO) << "METRICS: transmission attempt returned a failure code.  "
+      "Verify network connectivity";
+#ifndef NDEBUG
+  DLOG(INFO) << "Verify your metrics logs are formatted correctly."
+      "  Verify server is active at "  << kMetricsURL;
+#endif
+  if (!pending_log()) {
+    DLOG(INFO) << "METRICS: Recorder shutdown during log transmission.";
+  } else {
+    // Send progressively less frequently.
+    DCHECK(kBackoff > 1.0);
+    interlog_duration_ = TimeDelta::FromMicroseconds(
+        static_cast<int64>(kBackoff * interlog_duration_.InMicroseconds()));
+
+    if (kMaxBackoff * TimeDelta::FromSeconds(kMinSecondsPerLog) <
+        interlog_duration_)
+      interlog_duration_ = kMaxBackoff *
+          TimeDelta::FromSeconds(kMinSecondsPerLog);
+
+    DLOG(INFO) << "METRICS: transmission retry being scheduled in " <<
+        interlog_duration_.InSeconds() << " seconds for " <<
+        pending_log_text_;
   }
-  interlog_duration_ = TimeDelta::FromSeconds(interlog_seconds);
 }
 
+void MetricsService::GetSettingsFromResponseData(const std::string& data) {
+  // We assume that the file is structured as a block opened by <response>
+  // and that inside response, there is a block opened by tag <config>
+  // other tags are ignored for now except the content of <config>.
+  DLOG(INFO) << data;
+  int data_size = static_cast<int>(data.size());
+  if (data_size < 0) {
+    DLOG(INFO) << "METRICS: server response data bad size " <<
+      " aborting extraction of settings";
+    return;
+  }
+  xmlDocPtr doc = xmlReadMemory(data.c_str(), data_size,
+                                "", NULL, 0);
+  DCHECK(doc);
+  // if the document is malformed, we just use the settings that were there
+  if (!doc)
+    return;
+
+  xmlNodePtr top_node = xmlDocGetRootElement(doc), config_node = NULL;
+  // Here, we find the config node by name.
+  for (xmlNodePtr p = top_node->children; p; p = p->next) {
+    if (xmlStrEqual(p->name, BAD_CAST "config")) {
+      config_node = p;
+      break;
+    }
+  }
+  // If the server data is formatted wrong and there is no
+  // config node where we expect, we just drop out.
+  if (config_node != NULL)
+    GetSettingsFromConfigNode(config_node);
+  xmlFreeDoc(doc);
+}
+
+void MetricsService::GetSettingsFromConfigNode(xmlNodePtr config_node) {
+  for (xmlNodePtr current_node = config_node->children;
+      current_node;
+      current_node = current_node->next) {
+    // If the node is collectors list, we iterate through the children
+    // to get the types of collectors.
+    if (xmlStrEqual(current_node->name, BAD_CAST "collectors")) {
+      collectors_.clear();
+      // Iterate through children and get the property "type".
+      for (xmlNodePtr sub_node = current_node->children;
+          sub_node;
+          sub_node = sub_node->next) {
+        if (xmlStrEqual(sub_node->name, BAD_CAST "collector")) {
+          xmlChar* type_value = xmlGetProp(sub_node, BAD_CAST "type");
+          collectors_.insert(reinterpret_cast<char*>(type_value));
+        }
+      }
+      continue;
+    }
+    // Search for other tags, limit and upload.  Again if the server data
+    // does not contain those tags, the settings remain unchanged.
+    if (xmlStrEqual(current_node->name, BAD_CAST "limit")) {
+      xmlChar* event_limit_value = xmlGetProp(current_node, BAD_CAST "events");
+      event_limit_ = atoi(reinterpret_cast<char*>(event_limit_value));
+      continue;
+    }
+    if (xmlStrEqual(current_node->name, BAD_CAST "upload")) {
+      xmlChar* upload_interval_val = xmlGetProp(current_node,
+          BAD_CAST "interval");
+      int upload_interval_sec =
+        atoi(reinterpret_cast<char*>(upload_interval_val));
+      interlog_duration_ = TimeDelta::FromSeconds(upload_interval_sec);
+      continue;
+    }
+  }
+}
 
 void MetricsService::LogWindowChange(NotificationType type,
                                      const NotificationSource& source,
                                      const NotificationDetails& details) {
-  int window_id = -1;
-  int parent_id = -1;
-  uintptr_t window_key = source.map_key();
+  int controller_id = -1;
+  uintptr_t window_or_tab = source.map_key();
   MetricsLog::WindowEventType window_type;
 
   // Note: since we stop all logging when a single OTR session is active, it is
   // possible that we start getting notifications about a window that we don't
   // know about.
-  if (window_map_.find(window_key) == window_map_.end()) {
-    window_id = next_window_id_++;
-    window_map_[window_key] = window_id;
+  if (window_map_.find(window_or_tab) == window_map_.end()) {
+    controller_id = next_window_id_++;
+    window_map_[window_or_tab] = controller_id;
   } else {
-    window_id = window_map_[window_key];
+    controller_id = window_map_[window_or_tab];
   }
-
-  DCHECK(window_id != -1);
-
-  if (type == NOTIFY_TAB_APPENDED) {
-    parent_id = window_map_[details.map_key()];
-  }
+  DCHECK(controller_id != -1);
 
   switch (type) {
-    case NOTIFY_TAB_APPENDED:
+    case NOTIFY_TAB_PARENTED:
     case NOTIFY_BROWSER_OPENED:
       window_type = MetricsLog::WINDOW_CREATE;
       break;
 
     case NOTIFY_TAB_CLOSING:
     case NOTIFY_BROWSER_CLOSED:
-      window_map_.erase(window_map_.find(window_key));
+      window_map_.erase(window_map_.find(window_or_tab));
       window_type = MetricsLog::WINDOW_DESTROY;
       break;
 
@@ -1126,7 +1217,8 @@ void MetricsService::LogWindowChange(NotificationType type,
       break;
   }
 
-  current_log_->RecordWindowEvent(window_type, window_id, parent_id);
+  // TODO(brettw) we should have some kind of ID for the parent.
+  current_log_->RecordWindowEvent(window_type, controller_id, 0);
 }
 
 void MetricsService::LogLoadComplete(NotificationType type,
@@ -1135,22 +1227,29 @@ void MetricsService::LogLoadComplete(NotificationType type,
   if (details == NotificationService::NoDetails())
     return;
 
-  const Details<LoadNotificationDetails> load_details(details);
+  // TODO(jar): There is a bug causing this to be called too many times, and
+  // the log overflows.  For now, we won't record these events.
+  UMA_HISTOGRAM_COUNTS(L"UMA.LogLoadComplete called", 1);
+  return;
 
-  int window_id =
-      window_map_[reinterpret_cast<uintptr_t>(load_details->controller())];
-  current_log_->RecordLoadEvent(window_id,
+  const Details<LoadNotificationDetails> load_details(details);
+  int controller_id = window_map_[details.map_key()];
+  current_log_->RecordLoadEvent(controller_id,
                                 load_details->url(),
                                 load_details->origin(),
                                 load_details->session_index(),
                                 load_details->load_time());
 }
 
+void MetricsService::IncrementPrefValue(const wchar_t* path) {
+  PrefService* pref = g_browser_process->local_state();
+  DCHECK(pref);
+  int value = pref->GetInteger(path);
+  pref->SetInteger(path, value + 1);
+}
+
 void MetricsService::LogLoadStarted() {
-  PrefService* prefs = g_browser_process->local_state();
-  DCHECK(prefs);
-  int loads = prefs->GetInteger(prefs::kStabilityPageLoadCount);
-  prefs->SetInteger(prefs::kStabilityPageLoadCount, loads + 1);
+  IncrementPrefValue(prefs::kStabilityPageLoadCount);
   // We need to save the prefs, as page load count is a critical stat, and
   // it might be lost due to a crash :-(.
 }
@@ -1158,27 +1257,18 @@ void MetricsService::LogLoadStarted() {
 void MetricsService::LogRendererInSandbox(bool on_sandbox_desktop) {
   PrefService* prefs = g_browser_process->local_state();
   DCHECK(prefs);
-  if (on_sandbox_desktop) {
-    int count = prefs->GetInteger(prefs::kSecurityRendererOnSboxDesktop);
-    prefs->SetInteger(prefs::kSecurityRendererOnSboxDesktop, count + 1);
-  } else {
-    int count = prefs->GetInteger(prefs::kSecurityRendererOnDefaultDesktop);
-    prefs->SetInteger(prefs::kSecurityRendererOnDefaultDesktop, count + 1);
-  }
+  if (on_sandbox_desktop)
+    IncrementPrefValue(prefs::kSecurityRendererOnSboxDesktop);
+  else
+    IncrementPrefValue(prefs::kSecurityRendererOnDefaultDesktop);
 }
 
 void MetricsService::LogRendererCrash() {
-  PrefService* prefs = g_browser_process->local_state();
-  DCHECK(prefs);
-  int crashes = prefs->GetInteger(prefs::kStabilityRendererCrashCount);
-  prefs->SetInteger(prefs::kStabilityRendererCrashCount, crashes + 1);
+  IncrementPrefValue(prefs::kStabilityRendererCrashCount);
 }
 
 void MetricsService::LogRendererHang() {
-  PrefService* prefs = g_browser_process->local_state();
-  DCHECK(prefs);
-  int hangs = prefs->GetInteger(prefs::kStabilityRendererHangCount);
-  prefs->SetInteger(prefs::kStabilityRendererHangCount, hangs + 1);
+  IncrementPrefValue(prefs::kStabilityRendererHangCount);
 }
 
 void MetricsService::LogPluginChange(NotificationType type,
@@ -1211,9 +1301,7 @@ void MetricsService::LogPluginChange(NotificationType type,
 }
 
 // Recursively counts the number of bookmarks and folders in node.
-static void CountBookmarks(BookmarkBarNode* node,
-                           int* bookmarks,
-                           int* folders) {
+static void CountBookmarks(BookmarkNode* node, int* bookmarks, int* folders) {
   if (node->GetType() == history::StarredEntry::URL)
     (*bookmarks)++;
   else
@@ -1222,7 +1310,7 @@ static void CountBookmarks(BookmarkBarNode* node,
     CountBookmarks(node->GetChild(i), bookmarks, folders);
 }
 
-void MetricsService::LogBookmarks(BookmarkBarNode* node,
+void MetricsService::LogBookmarks(BookmarkNode* node,
                                   const wchar_t* num_bookmarks_key,
                                   const wchar_t* num_folders_key) {
   DCHECK(node);
@@ -1237,7 +1325,7 @@ void MetricsService::LogBookmarks(BookmarkBarNode* node,
   pref->SetInteger(num_folders_key, num_folders);
 }
 
-void MetricsService::LogBookmarks(BookmarkBarModel* model) {
+void MetricsService::LogBookmarks(BookmarkModel* model) {
   DCHECK(model);
   LogBookmarks(model->GetBookmarkBarNode(),
                prefs::kNumBookmarksOnBookmarkBar,
@@ -1423,3 +1511,4 @@ static bool IsSingleThreaded() {
     thread_id = GetCurrentThreadId();
   return GetCurrentThreadId() == thread_id;
 }
+

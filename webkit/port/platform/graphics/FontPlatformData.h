@@ -26,14 +26,13 @@
 
 #include "StringImpl.h"
 #include <wtf/PassRefPtr.h>
-#include <wtf/Refcounted.h>
+#include <wtf/RefCounted.h>
 
 typedef struct HFONT__ *HFONT;
 
 namespace WebCore {
 
 class FontDescription;
-class FontMetrics;
 
 class FontPlatformData
 {
@@ -46,19 +45,16 @@ public:
     FontPlatformData(WTF::HashTableDeletedValueType)
     : m_font(hashTableDeletedFontValue())
     , m_size(-1)
-    , m_overrideFontMetrics(0)
     , m_isMLangFont(false)
     {}
 
     FontPlatformData()
     : m_font(0)
     , m_size(0)
-    , m_overrideFontMetrics(0)
     , m_isMLangFont(false)
     {}
 
     FontPlatformData(HFONT hfont, float size,
-                     const FontMetrics* overrideFontMetrics,
                      bool isMLangFont);
     FontPlatformData(float size, bool bold, bool oblique);
 
@@ -68,7 +64,6 @@ public:
 
     HFONT hfont() const { return m_font ? m_font->hfont() : 0; }
     float size() const { return m_size; }
-    const FontMetrics* overrideFontMetrics() const { return m_overrideFontMetrics; }
     bool isMLangFont() const { return m_isMLangFont; }
 
     unsigned hash() const
@@ -115,13 +110,6 @@ private:
 
     RefPtr<RefCountedHFONT> m_font;
     float m_size;  // Point size of the font in pixels.
-
-    // Used by layout tests.  Contains cached font size information from a run of
-    // DumpRenderTree on the Mac. This is only non-NULL during layout test mode,
-    // and if it exists, means we should use these metrics instead of
-    // system-supplied ones.  We do this so that we can exactly match the
-    // layout test references as far as how text is laid out.
-    const FontMetrics* m_overrideFontMetrics;
 
     bool m_isMLangFont;
 };

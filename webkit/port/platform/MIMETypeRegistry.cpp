@@ -77,7 +77,7 @@ String MIMETypeRegistry::getMIMETypeForPath(const String& path)
 bool MIMETypeRegistry::isSupportedImageMIMEType(const String& mimeType)
 { 
     return !mimeType.isEmpty()
-        && mime_util::IsSupportedImageMimeType(mimeType.latin1().data()); 
+        && net::IsSupportedImageMimeType(mimeType.latin1().data()); 
 }
 
 bool MIMETypeRegistry::isSupportedImageMIMETypeForEncoding(const String& mimeType)
@@ -89,7 +89,7 @@ bool MIMETypeRegistry::isSupportedImageMIMETypeForEncoding(const String& mimeTyp
 bool MIMETypeRegistry::isSupportedJavaScriptMIMEType(const String& mimeType)
 {
     return !mimeType.isEmpty()
-        && mime_util::IsSupportedJavascriptMimeType(mimeType.latin1().data()); 
+        && net::IsSupportedJavascriptMimeType(mimeType.latin1().data()); 
 }
 
 bool MIMETypeRegistry::isSupportedImageResourceMIMEType(const String& mimeType)
@@ -100,7 +100,7 @@ bool MIMETypeRegistry::isSupportedImageResourceMIMEType(const String& mimeType)
 bool MIMETypeRegistry::isSupportedNonImageMIMEType(const String& mimeType)
 {
    return !mimeType.isEmpty()
-       && mime_util::IsSupportedNonImageMimeType(mimeType.latin1().data()); 
+       && net::IsSupportedNonImageMimeType(mimeType.latin1().data()); 
 }
 
 bool MIMETypeRegistry::isJavaAppletMIMEType(const String& mimeType)

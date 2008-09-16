@@ -1,35 +1,8 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/render_widget_host_hwnd.h"
-
-#include <windows.h>
 
 #include "base/command_line.h"
 #include "base/gfx/bitmap_header.h"
@@ -43,6 +16,7 @@
 #include "chrome/browser/render_widget_host.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/common/chrome_switches.h"
+#include "chrome/common/l10n_util.h"
 #include "chrome/common/plugin_messages.h"
 #include "chrome/common/win_util.h"
 #include "chrome/views/hwnd_view_container.h"
@@ -50,6 +24,9 @@
 
 // Tooltips will wrap after this width. Yes, wrap. Imagine that!
 static const int kTooltipMaxWidthPixels = 300;
+
+// Maximum number of characters we allow in a tooltip.
+static const int kMaxTooltipLength = 1024;
 
 ///////////////////////////////////////////////////////////////////////////////
 // RenderWidgetHostHWND, public:
@@ -323,6 +300,13 @@ void RenderWidgetHostHWND::Destroy() {
 void RenderWidgetHostHWND::SetTooltipText(const std::wstring& tooltip_text) {
   if (tooltip_text != tooltip_text_) {
     tooltip_text_ = tooltip_text;
+
+    // Clamp the tooltip length to kMaxTooltipLength so that we don't
+    // accidentally DOS the user with a mega tooltip (since Windows doesn't seem
+    // to do this itself).
+    if (tooltip_text_.length() > kMaxTooltipLength)
+      tooltip_text_ = tooltip_text_.substr(0, kMaxTooltipLength);
+
     // Need to check if the tooltip is already showing so that we don't
     // immediately show the tooltip with no delay when we move the mouse from
     // a region with no tooltip to a region with a tooltip.
@@ -508,6 +492,10 @@ void RenderWidgetHostHWND::OnInputLangChange(DWORD character_set,
       ime_notification_ = ime_status;
     }
   }
+}
+
+void RenderWidgetHostHWND::OnThemeChanged() {
+  render_widget_host_->SystemThemeChanged();
 }
 
 LRESULT RenderWidgetHostHWND::OnNotify(int w_param, NMHDR* header) {
@@ -865,3 +853,4 @@ void RenderWidgetHostHWND::ShutdownHost() {
   render_widget_host_->Shutdown();
   // Do not touch any members at this point, |this| has been deleted.
 }
+

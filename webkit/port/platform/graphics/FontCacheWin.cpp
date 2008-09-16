@@ -28,10 +28,10 @@
 
 #include "config.h"
 #include "FontCache.h"
-#include "FontMetrics.h"
 #include "Font.h"
 #include "HashSet.h"
 #include "SimpleFontData.h"
+#include "StringHash.h"
 #include <algorithm>
 #include <hash_map>
 #include <string>
@@ -39,6 +39,8 @@
 #include <mlang.h>
 
 #include "base/gfx/font_utils.h"
+#include "base/singleton.h"
+#include "unicode/uniset.h"
 #include "webkit/glue/webkit_glue.h"
 
 using std::min;
@@ -169,6 +171,29 @@ static bool LookupAltName(const String& name, String& altName)
         // 標楷體, DFKai-SB
         {L"\x6A19\x6977\x9AD4", {L"DFKai-SB", 950}},
         {L"dfkai-sb", {L"\x6A19\x6977\x9AD4", 950}},
+        // WenQuanYi Zen Hei
+        {L"\x6587\x6cc9\x9a5b\x6b63\x9ed1", {L"WenQuanYi Zen Hei", 950}},
+        {L"wenquanyi zen hei", {L"\x6587\x6cc9\x9a5b\x6b63\x9ed1", 950}},
+        // WenQuanYi Zen Hei
+        {L"\x6587\x6cc9\x9a7f\x6b63\x9ed1", {L"WenQuanYi Zen Hei", 936}},
+        {L"wenquanyi zen hei", {L"\x6587\x6cc9\x9a7f\x6b63\x9ed1", 936}},
+        // AR PL ShanHeiSun Uni,
+        {L"\x6587\x9f0e\x0050\x004c\x7d30\x4e0a\x6d77\x5b8b\x0055\x006e\x0069",
+         {L"AR PL ShanHeiSun Uni", 950}},
+        {L"ar pl shanheisun uni",
+         {L"\x6587\x9f0e\x0050\x004c\x7d30\x4e0a\x6d77\x5b8b\x0055\x006e\x0069", 950}},
+        // AR PL ShanHeiSun Uni,
+        {L"\x6587\x9f0e\x0050\x004c\x7ec6\x4e0a\x6d77\x5b8b\x0055\x006e\x0069",
+         {L"AR PL ShanHeiSun Uni", 936}},
+        {L"ar pl shanheisun uni",
+         {L"\x6587\x9f0e\x0050\x004c\x7ec6\x4e0a\x6d77\x5b8b\x0055\x006e\x0069", 936}},
+        // AR PL ZenKai Uni
+        // Traditional Chinese (950) and Simplified Chinese (936) names are
+        // identical.
+        {L"\x6587\x0050\x004C\x4E2D\x6977\x0055\x006E\x0069", {L"AR PL ZenKai Uni", 950}},
+        {L"ar pl zenkai uni", {L"\x6587\x0050\x004C\x4E2D\x6977\x0055\x006E\x0069", 950}},
+        {L"\x6587\x0050\x004C\x4E2D\x6977\x0055\x006E\x0069", {L"AR PL ZenKai Uni", 936}},
+        {L"ar pl zenkai uni", {L"\x6587\x0050\x004C\x4E2D\x6977\x0055\x006E\x0069", 936}},
     };
 
     typedef stdext::hash_map<std::wstring, const fontCodepage*> nameMap;
@@ -236,6 +261,81 @@ static HFONT createFontIndirectAndGetWinName(const String& family,
     return hfont;
 }
 
+// This maps font family names to their repertoires of supported Unicode
+// characters. Because it's family names rather than font faces we use
+// as keys, there might be edge cases where one face of a font family
+// has a different repertoire from another face of the same family. 
+typedef HashMap<const wchar_t*, UnicodeSet*> FontCmapCache;
+struct FontCmapCacheSingletonTraits
+    : public DefaultSingletonTraits<FontCmapCache> {
+    static void Delete(FontCmapCache* cache) {
+        FontCmapCache::iterator iter = cache->begin();
+        while (iter != cache->end()) {
+            delete iter->second;
+            ++iter;
+        }
+        delete cache;
+    }
+};
+
+static bool fontContainsCharacter(const FontPlatformData* font_data,
+                                  const wchar_t* family, UChar32 character)
+{
+    // TODO(jungshik) : For non-BMP characters, GetFontUnicodeRanges is of
+    // no use. We have to read directly from the cmap table of a font.
+    // Return true for now.
+    if (character > 0xFFFF)
+        return true;
+    static HashMap<const wchar_t*, UnicodeSet*> fontCoverageMap;
+    FontCmapCache* fontCmapCache = 
+        Singleton<FontCmapCache, FontCmapCacheSingletonTraits>::get();
+    HashMap<const wchar_t*, UnicodeSet*>::iterator it =
+        fontCmapCache->find(family);
+    if (it != fontCmapCache->end()) 
+        return it->second->contains(character);
+    
+    HFONT hfont = font_data->hfont(); 
+    HDC hdc = GetDC(0);
+    HGDIOBJ oldFont = static_cast<HFONT>(SelectObject(hdc, hfont));
+    int count = GetFontUnicodeRanges(hdc, 0);
+    if (count == 0) {
+        if (webkit_glue::EnsureFontLoaded(hfont)) 
+            count = GetFontUnicodeRanges(hdc, 0);
+    }
+    if (count == 0) {
+        ASSERT_NOT_REACHED();
+        SelectObject(hdc, oldFont);
+        ReleaseDC(0, hdc);
+        return true;
+    }
+
+    static Vector<char, 512> glyphsetBuffer;
+    glyphsetBuffer.resize(GetFontUnicodeRanges(hdc, 0));
+    GLYPHSET* glyphset = reinterpret_cast<GLYPHSET*>(glyphsetBuffer.data());
+    // In addition, refering to the OS/2 table and converting the codepage list
+    // to the coverage map might be faster. 
+    count = GetFontUnicodeRanges(hdc, glyphset);
+    ASSERT(count > 0);
+    SelectObject(hdc, oldFont);
+    ReleaseDC(0, hdc);
+
+    // TODO(jungshik) : consider doing either of the following two:
+    // 1) port back ICU 4.0's faster look-up code for UnicodeSet
+    // 2) port Mozilla's CompressedCharMap or gfxSparseBitset
+    unsigned i = 0;
+    UnicodeSet* cmap = new UnicodeSet;
+    while (i < glyphset->cRanges) {
+        WCHAR start = glyphset->ranges[i].wcLow; 
+        cmap->add(start, start + glyphset->ranges[i].cGlyphs - 1);
+        i++;
+    }
+    cmap->freeze();
+    // We don't lowercase |family| because all of them are under our control
+    // and they're already lowercased. 
+    fontCmapCache->set(family, cmap); 
+    return cmap->contains(character);
+}
+
 IMLangFontLink2* FontCache::getFontLinkInterface()
 {
   return webkit_glue::GetLangFontLink();
@@ -254,30 +354,15 @@ const SimpleFontData* FontCache::getFontDataForCharacters(const Font& font,
                                                     const UChar* characters,
                                                     int length)
 {
-    // Use Safari mac's font-fallback mechanism when in layout test mode.
-    if (webkit_glue::IsLayoutTestMode() && length == 1) {
-        // Get the family name for the font
-        String origFamily =
-            font.primaryFont()->platformData().overrideFontMetrics()->family;
-
-        const String* fallbackFamily =
-            FontFallbackMetrics::lookup(origFamily, characters[0]);
-
-        if (fallbackFamily) {
-            FontPlatformData* platformData = getCachedFontPlatformData(
-                font.fontDescription(), *fallbackFamily);
-            if (platformData) {
-                return new SimpleFontData(*platformData);
-            }
-        }
-    }
-
     // TODO(jungshik) : Consider passing fontDescription.dominantScript() 
     // to GetFallbackFamily here along with the corresponding change
     // in base/gfx.
     FontDescription fontDescription = font.fontDescription();
+    UChar32 c;
+    UScriptCode script;
     const wchar_t* family = gfx::GetFallbackFamily(characters, length,
-        static_cast<gfx::GenericFamilyType>(fontDescription.genericFamily()));
+        static_cast<gfx::GenericFamilyType>(fontDescription.genericFamily()),
+        &c, &script);
     FontPlatformData* data = NULL;
     if (family) {
         data = getCachedFontPlatformData(font.fontDescription(), 
@@ -285,20 +370,69 @@ const SimpleFontData* FontCache::getFontDataForCharacters(const Font& font,
                                          false); 
     }
 
-    // last resort font list : PanUnicode
-    const static char* const panUniFonts[] = {
-        "Arial Unicode MS",
-        "Bitstream Cyberbit", 
-        "Code2000",
-        "Titus Cyberbit Basic",
-        "Microsoft Sans Serif",
-        "Lucida Sans Unicode"
+    // Last resort font list : PanUnicode. CJK fonts have a pretty
+    // large repertoire. Eventually, we need to scan all the fonts
+    // on the system to have a Firefox-like coverage and this needs 
+    // to move to base/gfx. 
+    // Make sure that all of them are lowercased.
+    const static wchar_t* const cjkFonts[] = {
+        L"arial unicode ms",
+        L"ms pgothic",
+        L"simsun",
+        L"gulim",
+        L"pmingliu",
+        L"wenquanyi zen hei", // partial CJK Ext. A coverage but more
+                              // widely known to Chinese users.
+        L"ar pl shanheisun uni",
+        L"ar pl zenkai uni",
+        L"han nom a",  // Complete CJK Ext. A coverage
+        L"code2000",   // Complete CJK Ext. A coverage
+        // CJK Ext. B fonts are not listed here because it's of no use
+        // with our current non-BMP character handling because we use
+        // Uniscribe for it and that code path does not go through here.
+        // This will be fixed when we move a bulk of this to base/gfx.
     };
-    for (int i = 0; !data && i < ARRAYSIZE(panUniFonts); ++i) {
-        data = getCachedFontPlatformData(font.fontDescription(),
-                                         panUniFonts[i]); 
+
+    const static wchar_t* const commonFonts[] = {
+        L"tahoma",
+        L"arial unicode ms",
+        L"microsoft sans serif",
+        L"lucida sans unicode",
+        L"palatino linotype",
+        // Four fonts below (code2000 at the end) are not from MS, but
+        // once installed, cover a very wide range of characters.
+        L"freeserif",
+        L"freesans",
+        L"gentium",
+        L"gentiumalt",
+        L"ms pgothic",
+        L"simsun",
+        L"gulim",
+        L"pmingliu",
+        L"code2000",
+    };
+
+    const wchar_t* const* panUniFonts = NULL;
+    int numFonts = 0;
+    if (script == USCRIPT_HAN) {
+        panUniFonts = cjkFonts;
+        numFonts = ARRAYSIZE(cjkFonts);
+    } else {
+        panUniFonts = commonFonts;
+        numFonts = ARRAYSIZE(commonFonts);
     }
-    if (data) 
+    // Font returned from GetFallbackFamily may not cover |characters|
+    // because it's based on script to font mapping. This problem is
+    // critical enough for non-Latin scripts (especially Han) to
+    // warrant an additional (real coverage) check with fontCotainsCharacter.
+    int i;
+    for (i = 0; (!data || !fontContainsCharacter(data, family, c))
+         && i < numFonts; ++i) {
+        family = panUniFonts[i]; 
+        data = getCachedFontPlatformData(font.fontDescription(),
+                                         AtomicString(family, wcslen(family)));
+    }
+    if (i < numFonts) // we found the font that covers this character !
        return new SimpleFontData(*data);
 
     // IMLangFontLink can break up a string into regions that can be rendered
@@ -310,7 +444,8 @@ const SimpleFontData* FontCache::getFontDataForCharacters(const Font& font,
 
     SimpleFontData* fontData = 0;
     HDC hdc = GetDC(0);
-    HFONT primaryFont = font.primaryFont()->fontDataForCharacter(characters[0])->m_font.hfont();
+    HFONT primaryFont = font.primaryFont()->
+        fontDataForCharacter(characters[0])->m_font.hfont();
 
     // Get the code pages supported by the requested font.
     DWORD acpCodePages;
@@ -339,7 +474,7 @@ const SimpleFontData* FontCache::getFontDataForCharacters(const Font& font,
         if (langFontLink->MapFont(hdc, actualCodePages, characters[0], &result) == S_OK) {
             // This font will have to be deleted using the IMLangFontLink2
             // rather than the normal way.
-            fontData = new SimpleFontData(FontPlatformData(result, 0, 0, true));
+            fontData = new SimpleFontData(FontPlatformData(result, 0, true));
         }
     }
 
@@ -395,9 +530,6 @@ FontPlatformData* FontCache::getSimilarFontPlatformData(const Font& font)
 FontPlatformData* FontCache::getLastResortFallbackFont(
     const FontDescription& description)
 {
-    if (webkit_glue::IsLayoutTestMode())
-        return getCachedFontPlatformData(description, AtomicString("Times"));
-
     FontDescription::GenericFamilyType generic = description.genericFamily();
     // TODO(jungshik): Mapping webkit generic to gfx::GenericFamilyType needs to be
     // more intelligent and the mapping function should be added to webkit_glue. 
@@ -428,6 +560,8 @@ FontPlatformData* FontCache::getLastResortFallbackFont(
 // TODO in pending/FontCache.h.
 AtomicString FontCache::getGenericFontForScript(UScriptCode script, const FontDescription& description)
 {
+    if (webkit_glue::IsLayoutTestMode() && script == USCRIPT_LATIN)
+      return emptyAtom;
     FontDescription::GenericFamilyType generic = description.genericFamily();
     const wchar_t* scriptFont = gfx::GetFontFamilyForScript(
         script, static_cast<gfx::GenericFamilyType>(generic));
@@ -538,20 +672,9 @@ FontPlatformData* FontCache::createFontPlatformData(const FontDescription& fontD
     if (!hfont)
         return 0;
 
-    const FontMetrics* overrideFontMetrics = NULL;
-
-    if (webkit_glue::IsLayoutTestMode()) {
-        // In layout-test mode, we have a font IFF it exists in our font size
-        // cache.  We want to ignore the existence/absence of the font in the
-        // system.
-        overrideFontMetrics = FontMetrics::lookup(family,
-                                                  fontDescription.weight() == FontWeightBold,
-                                                  fontDescription.italic());
-        if (!overrideFontMetrics) {
-            DeleteObject(hfont);
-            return 0;
-        }
-    } else if (!equalIgnoringCase(family, winName)) {
+    // TODO(pamg): Do we need to use predefined fonts "guaranteed" to exist
+    // when we're running in layout-test mode?
+    if (!equalIgnoringCase(family, winName)) {
         // For CJK fonts with both English and native names, 
         // GetTextFace returns a native name under the font's "locale"
         // and an English name under other locales regardless of 
@@ -568,9 +691,7 @@ FontPlatformData* FontCache::createFontPlatformData(const FontDescription& fontD
 
     return new FontPlatformData(hfont,
                                 fontDescription.computedPixelSize(),
-                                overrideFontMetrics,
                                 false);
 }
 
 }
-

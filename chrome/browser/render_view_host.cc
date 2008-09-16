@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/render_view_host.h"
 
@@ -33,6 +8,7 @@
 #include <vector>
 
 #include "base/string_util.h"
+#include "chrome/app/result_codes.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/cross_site_request_manager.h"
 #include "chrome/browser/navigation_entry.h"
@@ -44,8 +20,6 @@
 #include "chrome/browser/renderer_security_policy.h"
 #include "chrome/browser/debugger/debugger_wrapper.h"
 #include "chrome/browser/site_instance.h"
-#include "chrome/browser/tab_contents.h"
-#include "chrome/browser/tab_contents_delegate.h"
 #include "chrome/browser/user_metrics.h"
 #include "chrome/browser/web_contents.h"
 #include "chrome/common/resource_bundle.h"
@@ -74,6 +48,9 @@ void FilterURL(RendererSecurityPolicy* policy, int renderer_id, GURL* url) {
   }
 }
 
+// Delay to wait on closing the tab for a beforeunload/unload handler to fire.
+const int kUnloadTimeoutMS = 1000;
+
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -99,6 +76,7 @@ RenderViewHost::RenderViewHost(SiteInstance* instance,
     : RenderWidgetHost(instance->GetProcess(), routing_id),
       instance_(instance),
       enable_dom_ui_bindings_(false),
+      enable_external_host_bindings_(false),
       delegate_(delegate),
       renderer_initialized_(false),
       waiting_for_drag_context_response_(false),
@@ -107,17 +85,26 @@ RenderViewHost::RenderViewHost(SiteInstance* instance,
       navigations_suspended_(false),
       suspended_nav_message_(NULL),
       run_modal_reply_msg_(NULL),
-      has_unload_listener_(false) {
+      has_unload_listener_(false),
+      is_waiting_for_unload_ack_(false) {
   DCHECK(instance_);
   DCHECK(delegate_);
   if (modal_dialog_event == NULL)
     modal_dialog_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 
   modal_dialog_event_.Set(modal_dialog_event);
+#ifdef CHROME_PERSONALIZATION
+  personalization_ = Personalization::CreateHostPersonalization(this);
+#endif
 }
 
 RenderViewHost::~RenderViewHost() {
   OnDebugDisconnect();
+
+#ifdef CHROME_PERSONALIZATION
+  Personalization::CleanupHostPersonalization(personalization_);
+  personalization_ = NULL;
+#endif
 
   // Be sure to clean up any leftover state from cross-site requests.
   Singleton<CrossSiteRequestManager>()->SetHasPendingCrossSiteRequest(
@@ -164,8 +151,8 @@ bool RenderViewHost::CreateRenderView() {
 
   // If it's enabled, tell the renderer to set up the Javascript bindings for
   // sending messages back to the browser.
-  if (enable_dom_ui_bindings_)
-    Send(new ViewMsg_AllowDOMUIBindings(routing_id_));
+  Send(new ViewMsg_AllowBindings(
+      routing_id_, enable_dom_ui_bindings_, enable_external_host_bindings_));
 
   // Let our delegate know that we created a RenderView.
   delegate_->RendererCreated(this);
@@ -241,41 +228,41 @@ void RenderViewHost::SetNavigationsSuspended(bool suspend) {
   }
 }
 
-void RenderViewHost::AttemptToClosePage(bool is_closing_browser) {
+void RenderViewHost::FirePageBeforeUnload() {
   if (IsRenderViewLive()) {
-    Send(new ViewMsg_ShouldClose(routing_id_, is_closing_browser));
+    // Start the hang monitor in case the renderer hangs in the beforeunload
+    // handler.
+    is_waiting_for_unload_ack_ = true;
+    StartHangMonitorTimeout(kUnloadTimeoutMS);
+    Send(new ViewMsg_ShouldClose(routing_id_));
   } else {
     // This RenderViewHost doesn't have a live renderer, so just skip running
     // the onbeforeunload handler.
-    OnMsgShouldCloseACK(true, is_closing_browser);
+    OnMsgShouldCloseACK(true);
   }
 }
 
-void RenderViewHost::OnProceedWithClosePage(bool is_closing_browser) {
-  Send(new ViewMsg_ClosePage(routing_id_,
-                             site_instance()->process_host_id(),
-                             routing_id(),
-                             is_closing_browser));
+void RenderViewHost::FirePageUnload() {
+  // Start the hang monitor in case the renderer hangs in the unload handler.
+  is_waiting_for_unload_ack_ = true;
+  StartHangMonitorTimeout(kUnloadTimeoutMS);
+  ClosePage(site_instance()->process_host_id(), 
+            routing_id());
 }
 
 // static
 void RenderViewHost::ClosePageIgnoringUnloadEvents(int render_process_host_id,
-                                                   int request_id,
-                                                   bool is_closing_browser) {
+                                                   int request_id) {
   RenderViewHost* rvh = RenderViewHost::FromID(render_process_host_id,
                                                request_id);
   if (!rvh)
     return;
 
-  // The RenderViewHost's delegate is a WebContents.
-  TabContents* tab = static_cast<WebContents*>(rvh->delegate());
-  rvh->UnloadListenerHasFired();
+  rvh->StopHangMonitorTimeout();
+  rvh->is_waiting_for_unload_ack_ = false;
 
-  if (is_closing_browser) {
-    tab->delegate()->UnloadFired(tab);
-  } else {
-    rvh->delegate()->Close(rvh);
-  }
+  rvh->UnloadListenerHasFired();
+  rvh->delegate()->Close(rvh);
 }
 
 void RenderViewHost::ClosePage(int new_render_process_host_id,
@@ -283,8 +270,7 @@ void RenderViewHost::ClosePage(int new_render_process_host_id,
   if (IsRenderViewLive()) {
     Send(new ViewMsg_ClosePage(routing_id_,
                                new_render_process_host_id,
-                               new_request_id,
-                               false)); // is_closing_browser
+                               new_request_id));
   } else {
     // This RenderViewHost doesn't have a live renderer, so just skip closing
     // the page.  We must notify the ResourceDispatcherHost on the IO thread,
@@ -337,10 +323,6 @@ void RenderViewHost::StopFinding(bool clear_selection) {
   Send(new ViewMsg_StopFinding(routing_id_, clear_selection));
 }
 
-void RenderViewHost::SendFindReplyAck() {
-  Send(new ViewMsg_FindReplyACK(routing_id_));
-}
-
 void RenderViewHost::AlterTextSize(text_zoom::TextSize size) {
   Send(new ViewMsg_AlterTextSize(routing_id_, size));
 }
@@ -370,7 +352,7 @@ void RenderViewHost::DragTargetDragEnter(const WebDropData& drop_data,
   for (std::vector<std::wstring>::const_iterator iter(drop_data.filenames.begin());
        iter != drop_data.filenames.end(); ++iter) {
     policy->GrantRequestURL(process()->host_id(),
-                            net_util::FilePathToFileURL(*iter));
+                            net::FilePathToFileURL(*iter));
     policy->GrantUploadFile(process()->host_id(), *iter);
   }
   Send(new ViewMsg_DragTargetDragEnter(routing_id_, drop_data, client_pt,
@@ -425,8 +407,8 @@ void RenderViewHost::AddMessageToConsole(
   Send(new ViewMsg_AddMessageToConsole(routing_id_, frame_xpath, msg, level));
 }
 
-void RenderViewHost::SendToDebugger(const std::wstring& cmd) {
-  Send(new ViewMsg_SendToDebugger(routing_id_, cmd));
+void RenderViewHost::DebugCommand(const std::wstring& cmd) {
+  Send(new ViewMsg_DebugCommand(routing_id_, cmd));
 }
 
 void RenderViewHost::DebugAttach() {
@@ -436,14 +418,14 @@ void RenderViewHost::DebugAttach() {
 
 void RenderViewHost::DebugDetach() {
   if (debugger_attached_) {
-    SendToDebugger(L"quit");
+    Send(new ViewMsg_DebugDetach(routing_id_));
     debugger_attached_ = false;
   }
 }
 
-void RenderViewHost::DebugBreak() {
+void RenderViewHost::DebugBreak(bool force) {
   if (debugger_attached_)
-    SendToDebugger(L"break");
+    Send(new ViewMsg_DebugBreak(routing_id_, force));
 }
 
 void RenderViewHost::Undo() {
@@ -500,6 +482,9 @@ void RenderViewHost::CaptureThumbnail() {
 void RenderViewHost::JavaScriptMessageBoxClosed(IPC::Message* reply_msg,
                                                 bool success,
                                                 const std::wstring& prompt) {
+  if (is_waiting_for_unload_ack_)
+    StartHangMonitorTimeout(kUnloadTimeoutMS);
+
   if (--modal_dialog_count_ == 0)
     ResetEvent(modal_dialog_event_.Get());
   ViewHostMsg_RunJavaScriptMessage::WriteReplyParams(reply_msg, success, prompt);
@@ -508,6 +493,9 @@ void RenderViewHost::JavaScriptMessageBoxClosed(IPC::Message* reply_msg,
 
 void RenderViewHost::ModalHTMLDialogClosed(IPC::Message* reply_msg,
                                            const std::string& json_retval) {
+  if (is_waiting_for_unload_ack_)
+    StartHangMonitorTimeout(kUnloadTimeoutMS);
+
   if (--modal_dialog_count_ == 0)
     ResetEvent(modal_dialog_event_.Get());
 
@@ -559,6 +547,10 @@ void RenderViewHost::AllowDOMUIBindings() {
   RendererSecurityPolicy::GetInstance()->GrantDOMUIBindings(process()->host_id());
 }
 
+void RenderViewHost::AllowExternalHostBindings() {
+  enable_external_host_bindings_ = true;
+}
+
 void RenderViewHost::SetDOMUIProperty(const std::string& name,
                                       const std::string& value) {
   DCHECK(enable_dom_ui_bindings_);
@@ -569,10 +561,10 @@ void RenderViewHost::SetDOMUIProperty(const std::string& name,
 void RenderViewHost::MakeNavigateParams(const NavigationEntry& entry,
                                         bool reload,
                                         ViewMsg_Navigate_Params* params) {
-  params->page_id = entry.GetPageID();
-  params->url = entry.GetURL();
-  params->transition = entry.GetTransitionType();
-  params->state = entry.GetContentState();
+  params->page_id = entry.page_id();
+  params->url = entry.url();
+  params->transition = entry.transition_type();
+  params->state = entry.content_state();
   params->reload = reload;
 }
 
@@ -653,6 +645,12 @@ void RenderViewHost::OnMessageReceived(const IPC::Message& msg) {
                         OnMsgDomOperationResponse)
     IPC_MESSAGE_HANDLER(ViewHostMsg_DOMUISend,
                         OnMsgDOMUISend)
+    IPC_MESSAGE_HANDLER(ViewHostMsg_ForwardMessageToExternalHost,
+                        OnMsgForwardMessageToExternalHost)
+#ifdef CHROME_PERSONALIZATION
+    IPC_MESSAGE_HANDLER(ViewHostMsg_PersonalizationEvent,
+                        OnPersonalizationEvent)
+#endif                       
     IPC_MESSAGE_HANDLER(ViewHostMsg_GoToEntryAtOffset,
                         OnMsgGoToEntryAtOffset)
     IPC_MESSAGE_HANDLER(ViewHostMsg_SetTooltipText, OnMsgSetTooltipText)
@@ -764,7 +762,7 @@ void RenderViewHost::OnMsgRendererGone() {
   current_size_ = gfx::Size();
   is_hidden_ = false;
 
-  backing_store_.reset();
+  RendererExited();
 
   if (view_) {
     view_->RendererGone();
@@ -928,9 +926,20 @@ void RenderViewHost::OnMsgFindReply(int request_id,
                                     const gfx::Rect& selection_rect,
                                     int active_match_ordinal,
                                     bool final_update) {
-  delegate_->FindReply(request_id, number_of_matches,
-                       selection_rect, active_match_ordinal, final_update);
-  SendFindReplyAck();
+  RenderViewHostDelegate::FindInPage* delegate =
+      delegate_->GetFindInPageDelegate();
+  if (!delegate)
+    return;
+  delegate->FindReply(request_id, number_of_matches, selection_rect,
+                      active_match_ordinal, final_update);
+
+  // Send a notification to the renderer that we are ready to receive more
+  // results from the scoping effort of the Find operation. The FindInPage
+  // scoping is asynchronous and periodically sends results back up to the
+  // browser using IPC. In an effort to not spam the browser we have the
+  // browser send an ACK for each FindReply message and have the renderer
+  // queue up the latest status message while waiting for this ACK.
+  Send(new ViewMsg_FindReplyACK(routing_id_));
 }
 
 void RenderViewHost::OnMsgUpdateFavIconURL(int32 page_id,
@@ -986,6 +995,19 @@ void RenderViewHost::OnMsgDOMUISend(
   delegate_->ProcessDOMUIMessage(message, content);
 }
 
+void RenderViewHost::OnMsgForwardMessageToExternalHost(
+    const std::string& receiver,
+    const std::string& message) {
+  delegate_->ProcessExternalHostMessage(receiver, message);
+}
+
+#ifdef CHROME_PERSONALIZATION
+void RenderViewHost::OnPersonalizationEvent(const std::string& message,
+                                            const std::string& content) {
+  Personalization::HandlePersonalizationEvent(this, message, content);
+}
+#endif
+
 void RenderViewHost::OnMsgGoToEntryAtOffset(int offset) {
   delegate_->GoToEntryAtOffset(offset);
 }
@@ -1005,6 +1027,7 @@ void RenderViewHost::OnMsgRunJavaScriptMessage(
     const std::wstring& default_prompt,
     const int flags,
     IPC::Message* reply_msg) {
+  StopHangMonitorTimeout();
   if (modal_dialog_count_++ == 0)
     SetEvent(modal_dialog_event_.Get());
   delegate_->RunJavaScriptMessage(message, default_prompt, flags, reply_msg);
@@ -1012,6 +1035,7 @@ void RenderViewHost::OnMsgRunJavaScriptMessage(
 
 void RenderViewHost::OnMsgRunBeforeUnloadConfirm(const std::wstring& message,
                                                  IPC::Message* reply_msg) {
+  StopHangMonitorTimeout();
   if (modal_dialog_count_++ == 0)
     SetEvent(modal_dialog_event_.Get());
   delegate_->RunBeforeUnloadConfirm(message, reply_msg);
@@ -1020,6 +1044,7 @@ void RenderViewHost::OnMsgRunBeforeUnloadConfirm(const std::wstring& message,
 void RenderViewHost::OnMsgShowModalHTMLDialog(
     const GURL& url, int width, int height, const std::string& json_arguments,
     IPC::Message* reply_msg) {
+  StopHangMonitorTimeout();
   if (modal_dialog_count_++ == 0)
     SetEvent(modal_dialog_event_.Get());
   delegate_->ShowModalHTMLDialog(url, width, height, json_arguments, reply_msg);
@@ -1060,7 +1085,7 @@ void RenderViewHost::DidPrintPage(
 void RenderViewHost::OnAddMessageToConsole(const std::wstring& message,
                                            int32 line_no,
                                            const std::wstring& source_id) {
-  std::wstring msg = StringPrintf(L"\"%s,\" source: %s (%d)", message.c_str(),
+  std::wstring msg = StringPrintf(L"\"%ls,\" source: %ls (%d)", message.c_str(),
                                   source_id.c_str(), line_no);
   logging::LogMessage("CONSOLE", 0).stream() << msg;
   if (debugger_attached_)
@@ -1075,7 +1100,7 @@ void RenderViewHost::OnDebuggerOutput(const std::wstring& output) {
 void RenderViewHost::DidDebugAttach() {
   if (!debugger_attached_) {
     debugger_attached_ = true;
-    SendToDebugger(L"attach");
+    g_browser_process->debugger_wrapper()->OnDebugAttach();
   }
 }
 
@@ -1136,18 +1161,11 @@ void RenderViewHost::OnReceivedSerializedHtmlData(const GURL& frame_url,
   delegate_->OnReceivedSerializedHtmlData(frame_url, data, status);
 }
 
-void RenderViewHost::OnMsgShouldCloseACK(bool proceed,
-                                         bool is_closing_browser) {
-  if (is_closing_browser) {
-    // The RenderViewHost's delegate is a WebContents.
-    TabContents* tab = static_cast<WebContents*>(delegate());
-    if (!tab)
-      return;
-
-    tab->delegate()->BeforeUnloadFired(tab, proceed);
-  } else {
-    delegate_->ShouldClosePage(proceed);
-  }
+void RenderViewHost::OnMsgShouldCloseACK(bool proceed) {
+  StopHangMonitorTimeout();
+  DCHECK(is_waiting_for_unload_ack_);
+  is_waiting_for_unload_ack_ = false;
+  delegate_->ShouldClosePage(proceed);
 }
 
 void RenderViewHost::OnUnloadListenerChanged(bool has_listener) {
@@ -1155,6 +1173,16 @@ void RenderViewHost::OnUnloadListenerChanged(bool has_listener) {
 }
 
 void RenderViewHost::NotifyRendererUnresponsive() {
+  if (is_waiting_for_unload_ack_) {
+    // If the tab hangs in the beforeunload/unload handler there's really
+    // nothing we can do to recover. Pretend the unload listeners have
+    // all fired and close the tab. If the hang is in the beforeunload handler
+    // then the user will not have the option of cancelling the close.
+    UnloadListenerHasFired();
+    delegate_->Close(this);
+    return;
+  }
+
   // If the debugger is attached, we're going to be unresponsive anytime it's
   // stopped at a breakpoint.
   if (!debugger_attached_)
@@ -1172,7 +1200,17 @@ void RenderViewHost::OnDebugDisconnect() {
   }
 }
 
-void RenderViewHost::OnThemeChanged() {
-  Send (new ViewMsg_ThemeChanged(routing_id_));
+#ifdef CHROME_PERSONALIZATION
+void RenderViewHost::RaisePersonalizationEvent(std::string event_name, 
+                                               std::string event_arg) {
+  Send(new ViewMsg_PersonalizationEvent(routing_id_,
+                                        event_name,
+                                        event_arg));
+}
+#endif
+
+void RenderViewHost::ForwardMessageFromExternalHost(
+    const std::string& target, const std::string& message) {
+  Send(new ViewMsg_HandleMessageFromExternalHost(routing_id_, target, message));
 }
 

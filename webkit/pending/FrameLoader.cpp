@@ -174,9 +174,9 @@ struct ScheduledRedirection {
     explicit ScheduledRedirection(HistoryItem* item)
         : type(historyNavigation)
         , delay(0)
-        , historyItem(item)
         , lockHistory(false)
         , wasUserGesture(false)
+        , historyItem(item)
     {
     }
 };
@@ -230,9 +230,9 @@ FrameLoader::FrameLoader(Frame* frame, FrameLoaderClient* client)
     , m_isRunningScript(false)
     , m_didCallImplicitClose(false)
     , m_wasUnloadEventEmitted(false)
-    , m_firingUnloadEvents(false)
     , m_isComplete(false)
     , m_isLoadingMainResource(false)
+    , m_firingUnloadEvents(false)
     , m_cancellingWithLoadInProgress(false)
     , m_needsClear(false)
     , m_receivedData(false)
@@ -956,7 +956,7 @@ void FrameLoader::begin(const KURL& url, bool dispatch, SecurityOrigin* origin)
     document->docLoader()->setAutoLoadImages(settings && settings->loadsImagesAutomatically());
 
     if (m_documentLoader) {
-        String dnsPrefetchControl = m_documentLoader->response().httpHeaderField("DNS-Prefetch-Control");
+        String dnsPrefetchControl = m_documentLoader->response().httpHeaderField("X-DNS-Prefetch-Control");
         if (!dnsPrefetchControl.isEmpty())
             document->setDNSPrefetchControl(dnsPrefetchControl);
     }

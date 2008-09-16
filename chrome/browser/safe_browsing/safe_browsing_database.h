@@ -1,40 +1,15 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef CHROME_BROWSER_SAFE_BROWSING_SAFE_BROWSING_DATABASE_H__
 #define CHROME_BROWSER_SAFE_BROWSING_SAFE_BROWSING_DATABASE_H__
 
-#include <hash_map>
 #include <list>
 #include <queue>
 #include <vector>
 
+#include "base/hash_tables.h"
 #include "base/scoped_ptr.h"
 #include "base/task.h"
 #include "base/time.h"
@@ -94,8 +69,11 @@ class SafeBrowsingDatabase {
   // to blocking user requests.
   void set_synchronous() { asynchronous_ = false; }
 
-  // Store the results of a GetHash response.
-  void CacheHashResults(const std::vector<SBFullHashResult>& full_hits);
+  // Store the results of a GetHash response. In the case of empty results, we
+  // cache the prefixes until the next update so that we don't have to issue
+  // further GetHash requests we know will be empty.
+  void CacheHashResults(const std::vector<SBPrefix>& prefixes,
+                        const std::vector<SBFullHashResult>& full_hits);
 
   // Called when the user's machine has resumed from a lower power state.
   void HandleResume();
@@ -310,8 +288,11 @@ class SafeBrowsingDatabase {
   } HashCacheEntry;
 
   typedef std::list<HashCacheEntry> HashList;
-  typedef stdext::hash_map<SBPrefix, HashList> HashCache;
+  typedef base::hash_map<SBPrefix, HashList> HashCache;
   HashCache hash_cache_;
+
+  // Cache of prefixes that returned empty results (no full hash match).
+  std::set<SBPrefix> prefix_miss_cache_;
 
   // The amount of time, in milliseconds, to wait before the next disk write.
   int disk_delay_;

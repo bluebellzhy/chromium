@@ -49,7 +49,7 @@
 #include <wtf/HashSet.h>
 
 #undef LOG
-#include "base/gfx/platform_canvas.h"
+#include "base/gfx/platform_canvas_win.h"
 #include "webkit/glue/webframe_impl.h"
 #include "webkit/glue/webview_impl.h"
 

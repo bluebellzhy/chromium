@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include <windows.h>
 
@@ -136,16 +111,21 @@ class TemplateURLModelTest : public testing::Test,
     profile_->TearDown();
     delete TemplateURLRef::google_base_url_;
     TemplateURLRef::google_base_url_ = NULL;
+
+    // Flush the message loop to make Purify happy.
+    message_loop_.RunAllPending();
   }
 
-  TemplateURL* AddKeywordWithDate(const std::wstring & keyword,
-                                  const std::wstring & url,
-                                  const std::wstring & short_name,
+  TemplateURL* AddKeywordWithDate(const std::wstring& keyword,
+                                  bool autogenerate_keyword,
+                                  const std::wstring& url,
+                                  const std::wstring& short_name,
                                   bool safe_for_autoreplace,
                                   Time created_date) {
     TemplateURL* template_url = new TemplateURL();
     template_url->SetURL(url, 0, 0);
     template_url->set_keyword(keyword);
+    template_url->set_autogenerate_keyword(autogenerate_keyword);
     template_url->set_short_name(short_name);
     template_url->set_date_created(created_date);
     template_url->set_safe_for_autoreplace(safe_for_autoreplace);
@@ -214,6 +194,7 @@ class TemplateURLModelTest : public testing::Test,
     TemplateURLRef::google_base_url_ = new std::wstring(base_url);
   }
 
+  MessageLoopForUI message_loop_;
   scoped_ptr<TemplateURLModelTestingProfile> profile_;
   scoped_ptr<TestingTemplateURLModel> model_;
   int changed_count_;
@@ -309,14 +290,16 @@ TEST_F(TemplateURLModelTest, ClearBrowsingData_Keywords) {
   EXPECT_EQ(0, model_->GetTemplateURLs().size());
 
   // Create one with a 0 time.
-  AddKeywordWithDate(L"key1", L"http://foo1", L"name1", true, Time());
+  AddKeywordWithDate(L"key1", false, L"http://foo1", L"name1", true, Time());
   // Create one for now and +/- 1 day.
-  AddKeywordWithDate(L"key2", L"http://foo2", L"name2", true, now - one_day);
-  AddKeywordWithDate(L"key3", L"http://foo3", L"name3", true, now);
-  AddKeywordWithDate(L"key4", L"http://foo4", L"name4", true, now + one_day);
+  AddKeywordWithDate(L"key2", false, L"http://foo2", L"name2", true,
+                     now - one_day);
+  AddKeywordWithDate(L"key3", false, L"http://foo3", L"name3", true, now);
+  AddKeywordWithDate(L"key4", false, L"http://foo4", L"name4", true,
+                     now + one_day);
   // Try the other three states.
-  AddKeywordWithDate(L"key5", L"http://foo5", L"name5", false, now);
-  AddKeywordWithDate(L"key6", L"http://foo6", L"name6", false, month_ago);
+  AddKeywordWithDate(L"key5", false, L"http://foo5", L"name5", false, now);
+  AddKeywordWithDate(L"key6", false, L"http://foo6", L"name6", false, month_ago);
 
   // We just added a few items, validate them.
   EXPECT_EQ(6, model_->GetTemplateURLs().size());
@@ -395,8 +378,8 @@ TEST_F(TemplateURLModelTest, DefaultSearchProvider) {
   // Add a new TemplateURL.
   VerifyLoad();
   const size_t initial_count = model_->GetTemplateURLs().size();
-  TemplateURL* t_url =
-      AddKeywordWithDate(L"key1", L"http://foo1", L"name1", true, Time());
+  TemplateURL* t_url = AddKeywordWithDate(L"key1", false, L"http://foo1",
+                                          L"name1", true, Time());
 
   changed_count_ = 0;
   model_->SetDefaultSearchProvider(t_url);
@@ -427,7 +410,8 @@ TEST_F(TemplateURLModelTest, TemplateURLWithNoKeyword) {
 
   const size_t initial_count = model_->GetTemplateURLs().size();
 
-  AddKeywordWithDate(std::wstring(), L"http://foo1", L"name1", true, Time());
+  AddKeywordWithDate(std::wstring(), false, L"http://foo1", L"name1", true,
+                     Time());
 
   // We just added a few items, validate them.
   ASSERT_EQ(initial_count + 1, model_->GetTemplateURLs().size());
@@ -449,8 +433,8 @@ TEST_F(TemplateURLModelTest, TemplateURLWithNoKeyword) {
 
 TEST_F(TemplateURLModelTest, CantReplaceWithSameKeyword) {
   ASSERT_TRUE(model_->CanReplaceKeyword(L"foo", std::wstring(), NULL));
-  TemplateURL* t_url =
-      AddKeywordWithDate(L"foo", L"http://foo1", L"name1", true, Time());
+  TemplateURL* t_url = AddKeywordWithDate(L"foo", false, L"http://foo1",
+                                          L"name1", true, Time());
 
   // Can still replace, newly added template url is marked safe to replace.
   ASSERT_TRUE(model_->CanReplaceKeyword(L"foo", L"http://foo2", NULL));
@@ -465,8 +449,8 @@ TEST_F(TemplateURLModelTest, CantReplaceWithSameKeyword) {
 
 TEST_F(TemplateURLModelTest, CantReplaceWithSameHosts) {
   ASSERT_TRUE(model_->CanReplaceKeyword(L"foo", L"http://foo.com", NULL));
-  TemplateURL* t_url =
-      AddKeywordWithDate(L"foo", L"http://foo.com", L"name1", true, Time());
+  TemplateURL* t_url = AddKeywordWithDate(L"foo", false, L"http://foo.com",
+                                          L"name1", true, Time());
 
   // Can still replace, newly added template url is marked safe to replace.
   ASSERT_TRUE(model_->CanReplaceKeyword(L"bar", L"http://foo.com", NULL));
@@ -594,8 +578,8 @@ TEST_F(TemplateURLModelTest, UpdateKeywordSearchTermsForURL) {
     { "http://x/foo?q=b&q=xx", L"" },
   };
 
-  AddKeywordWithDate(L"x", L"http://x/foo?q={searchTerms}", L"name", false,
-                     Time());
+  AddKeywordWithDate(L"x", false, L"http://x/foo?q={searchTerms}", L"name",
+                     false, Time());
 
   for (size_t i = 0; i < arraysize(data); ++i) {
     model_->UpdateKeywordSearchTermsForURL(history::URLRow(GURL(data[i].url)));
@@ -612,7 +596,7 @@ TEST_F(TemplateURLModelTest, DontUpdateKeywordSearchForNonReplaceable) {
     { "http://x/foo?y=xx" },
   };
 
-  AddKeywordWithDate(L"x", L"http://x/foo", L"name", false, Time());
+  AddKeywordWithDate(L"x", false, L"http://x/foo", L"name", false, Time());
 
   for (size_t i = 0; i < arraysize(data); ++i) {
     model_->UpdateKeywordSearchTermsForURL(history::URLRow(GURL(data[i].url)));
@@ -621,21 +605,29 @@ TEST_F(TemplateURLModelTest, DontUpdateKeywordSearchForNonReplaceable) {
 }
 
 TEST_F(TemplateURLModelTest, ChangeGoogleBaseValue) {
+  // NOTE: Do not do a VerifyLoad() here as it will load the prepopulate data,
+  // which also has a {google:baseURL} keyword in it, which will confuse this
+  // test.
   SetGoogleBaseURL(L"http://google.com/");
-  const TemplateURL* t_url =
-      AddKeywordWithDate(L"x", L"{google:baseURL}?q={searchTerms}",
-                         L"name", false, Time());
+  const TemplateURL* t_url = AddKeywordWithDate(std::wstring(), true,
+      L"{google:baseURL}?q={searchTerms}", L"name", false, Time());
   ASSERT_EQ(t_url, model_->GetTemplateURLForHost("google.com"));
-  ASSERT_EQ("google.com", t_url->url()->GetHost());
+  EXPECT_EQ("google.com", t_url->url()->GetHost());
+  EXPECT_EQ(L"google.com", t_url->keyword());
 
   // Change the Google base url.
+  model_->loaded_ = true;  // Hack to make sure we get notified of the base URL
+                           // changing.
   SetGoogleBaseURL(L"http://foo.com/");
   model_->GoogleBaseURLChanged();
+  VerifyObserverCount(1);
 
   // Make sure the host->TemplateURL map was updated appropriately.
   ASSERT_EQ(t_url, model_->GetTemplateURLForHost("foo.com"));
-  ASSERT_TRUE(model_->GetTemplateURLForHost("google.com") == NULL);
-  ASSERT_EQ("foo.com", t_url->url()->GetHost());
-  ASSERT_EQ(L"http://foo.com/?q=x", t_url->url()->ReplaceSearchTerms(*t_url,
+  EXPECT_TRUE(model_->GetTemplateURLForHost("google.com") == NULL);
+  EXPECT_EQ("foo.com", t_url->url()->GetHost());
+  EXPECT_EQ(L"foo.com", t_url->keyword());
+  EXPECT_EQ(L"http://foo.com/?q=x", t_url->url()->ReplaceSearchTerms(*t_url,
       L"x", TemplateURLRef::NO_SUGGESTIONS_AVAILABLE, std::wstring()));
 }
+

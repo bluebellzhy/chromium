@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef CHROME_BROWSER_TEMPLATE_URL_H__
 #define CHROME_BROWSER_TEMPLATE_URL_H__
@@ -134,11 +109,6 @@ class TemplateURLRef {
   // {google:baseURL} or {google:baseSuggestURL}.
   bool HasGoogleBaseURLs() const;
 
-  // TemplateURLRef internally caches values to make replacement quick. This
-  // method invalidates any cached values. You shouldn't have a need to invoke
-  // this, it's invoked by TemplateURLModel when the google base url changes.
-  void InvalidateCachedValues() const;
-
  private:
   friend class TemplateURL;
   friend class TemplateURLModelTest;
@@ -166,6 +136,10 @@ class TemplateURLRef {
 
   // The list of elements to replace.
   typedef std::vector<struct Replacement> Replacements;
+
+  // TemplateURLRef internally caches values to make replacement quick. This
+  // method invalidates any cached values.
+  void InvalidateCachedValues() const;
 
   // Resets the url.
   void Set(const std::wstring& url, int index_offset, int page_offset);
@@ -278,7 +252,8 @@ class TemplateURL {
   static GURL GenerateFaviconURL(const GURL& url);
 
   TemplateURL()
-      : show_in_default_list_(false),
+      : autogenerate_keyword_(false),
+        show_in_default_list_(false),
         safe_for_autoreplace_(false),
         id_(0),
         date_created_(Time::Now()),
@@ -336,8 +311,22 @@ class TemplateURL {
     // Case sensitive keyword matching is confusing. As such, we force all
     // keywords to be lower case.
     keyword_ = l10n_util::ToLower(keyword);
+    autogenerate_keyword_ = false;
   }
-  const std::wstring& keyword() const { return keyword_; }
+  const std::wstring& keyword() const;
+
+  // Whether to autogenerate a keyword from the url() in GetKeyword().  Most
+  // consumers should not need this.
+  // NOTE: Calling set_keyword() turns this back off.  Manual and automatic
+  // keywords are mutually exclusive.
+  void set_autogenerate_keyword(bool autogenerate_keyword) {
+    autogenerate_keyword_ = autogenerate_keyword;
+    if (autogenerate_keyword_)
+      keyword_.clear();
+  }
+  bool autogenerate_keyword() const {
+    return autogenerate_keyword_;
+  }
 
   // Whether this keyword is shown in the default list of search providers. This
   // is just a property and does not indicate whether this TemplateURL has
@@ -417,10 +406,12 @@ class TemplateURL {
   int prepopulate_id() const { return prepopulate_id_; }
 
  private:
-  // For access to set id.
   friend class WebDatabaseTest;
   friend class WebDatabase;
   friend class TemplateURLModel;
+
+  // Invalidates cached values on this object and its child TemplateURLRefs.
+  void InvalidateCachedValues() const;
 
   // Unique identifier, used when archived to the database.
   void set_id(IDType id) { id_ = id;}
@@ -430,7 +421,9 @@ class TemplateURL {
   TemplateURLRef suggestions_url_;
   TemplateURLRef url_;
   GURL originating_url_;
-  std::wstring keyword_;
+  mutable std::wstring keyword_;
+  bool autogenerate_keyword_;  // If this is set, |keyword_| holds the cached
+                               // generated keyword if available.
   bool show_in_default_list_;
   bool safe_for_autoreplace_;
   std::vector<ImageRef> image_refs_;
@@ -446,3 +439,4 @@ class TemplateURL {
 };
 
 #endif // CHROME_BROWSER_TEMPLATE_URL_PARSER_H__
+

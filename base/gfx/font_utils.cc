@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "base/gfx/font_utils.h"
 
@@ -37,6 +12,7 @@
 #include "base/singleton.h"
 #include "base/string_util.h"
 #include "unicode/locid.h"
+#include "unicode/uchar.h"
 
 namespace gfx {
 
@@ -58,15 +34,18 @@ struct ScriptToFontMapSingletonTraits
     };
 
     const static FontMap font_map[] = {
+      {USCRIPT_LATIN, L"times new roman"},
+      {USCRIPT_GREEK, L"times new roman"},
+      {USCRIPT_CYRILLIC, L"times new roman"},
       {USCRIPT_SIMPLIFIED_HAN, L"simsun"},
-      {USCRIPT_TRADITIONAL_HAN, L"pmingliu"},
+      //{USCRIPT_TRADITIONAL_HAN, L"pmingliu"},
       {USCRIPT_HIRAGANA, L"ms pgothic"},
       {USCRIPT_KATAKANA, L"ms pgothic"},
       {USCRIPT_KATAKANA_OR_HIRAGANA, L"ms pgothic"},
       {USCRIPT_HANGUL, L"gulim"},
       {USCRIPT_THAI, L"tahoma"},
       {USCRIPT_HEBREW, L"david"},
-      {USCRIPT_ARABIC, L"simplified arabic"},
+      {USCRIPT_ARABIC, L"tahoma"},
       {USCRIPT_DEVANAGARI, L"mangal"},
       {USCRIPT_BENGALI, L"vrinda"},
       {USCRIPT_GURMUKHI, L"raavi"},
@@ -89,9 +68,9 @@ struct ScriptToFontMapSingletonTraits
       {USCRIPT_KHMER, L"daunpenh"},
       {USCRIPT_THAANA, L"mv boli"},
       {USCRIPT_MONGOLIAN, L"mongolian balti"},
-      // For common, perhaps we should return a font
-      // for the current application/system locale.
-      //{USCRIPT_COMMON, L"times new roman"}
+      {USCRIPT_MYANMAR, L"padauk"},
+      // For USCRIPT_COMMON, we map blocks to scripts when
+      // that makes sense.
     };
 
     ScriptToFontMap* new_instance = new ScriptToFontMap;
@@ -104,13 +83,15 @@ struct ScriptToFontMapSingletonTraits
     // this ICU locale tells the current UI locale of Chrome.
     Locale locale = Locale::getDefault();
     ScriptToFontMap::const_iterator iter;
-    if (locale == Locale::getKorean()) {
+    if (locale == Locale::getJapanese()) {
+      iter = new_instance->find(USCRIPT_HIRAGANA);
+    } else if (locale == Locale::getKorean()) {
       iter = new_instance->find(USCRIPT_HANGUL);
-    } else if (locale == Locale::getJapanese()) {
-      iter = new_instance->find(USCRIPT_KATAKANA_OR_HIRAGANA);
-    } else if (locale == Locale::getTraditionalChinese()) {
-      iter = new_instance->find(USCRIPT_TRADITIONAL_HAN);
     } else {
+      // Use Simplified Chinese font for all other locales including
+      // Traditional Chinese because Simsun (SC font) has a wider
+      // coverage (covering both SC and TC) than PMingLiu (TC font).
+      // This also speeds up the TC version of Chrome when rendering SC pages.
       iter = new_instance->find(USCRIPT_SIMPLIFIED_HAN);
     }
     if (iter != new_instance->end())
@@ -170,12 +151,15 @@ struct FontDataCacheSingletonTraits
 //  - Cover all the scripts
 //  - Get the default font for each script/generic family from the
 //    preference instead of hardcoding in the source.
+//    (at least, read values from the registry for IE font settings).
 //  - Support generic families (from FontDescription)
 //  - If the default font for a script is not available,
+//    try some more fonts known to support it. Finally, we can
 //    use EnumFontFamilies or similar APIs to come up with a list of
 //    fonts supporting the script and cache the result.
-//  - Consider using UnicodeSet (or UnicodeMap) to keep track of which
-//    character is supported by which font
+//  - Consider using UnicodeSet (or UnicodeMap) converted from
+//    GLYPHSET (BMP) or directly read from truetype cmap tables to
+//    keep track of which character is supported by which font
 //  - Update script_font_cache in response to WM_FONTCHANGE
 
 const wchar_t* GetFontFamilyForScript(UScriptCode script,
@@ -196,9 +180,11 @@ const wchar_t* GetFontFamilyForScript(UScriptCode script,
 //    and just return it.
 //  - All the characters (or characters up to the point a single
 //    font can cover) need to be taken into account
-const wchar_t* GetFallbackFamily(const wchar_t* characters,
+const wchar_t* GetFallbackFamily(const wchar_t *characters,
                                  int length,
-                                 GenericFamilyType generic) {
+                                 GenericFamilyType generic,
+                                 UChar32 *char_checked,
+                                 UScriptCode *script_checked) {
   DCHECK(characters && characters[0] && length > 0);
   UScriptCode script = USCRIPT_COMMON;
 
@@ -215,11 +201,53 @@ const wchar_t* GetFallbackFamily(const wchar_t* characters,
     // silently ignore the error
   }
 
-  // hack for full width ASCII. Japanese are most fond of full-width ASCII.
-  // TODO(jungshik) find a better way !
+  // hack for full width ASCII. For the full-width ASCII, use the font
+  // for Han (which is locale-dependent). 
   if (0xFF00 < ucs4 && ucs4 < 0xFF5F)
-    return L"ms pgothic";
+    script = USCRIPT_HAN; 
 
+  // There are a lot of characters in USCRIPT_COMMON that can be covered
+  // by fonts for scripts closely related to them.
+  // See http://unicode.org/cldr/utility/list-unicodeset.jsp?a=[:Script=Common:]
+  // TODO(jungshik): make this more efficient with a wider coverage
+  if (script == USCRIPT_COMMON || script == USCRIPT_INHERITED) { 
+    UBlockCode block = ublock_getCode(ucs4);
+    switch (block) {
+      case UBLOCK_BASIC_LATIN:
+        script = USCRIPT_LATIN;
+        break;
+      case UBLOCK_CJK_SYMBOLS_AND_PUNCTUATION: 
+        script = USCRIPT_HAN;
+        break;
+      case UBLOCK_HIRAGANA:
+      case UBLOCK_KATAKANA:
+        script = USCRIPT_HIRAGANA;
+        break;
+      case UBLOCK_ARABIC:
+        script = USCRIPT_ARABIC;
+        break;
+      case UBLOCK_GREEK:
+        script = USCRIPT_GREEK;
+        break;
+      case UBLOCK_DEVANAGARI:
+        // For Danda and Double Danda (U+0964, U+0965), use a Devanagari
+        // font for now although they're used by other scripts as well.
+        // Without a context, we can't do any better. 
+        script = USCRIPT_DEVANAGARI;
+        break;
+      case UBLOCK_ARMENIAN:
+        script = USCRIPT_ARMENIAN;
+        break;
+      case UBLOCK_GEORGIAN:
+        script = USCRIPT_GEORGIAN;
+        break;
+      case UBLOCK_KANNADA:
+        script = USCRIPT_KANNADA;
+        break;
+    }
+  }
+
+  // Another lame work-around to cover non-BMP characters.
   const wchar_t* family = GetFontFamilyForScript(script, generic);
   if (!family) {
     int plane = ucs4 >> 16;
@@ -228,13 +256,15 @@ const wchar_t* GetFallbackFamily(const wchar_t* characters,
         family = L"code2001";
         break;
       case 2:
-        family = L"simsun ext b";
+        family = L"simsun-extb";
         break;
       default:
         family = L"arial unicode ms";
     }
   }
 
+  if (char_checked) *char_checked = ucs4;
+  if (script_checked) *script_checked = script;
   return family;
 }
 
@@ -259,7 +289,7 @@ bool GetDerivedFontData(const wchar_t *family,
   // TODO(jungshik) : This comes up pretty high in the profile so that
   // we need to measure whether using SHA256 (after coercing all the
   // fields to char*) is faster than StringPrintf.
-  std::wstring font_key = StringPrintf(L"%1d:%d:%s", style, logfont->lfHeight,
+  std::wstring font_key = StringPrintf(L"%1d:%d:%ls", style, logfont->lfHeight,
                                        family);
   FontDataCache::const_iterator iter = font_data_cache->find(font_key);
   FontData *derived;
@@ -303,3 +333,4 @@ int GetStyleFromLogfont(const LOGFONT* logfont) {
 }
 
 }  // namespace gfx
+

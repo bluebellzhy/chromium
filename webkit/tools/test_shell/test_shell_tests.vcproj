@@ -183,10 +183,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\temp\navigation_controller_base.cc"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\net\base\net_resources.rc"
 				>
 			</File>
@@ -376,6 +372,10 @@
 			</File>
 			<File
 				RelativePath=".\text_input_controller_unittest.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\glue\webframe_unittest.cc"
 				>
 			</File>
 			<File

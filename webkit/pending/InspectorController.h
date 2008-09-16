@@ -46,7 +46,7 @@
 #include "Console.h"
 #include "PlatformString.h"
 #include "StringHash.h"
-#include "DomWindow.h"
+#include "DOMWindow.h"
 #include <wtf/RefCounted.h>
 #if USE(JSC)
 #include <JavaScriptCore/JSContextRef.h>

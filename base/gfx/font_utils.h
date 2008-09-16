@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 //
 // A collection of utilities for font handling.
 
@@ -55,15 +30,21 @@ enum GenericFamilyType {
 };
 
 // Return a font family that supports a script and belongs to |generic| font family.
-// It can retun NULL and a caller has to implement its own fallback.
+// It can return NULL and a caller has to implement its own fallback.
 const wchar_t* GetFontFamilyForScript(UScriptCode script,
                                       GenericFamilyType generic);
 
 // Return a font family that can render |characters| based on
-// what script characters belong to.
-const wchar_t* GetFallbackFamily(const wchar_t *characters, int length,
-                                 GenericFamilyType generic);
-
+// what script characters belong to. When char_checked is non-NULL,
+// it's filled with the character used to determine the script.
+// When script_checked is non-NULL, the script used to determine
+// the family is returned.
+// TODO(jungshik) : This function needs a total overhaul.
+const wchar_t* GetFallbackFamily(const wchar_t* characters,
+                                 int length,
+                                 GenericFamilyType generic,
+                                 UChar32 *char_checked,
+                                 UScriptCode *script_checked);
 // Derive a new HFONT by replacing lfFaceName of LOGFONT with |family|,
 // calculate the ascent for the derived HFONT, and initialize SCRIPT_CACHE
 // in FontData.
@@ -103,3 +84,4 @@ int GetStyleFromLogfont(const LOGFONT *logfont);
 }  // namespace gfx
 
 #endif // BASE_GFX_FONT_UTILS_H__
+

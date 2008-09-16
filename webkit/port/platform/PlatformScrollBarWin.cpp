@@ -45,7 +45,7 @@
 
 #undef LOG
 #include "base/gfx/native_theme.h"
-#include "base/gfx/platform_canvas.h"
+#include "base/gfx/platform_canvas_win.h"
 #include "base/win_util.h"
 #include "webkit/glue/webframe_impl.h"
 #include "webkit/glue/webkit_glue.h"
@@ -240,7 +240,7 @@ void PlatformScrollbar::paint(GraphicsContext* gc, const IntRect& damageRect)
     const bool horz = orientation() == HorizontalScrollbar;
     const PlatformContextSkia* const skia = gc->platformContext();
     const gfx::NativeTheme* const nativeTheme = skia->nativeTheme();
-    gfx::PlatformCanvas* const canvas = skia->canvas();
+    gfx::PlatformCanvasWin* const canvas = skia->canvas();
     
     // Draw the up/left arrow of the scroll bar.
     nativeTheme->PaintScrollbarArrow(hdc, getThemeArrowState(Arrow1),

@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/common/pref_names.h"
 
@@ -33,6 +8,9 @@ namespace prefs {
 
 // *************** PROFILE PREFS ***************
 // These are attached to the user profile
+
+// A boolean specifying whether the New Tab page is the home page or not.
+const wchar_t kHomePageIsNewTabPage[] = L"homepage_is_newtabpage";
 
 // This is the URL of the page to load when opening new tabs.
 const wchar_t kHomePage[] = L"homepage";
@@ -215,6 +193,15 @@ const wchar_t kShowHomeButton[] = L"browser.show_home_button";
 const wchar_t kRecentlySelectedEncoding[] =
     L"profile.recently_selected_encodings";
 
+// Boolean prefs that define the default values for the check boxes in the Clear
+// Browsing Data dialog.
+const wchar_t kDeleteBrowsingHistory[] = L"browser.clear_data.browsing_history";
+const wchar_t kDeleteDownloadHistory[] =
+    L"browser.clear_data.download_history";
+const wchar_t kDeleteCache[] = L"browser.clear_data.cache";
+const wchar_t kDeleteCookies[] = L"browser.clear_data.cookies";
+const wchar_t kDeletePasswords[] = L"browser.clear_data.passwords";
+
 
 // *************** LOCAL STATE ***************
 // These are attached to the machine/installation
@@ -322,6 +309,22 @@ const wchar_t kStabilityPluginStats[] =
 const wchar_t kStabilityRendererHangCount[] =
     L"user_experience_metrics.stability.renderer_hang_count";
 
+// Number of times the browser has been able to register crash reporting.
+const wchar_t kStabilityBreakpadRegistrationSuccess[] =
+    L"user_experience_metrics.stability.breakpad_registration_ok";
+
+// Number of times the browser has failed to register crash reporting.
+const wchar_t kStabilityBreakpadRegistrationFail[] =
+    L"user_experience_metrics.stability.breakpad_registration_fail";
+
+// Number of times the browser has been run under a debugger.
+const wchar_t kStabilityDebuggerPresent[] =
+    L"user_experience_metrics.stability.debugger_present";
+
+// Number of times the browser has not been run under a debugger.
+const wchar_t kStabilityDebuggerNotPresent[] =
+    L"user_experience_metrics.stability.debugger_not_present";
+
 // The keys below are used for the dictionaries in the
 // kStabilityPluginStats list.
 const wchar_t kStabilityPluginPath[] = L"path";
@@ -350,6 +353,10 @@ const wchar_t kMemoryCacheSize[] = L"renderer.memory_cache.size";
 
 // String which specifies where to download files to by default.
 const wchar_t kDownloadDefaultDirectory[] = L"download.default_directory";
+
+// Boolean that records if the download directory was changed by an
+// upgrade a unsafe location to a safe location.
+const wchar_t kDownloadDirUpgraded[] = L"download.directory_upgrade";
 
 // String which specifies where to save html files to by default.
 const wchar_t kSaveFileDefaultDirectory[] = L"savefile.default_directory";
@@ -423,3 +430,4 @@ const wchar_t kNumFoldersInOtherBookmarkFolder[] =
 const wchar_t kNumKeywords[] = L"user_experience_metrics.num_keywords";
 
 }  // namespace prefs
+

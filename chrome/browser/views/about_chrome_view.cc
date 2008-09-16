@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/views/about_chrome_view.h"
 
@@ -37,9 +12,10 @@
 #include "chrome/app/locales/locale_settings.h"
 #include "chrome/app/theme/theme_resources.h"
 #include "chrome/common/gfx/color_utils.h"
-#include "chrome/browser/standard_layout.h"
 #include "chrome/browser/user_metrics.h"
 #include "chrome/browser/views/restart_message_box.h"
+#include "chrome/browser/views/standard_layout.h"
+#include "chrome/common/l10n_util.h"
 #include "chrome/common/resource_bundle.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/installer/util/install_util.h"
@@ -48,14 +24,20 @@
 #include "chrome/views/window.h"
 #include "webkit/glue/webkit_glue.h"
 
+#include "chromium_strings.h"
 #include "generated_resources.h"
+
+// The pixel width of the version text field. Ideally, we'd like to have the
+// bounds set to the edge of the icon. However, the icon is not a view but a
+// part of the background, so we have to hard code the width to make sure
+// the version field doesn't overlap it.
+const int kVersionFieldWidth = 195;
 
 ////////////////////////////////////////////////////////////////////////////////
 // AboutChromeView, public:
 
 AboutChromeView::AboutChromeView(Profile* profile)
-    : dialog_(NULL),
-      profile_(profile),
+    : profile_(profile),
       about_dlg_background_(NULL),
       about_title_label_(NULL),
       version_label_(NULL),
@@ -87,13 +69,6 @@ void AboutChromeView::Init() {
   }
 
   current_version_ = version_info->file_version();
-
-  std::wstring official;
-  if (version_info->is_official_build()) {
-    official = l10n_util::GetString(IDS_ABOUT_VERSION_OFFICIAL);
-  } else {
-    official = l10n_util::GetString(IDS_ABOUT_VERSION_UNOFFICIAL);
-  }
 
   // Views we will add to the *parent* of this dialog, since it will display
   // next to the buttons which we don't draw ourselves.
@@ -144,8 +119,6 @@ void AboutChromeView::Init() {
   version_label_->RemoveBorder();
   version_label_->SetFont(ResourceBundle::GetSharedInstance().GetFont(
       ResourceBundle::BaseFont).DeriveFont(0, BOLD_FONTTYPE));
-  version_label_->set_default_width_in_chars(
-      static_cast<int>(current_version_.size() + 1));
   AddChildView(version_label_);
 
   // Text to display at the bottom of the dialog.
@@ -153,9 +126,7 @@ void AboutChromeView::Init() {
       l10n_util::GetString(IDS_ABOUT_VERSION_COMPANY_NAME) + L"\n" +
       l10n_util::GetString(IDS_ABOUT_VERSION_COPYRIGHT) + L"\n" +
       l10n_util::GetStringF(IDS_ABOUT_VERSION_LICENSE,
-          l10n_util::GetString(IDS_ABOUT_VERSION_LICENSE_URL)) + L"\n\n" +
-      official + L" " + version_info->last_change() + L"\n" +
-      UTF8ToWide(webkit_glue::GetDefaultUserAgent());
+          l10n_util::GetString(IDS_ABOUT_VERSION_LICENSE_URL));
 
   main_text_label_ =
       new ChromeViews::TextField(ChromeViews::TextField::STYLE_MULTILINE);
@@ -208,7 +179,7 @@ void AboutChromeView::Layout() {
                             about_title_label_->GetY() +
                                 about_title_label_->GetHeight() +
                                 kRelatedControlVerticalSpacing,
-                            sz.cx,
+                            kVersionFieldWidth,
                             sz.cy);
 
   // For the width of the main text label we want to use up the whole panel
@@ -280,11 +251,16 @@ void AboutChromeView::ViewHierarchyChanged(bool is_add,
       parent->AddChildView(&timeout_indicator_);
       timeout_indicator_.SetVisible(false);
 
-      // On-demand updates for Chrome don't work in Vista when UAC is turned
+      // On-demand updates for Chrome don't work in Vista RTM when UAC is turned
       // off. So, in this case we just want the About box to not mention
       // on-demand updates. Silent updates (in the background) should still
-      // work as before.
-      if (win_util::UserAccountControlIsEnabled()) {
+      // work as before - enabling UAC or installing the latest service pack
+      // for Vista is another option.
+      int service_pack_major = 0, service_pack_minor = 0;
+      win_util::GetServicePackLevel(&service_pack_major, &service_pack_minor);
+      if (win_util::UserAccountControlIsEnabled() ||
+          (win_util::GetWinVersion() == win_util::WINVERSION_VISTA &&
+           service_pack_major >= 1)) {
         UpdateStatus(UPGRADE_CHECK_STARTED, GOOGLE_UPDATE_NO_ERROR);
         google_updater_->CheckForUpdate(false);  // false=don't upgrade yet.
       }
@@ -372,6 +348,10 @@ bool AboutChromeView::Accept() {
   return false;  // We never allow this button to close the window.
 }
 
+ChromeViews::View* AboutChromeView::GetContentsView() {
+  return this;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // AboutChromeView, GoogleUpdateStatusListener implementation:
 
@@ -456,7 +436,7 @@ void AboutChromeView::UpdateStatus(GoogleUpdateUpgradeResult result,
           l10n_util::GetString(IDS_PRODUCT_NAME),
           new_version_available_));
       show_success_indicator = true;
-      RestartMessageBox::ShowMessageBox(dialog_->GetHWND());
+      RestartMessageBox::ShowMessageBox(window()->GetHWND());
       break;
     case UPGRADE_ERROR:
       UserMetrics::RecordAction(L"UpgradeCheck_Error", profile_);
@@ -484,7 +464,8 @@ void AboutChromeView::UpdateStatus(GoogleUpdateUpgradeResult result,
   parent->Layout();
 
   // Check button may have appeared/disappeared. We cannot call this during
-  // ViewHierarchyChanged because the |dialog_| pointer hasn't been set yet.
-  if (dialog_)
-    dialog_->UpdateDialogButtons();
+  // ViewHierarchyChanged because the |window()| pointer hasn't been set yet.
+  if (window())
+    GetDialogClientView()->UpdateDialogButtons();
 }
+

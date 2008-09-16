@@ -1,31 +1,6 @@
-// Copyright 2008, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//    * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//    * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "chrome/browser/safe_browsing/safe_browsing_database.h"
 
@@ -42,7 +17,7 @@
 
 // Database version.  If this is different than what's stored on disk, the
 // database is reset.
-static const int kDatabaseVersion = 2;
+static const int kDatabaseVersion = 4;
 
 // Filename suffix for the bloom filter.
 static const wchar_t kBloomFilterFile[] = L" Filter";
@@ -244,6 +219,7 @@ bool SafeBrowsingDatabase::CreateTables() {
 // The SafeBrowsing service assumes this operation is synchronous.
 bool SafeBrowsingDatabase::ResetDatabase() {
   hash_cache_.clear();
+  prefix_miss_cache_.clear();
 
   bool rv = Close();
   DCHECK(rv);
@@ -320,6 +296,17 @@ bool SafeBrowsingDatabase::ContainsUrl(
   }
 
   if (!matching_list->empty() || !prefix_hits->empty()) {
+    // If all the prefixes are cached as 'misses', don't issue a GetHash.
+    bool all_misses = true;
+    for (std::vector<SBPrefix>::const_iterator it = prefix_hits->begin();
+         it != prefix_hits->end(); ++it) {
+      if (prefix_miss_cache_.find(*it) == prefix_miss_cache_.end()) {
+        all_misses = false;
+        break;
+      }
+    }
+    if (all_misses)
+      return false;
     GetCachedFullHashes(prefix_hits, full_hits, last_update);
     return true;
   }
@@ -466,6 +453,7 @@ void SafeBrowsingDatabase::StartThrottledWork() {
 }
 
 void SafeBrowsingDatabase::RunThrottledWork() {
+  prefix_miss_cache_.clear();
   while (true) {
     bool done = ProcessChunks();
 
@@ -1208,7 +1196,18 @@ void SafeBrowsingDatabase::GetCachedFullHashes(
 }
 
 void SafeBrowsingDatabase::CacheHashResults(
+    const std::vector<SBPrefix>& prefixes,
     const std::vector<SBFullHashResult>& full_hits) {
+  if (full_hits.empty()) {
+    // These prefixes returned no results, so we store them in order to prevent
+    // asking for them again. We flush this cache at the next update.
+    for (std::vector<SBPrefix>::const_iterator it = prefixes.begin();
+         it != prefixes.end(); ++it) {
+      prefix_miss_cache_.insert(*it);
+    }
+    return;
+  }
+
   const Time now = Time::Now();
   for (std::vector<SBFullHashResult>::const_iterator it = full_hits.begin();
        it != full_hits.end(); ++it) {
