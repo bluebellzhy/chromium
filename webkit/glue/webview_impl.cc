@@ -1158,7 +1158,7 @@ void WebViewImpl::MakeTextLarger() {
   double multiplier = std::min(std::pow(kTextSizeMultiplierRatio,
                                         text_zoom_level_ + 1),
                                kMaxTextSizeMultiplier);
-  float zoom_factor = static_cast<float>(100.0 * multiplier);
+  float zoom_factor = static_cast<float>(multiplier);
   if (zoom_factor != frame->zoomFactor()) {
     ++text_zoom_level_;
     frame->setZoomFactor(zoom_factor, true);
@@ -1170,7 +1170,7 @@ void WebViewImpl::MakeTextSmaller() {
   double multiplier = std::max(std::pow(kTextSizeMultiplierRatio,
                                         text_zoom_level_ - 1),
                                kMinTextSizeMultiplier);
-  float zoom_factor = static_cast<float>(100.0 * multiplier);
+  float zoom_factor = static_cast<float>(multiplier);
   if (zoom_factor != frame->zoomFactor()) {
     --text_zoom_level_;
     frame->setZoomFactor(zoom_factor, true);
@@ -1179,7 +1179,7 @@ void WebViewImpl::MakeTextSmaller() {
 
 void WebViewImpl::MakeTextStandardSize() {
   text_zoom_level_ = 0;
-  main_frame()->frame()->setZoomFactor(100.0f, true);
+  main_frame()->frame()->setZoomFactor(1.0f, true);
 }
 
 void WebViewImpl::CopyImageAt(int x, int y) {
