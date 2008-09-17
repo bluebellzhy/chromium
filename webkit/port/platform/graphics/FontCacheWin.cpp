@@ -556,6 +556,22 @@ FontPlatformData* FontCache::getLastResortFallbackFont(
     return getCachedFontPlatformData(description, fontStr);
 }
 
+static LONG toGDIFontWeight(FontWeight fontWeight)
+{
+    static LONG gdiFontWeights[] = {
+        FW_THIN,        // FontWeight100
+        FW_EXTRALIGHT,  // FontWeight200
+        FW_LIGHT,       // FontWeight300
+        FW_NORMAL,      // FontWeight400
+        FW_MEDIUM,      // FontWeight500
+        FW_SEMIBOLD,    // FontWeight600
+        FW_BOLD,        // FontWeight700
+        FW_EXTRABOLD,   // FontWeight800
+        FW_HEAVY        // FontWeight900
+    };
+    return gdiFontWeights[fontWeight];
+}
+
 // TODO(jungshik): This may not be the best place to put this function. See
 // TODO in pending/FontCache.h.
 AtomicString FontCache::getGenericFontForScript(UScriptCode script, const FontDescription& description)
@@ -585,7 +601,7 @@ static void FillLogFont(const FontDescription& fontDescription, LOGFONT* winfont
         : DEFAULT_QUALITY; // Honor user's desktop settings.
     winfont->lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
     winfont->lfItalic = fontDescription.italic();
-    winfont->lfWeight = fontDescription.weight();
+    winfont->lfWeight = toGDIFontWeight(fontDescription.weight());
 }
 
 bool FontCache::fontExists(const FontDescription& fontDescription, const AtomicString& family)
