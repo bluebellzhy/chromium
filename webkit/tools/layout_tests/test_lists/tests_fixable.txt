@@ -789,3 +789,17 @@ V8 # pending/http/tests/security/cross-frame-access-protocol.html = PASS | TIMEO
 // See bug # 2307
 V8 # LayoutTests/fast/js/date-DST-time-cusps.html = FAIL | PASS
 V8 # LayoutTests/fast/js/date-big-setdate.html = FAIL | PASS
+
+
+// ----------------------------------------------------------------------------
+// NEW FOR THE MERGE
+//
+// These tests need to have their output inspected to make sure it's reasonable
+// and then baselined.
+// ----------------------------------------------------------------------------
+V8 | KJS # LayoutTests/fast/backgrounds/background-origin-root-element.html = FAIL
+V8 | KJS # LayoutTests/fast/backgrounds/background-position-1.html = FAIL
+V8 | KJS # LayoutTests/fast/backgrounds/background-position-rounding.html = FAIL
+V8 | KJS # LayoutTests/fast/backgrounds/mask-composite.html = FAIL
+V8 | KJS # LayoutTests/fast/backgrounds/repeat/mask-negative-offset-repeat.html = FAIL
+V8 | KJS # LayoutTests/fast/backgrounds/svg-as-mask.html = FAIL
