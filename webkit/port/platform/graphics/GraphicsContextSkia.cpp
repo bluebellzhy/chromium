@@ -814,6 +814,11 @@ void GraphicsContext::endTransparencyLayer()
     m_data->canvas()->restore();
 }
 
+void GraphicsContext::setPlatformStrokeStyle(const StrokeStyle& stroke)
+{
+    m_data->setStrokeStyle(StrokeStyle2StrokeStyle(stroke));
+}
+
 void GraphicsContext::setPlatformShadow(const IntSize& size, int blur, const Color& color)
 {
     if (paintingDisabled())

@@ -1137,7 +1137,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\graphics\GraphicsContext.cpp"
+					RelativePath="..\..\pending\GraphicsContext.cpp"
 					>
 				</File>
 				<File
