@@ -526,7 +526,7 @@ void KURL::setQuery(const String& query)
     if (query.isNull()) {
         // WebKit sets to NULL to clear any query.
         replacements.ClearQuery();
-    } else if (query.length() > 0 && query.ascii()[0] == '?') {
+    } else if (query.length() > 0 && query[0] == '?') {
         // WebKit expects the query string to begin with a question mark, but
         // our library doesn't. So we trim off the question mark when setting.
         replacements.SetQuery(
