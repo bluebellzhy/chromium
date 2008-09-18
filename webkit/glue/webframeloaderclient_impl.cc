@@ -379,6 +379,11 @@ bool WebFrameLoaderClient::dispatchDidLoadResourceFromMemoryCache(
 
 void WebFrameLoaderClient::dispatchDidHandleOnloadEvents() {
   WebViewImpl* webview = webframe_->webview_impl();
+  // During the onload event of a subframe, the subframe can be removed.  In
+  // that case, we have no webview.  This is covered by
+  // LayoutTests/fast/dom/replaceChild.html
+  if (!webview)
+    return;
   WebViewDelegate* d = webview->delegate();
 
   if (d)
