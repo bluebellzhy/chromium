@@ -1056,6 +1056,10 @@ HCURSOR LoadCursor(int cursor_id) {
   return NULL;
 }
 
+SkBitmap* GetBitmapResource(int resource_id) {
+  return NULL;
+}
+
 bool GetApplicationDirectory(std::wstring *path) {
   return PathService::Get(base::DIR_EXE, path);
 }

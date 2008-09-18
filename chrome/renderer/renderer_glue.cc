@@ -168,6 +168,10 @@ std::string webkit_glue::GetDataResource(int resource_id) {
   return ResourceBundle::GetSharedInstance().GetDataResource(resource_id);
 }
 
+SkBitmap* webkit_glue::GetBitmapResource(int resource_id) {
+  return ResourceBundle::GetSharedInstance().GetBitmapNamed(resource_id);
+}
+
 HCURSOR webkit_glue::LoadCursor(int cursor_id) {
   return ResourceBundle::GetSharedInstance().LoadCursor(cursor_id);
 }

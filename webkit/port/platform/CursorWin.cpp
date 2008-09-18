@@ -29,8 +29,10 @@
 #include "Image.h"
 #include "IntPoint.h"
 #include "NativeImageSkia.h"
-#include "webkit/glue/webkit_resources.h"
 #include "NotImplemented.h"
+
+#include "webkit/glue/webkit_resources.h"
+#include "webkit/glue/webkit_glue.h"
 
 #define ALPHA_CURSORS
 
@@ -191,64 +193,64 @@ const Cursor& rowResizeCursor()
 
 const Cursor& middlePanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_MIDDLE);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& eastPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_EAST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& northPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_NORTH);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& northEastPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_NORTH_EAST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& northWestPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_NORTH_WEST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& southPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_SOUTH);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& southEastPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_SOUTH_EAST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& southWestPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_SOUTH_WEST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 
 const Cursor& westPanningCursor()
 {
-    static Cursor c = WebCursor::ARROW;
-    notImplemented();
+    SkBitmap* bitmap = webkit_glue::GetBitmapResource(IDC_PAN_WEST);
+    static Cursor c = WebCursor(bitmap, 7, 7);
     return c;
 }
 

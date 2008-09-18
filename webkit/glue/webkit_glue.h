@@ -176,6 +176,10 @@ std::wstring GetLocalizedString(int message_id);
 // specified as BINDATA in the relevant .rc file.
 std::string GetDataResource(int resource_id);
 
+// Returns an SkBitmap for a resource.  This resource must have been
+// specified as BINDATA in the relevant .rc file.
+SkBitmap* GetBitmapResource(int resource_id);
+
 #ifdef _WIN32
 // Loads and returns a cursor.
 HCURSOR LoadCursor(int cursor_id);
