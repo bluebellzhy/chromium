@@ -1145,7 +1145,7 @@ void DOMWindow::resizeBy(float x, float y) const {
  
 
 void DOMWindow::scrollTo(int x, int y) const {
-  if (!m_frame || !m_frame->view()) return;
+  if (!m_frame || !m_frame->view())
         return;
 
     if (m_frame->isDisconnected())
