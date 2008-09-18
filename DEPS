@@ -9,7 +9,7 @@ deps = {
     "http://googletest.googlecode.com/svn/trunk@63",
 
   "src/third_party/WebKit":
-    "/trunk/third_party/WebKit@2221",
+    "/trunk/deps/third_party/WebKit@2221",
 
   "src/third_party/cygwin":
     "/trunk/deps/third_party/cygwin@1788",
