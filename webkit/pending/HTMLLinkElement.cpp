@@ -25,18 +25,18 @@
 
 #include "CSSHelper.h"
 #include "CachedCSSStyleSheet.h"
+#include "DNS.h"
 #include "DocLoader.h"
 #include "Document.h"
 #include "Frame.h"
 #include "FrameLoader.h"
+#include "FrameLoaderClient.h"
 #include "FrameTree.h"
 #include "HTMLNames.h"
 #include "MediaList.h"
 #include "MediaQueryEvaluator.h"
 #include "Page.h"
 #include "Settings.h"
-
-#include "webkit/glue/webkit_glue.h"
 
 namespace WebCore {
 
@@ -50,9 +50,8 @@ HTMLLinkElement::HTMLLinkElement(Document *doc)
     , m_alternate(false)
     , m_isStyleSheet(false)
     , m_isIcon(false)
+    , m_isDNSPrefetch(false)
     , m_createdByParser(false)
-    , m_isPrefetch(false)
-    , m_isDnsPrefetch(false)
 {
 }
 
@@ -112,14 +111,6 @@ void HTMLLinkElement::parseMappedAttribute(MappedAttribute *attr)
 {
     if (attr->name() == relAttr) {
         tokenizeRelAttribute(attr->value(), m_isStyleSheet, m_alternate, m_isIcon);
-        // TODO(eseidel): We should probably move these to tokenizeRelAttribute
-        // when we upstream this change, then the PreloadScanner can prefetch
-        // tokenizeRelAttribute is static, so to add these there would require
-        // forking 3 files (this one, the header, and PreloadScanner.cpp)
-        if (equalIgnoringCase(attr->value(), "prefetch"))
-            m_isPrefetch = true;
-        else if (equalIgnoringCase(attr->value(), "dns-prefetch"))
-            m_isDnsPrefetch = true;
         process();
     } else if (attr->name() == hrefAttr) {
         m_url = document()->completeURL(parseURL(attr->value())).string();
@@ -143,7 +134,7 @@ void HTMLLinkElement::tokenizeRelAttribute(const AtomicString& rel, bool& styleS
 {
     styleSheet = false;
     icon = false; 
-    alternate = false;;
+    alternate = false;
     if (equalIgnoringCase(rel, "stylesheet"))
         styleSheet = true;
     else if (equalIgnoringCase(rel, "icon") || equalIgnoringCase(rel, "shortcut icon"))
@@ -181,15 +172,8 @@ void HTMLLinkElement::process()
     if (m_isIcon && !m_url.isEmpty())
         document()->setIconURL(m_url, type);
 
-    // Google extension: Prefetch domain name lookup via DNS.
-    if (m_isDnsPrefetch &&!m_url.isEmpty()) {
-      webkit_glue::DnsPrefetchUrl(m_url.characters(), m_url.length());
-    }
-
-    // Google/Firefox extension: Pre-load URL into our cache.
-    if (m_isPrefetch &&!m_url.isEmpty()) {
-      webkit_glue::PrecacheUrl(m_url.characters(), m_url.length());
-    }
+    if (m_isDNSPrefetch && !m_url.isEmpty())
+        prefetchDNS(KURL(m_url).host());
 
     // Stylesheet
     // This was buggy and would incorrectly match <link rel="alternate">, which has a different specified meaning. -dwh

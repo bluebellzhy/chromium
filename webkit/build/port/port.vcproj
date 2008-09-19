@@ -1167,6 +1167,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\port\platform\network\DNS.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\port\platform\network\NetworkStateNotifierWin.cpp"
 					>
 				</File>
@@ -1205,10 +1209,6 @@
 			>
 			<File
 				RelativePath="..\..\port\bridge\FrameWin.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\port\bridge\HistoryWin.cpp"
 				>
 			</File>
 			<File

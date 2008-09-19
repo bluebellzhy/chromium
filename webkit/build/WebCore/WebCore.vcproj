@@ -802,6 +802,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pending\DNS.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\third_party\WebKit\WebCore\platform\DragData.cpp"
 				>
 			</File>
@@ -1266,6 +1270,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\third_party\WebKit\WebCore\platform\network\Credential.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\pending\DNS.h"
 					>
 				</File>
 				<File
@@ -3609,10 +3617,6 @@
 				RelativePath="..\..\..\third_party\WebKit\WebCore\bridge\EditorClient.h"
 				>
 			</File>
-			<File
-				RelativePath="..\..\pending\GlobalHistory.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="editing"
@@ -4070,7 +4074,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\html\HTMLAnchorElement.cpp"
+				RelativePath="..\..\pending\HTMLAnchorElement.cpp"
 				>
 			</File>
 			<File
