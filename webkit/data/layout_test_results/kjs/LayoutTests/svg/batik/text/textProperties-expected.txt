@@ -108,7 +108,7 @@ layer at (0,0) size 450x500
           RenderSVGInlineText {#text} at (0,-15) size 88x19
             chunk 1 (middle anchor) text run 1 at (-44.00,15.00) startOffset 0 endOffset 14 width 88.00: "fill=\"DarkRed\""
       RenderSVGContainer {g} at (24,343) size 153x46 [transform={m=((1.00,0.00)(0.00,1.00)) t=(100.00,370.00)}]
-        RenderSVGContainer {g} at (59,343) size 82x34 [filter=#gaussianBlur]
+        RenderSVGContainer {g} at (59,343) size 82x34 [filter=gaussianBlur]
           RenderSVGContainer {use} at (59,343) size 82x34
             RenderSVGContainer {g} at (59,343) size 82x34
               RenderSVGText {text} at (-41,0) size 82x34 contains 1 chunk(s)
