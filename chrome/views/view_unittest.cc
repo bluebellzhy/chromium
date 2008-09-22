@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "chrome/common/gfx/chrome_canvas.h"
+#include "chrome/common/gfx/path.h"
 #include "chrome/views/background.h"
 #include "chrome/views/event.h"
 #include "chrome/views/root_view.h"

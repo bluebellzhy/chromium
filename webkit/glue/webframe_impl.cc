@@ -1442,7 +1442,6 @@ void WebFrameImpl::Paint(gfx::PlatformCanvas* canvas, const gfx::Rect& rect) {
 }
 
 #if defined(OS_WIN)
-// TODO(pinkerton): waiting on bitmap re-factor from awalker
 gfx::BitmapPlatformDevice WebFrameImpl::CaptureImage(bool scroll_to_zero) {
   // Must layout before painting.
   Layout();
@@ -1458,6 +1457,11 @@ gfx::BitmapPlatformDevice WebFrameImpl::CaptureImage(bool scroll_to_zero) {
       static_cast<gfx::BitmapPlatformDeviceWin&>(canvas.getTopPlatformDevice());
   device.fixupAlphaBeforeCompositing();
   return device;
+}
+#else
+// TODO(pinkerton): waiting on bitmap re-factor from awalker
+gfx::BitmapPlatformDevice WebFrameImpl::CaptureImage(bool scroll_to_zero) {
+  NOTIMPLEMENTED();
 }
 #endif
 

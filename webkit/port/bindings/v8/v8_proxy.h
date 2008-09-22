@@ -27,41 +27,42 @@
 
 namespace WebCore {
 
+class CanvasRenderingContext2D;
+class CSSRule;
+class CSSRuleList;
 class CSSStyleDeclaration;
+class CSSValue;
+class CSSValueList;
 class DOMImplementation;
+class DOMWindow;
+class Document;
 class Element;
 class Event;
+class Event;
 class EventListener;
+class EventListener;
+class EventTarget;
+class EventTargetNode;
 class Frame;
 class HTMLCollection;
-class HTMLOptionsCollection;
-class HTMLElement;
 class HTMLDocument;
+class HTMLElement;
+class HTMLOptionsCollection;
 class MediaList;
+class MimeType;
+class MimeTypeArray;
 class NamedNodeMap;
+class Navigator;
 class Node;
+class NodeFilter;
 class NodeList;
+class Plugin;
+class PluginArray;
+class SVGElement;
 class Screen;
 class String;
 class StyleSheet;
-class SVGElement;
-class DOMWindow;
-class Document;
-class EventTarget;
-class Event;
-class EventListener;
-class Navigator;
-class MimeType;
-class MimeTypeArray;
-class Plugin;
-class PluginArray;
-class EventTargetNode;
 class StyleSheetList;
-class CSSValue;
-class CSSRule;
-class CSSRuleList;
-class CSSValueList;
-class NodeFilter;
 
 #if ENABLE(SVG)
 class SVGElementInstance;
@@ -432,6 +433,7 @@ class V8Proxy {
   static v8::Handle<v8::Object> StyleSheetToV8Object(StyleSheet* sheet);
   static v8::Handle<v8::Object> CSSValueToV8Object(CSSValue* value);
   static v8::Handle<v8::Object> CSSRuleToV8Object(CSSRule* rule);
+  static v8::Handle<v8::Object> CanvasRenderingContext2DToV8Object(CanvasRenderingContext2D* ctx);
   // Returns the JS wrapper of a window object, initializes the environment
   // of the window frame if needed.
   static v8::Handle<v8::Object> WindowToV8Object(DOMWindow* window);
