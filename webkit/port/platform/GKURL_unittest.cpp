@@ -82,6 +82,8 @@ struct ComponentCase {
 // Output stream operator so gTest's macros work with WebCore strings.
 std::ostream& operator<<(std::ostream& out,
                          const WebCore::String& str) {
+  if (str.isEmpty())
+    return out;
   return out << WideToUTF8(std::wstring(
     reinterpret_cast<const wchar_t*>(str.characters()), str.length()));
 }
