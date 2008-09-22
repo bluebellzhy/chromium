@@ -70,7 +70,7 @@ WebCore::String StdStringToString(const std::string& str) {
 GURL KURLToGURL(const WebCore::KURL& url) {
 #ifdef USE_GOOGLE_URL_LIBRARY
   const WebCore::CString& spec = url.utf8String();
-  if (spec.isNull())
+  if (spec.isNull() || 0 == spec.length())
     return GURL();
   return GURL(spec.data(), spec.length(), url.parsed(), url.isValid());
 #else
