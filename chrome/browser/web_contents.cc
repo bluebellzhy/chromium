@@ -567,6 +567,8 @@ void WebContents::SavePage(const std::wstring& main_file,
 bool WebContents::NavigateToPendingEntry(bool reload) {
   NavigationEntry* entry = controller()->GetPendingEntry();
   RenderViewHost* dest_render_view_host = render_manager_.Navigate(*entry);
+  if (!dest_render_view_host)
+    return false;  // Unable to create the desired render view host.
 
   // Used for page load time metrics.
   current_load_start_ = TimeTicks::Now();
@@ -913,6 +915,10 @@ void WebContents::Redo() {
 
 void WebContents::Replace(const std::wstring& text) {
    render_view_host()->Replace(text);
+}
+
+void WebContents::AddToDictionary(const std::wstring& word) {
+  render_view_host()->AddToDictionary(word);
 }
 
 void WebContents::Delete() {
@@ -1329,7 +1335,7 @@ void WebContents::WebAppImagesChanged(WebApp* web_app) {
 void WebContents::UpdateStarredStateForCurrentURL() {
   BookmarkModel* model = profile()->GetBookmarkModel();
   const bool old_state = is_starred_;
-  is_starred_ = (model && model->GetNodeByURL(GetURL()));
+  is_starred_ = (model && model->IsBookmarked(GetURL()));
 
   if (is_starred_ != old_state && delegate())
     delegate()->URLStarredChanged(this, is_starred_);
@@ -1659,8 +1665,12 @@ void WebContents::DidDownloadImage(
 void WebContents::ShowContextMenu(
     const ViewHostMsg_ContextMenu_Params& params) {
   RenderViewContextMenuController menu_controller(this, params);
-  RenderViewContextMenu menu(&menu_controller, GetHWND(), params.type,
-                             params.dictionary_suggestions, profile());
+  RenderViewContextMenu menu(&menu_controller,
+                             GetHWND(),
+                             params.type,
+                             params.misspelled_word,
+                             params.dictionary_suggestions,
+                             profile());
 
   POINT screen_pt = { params.x, params.y };
   MapWindowPoints(GetHWND(), HWND_DESKTOP, &screen_pt, 1);

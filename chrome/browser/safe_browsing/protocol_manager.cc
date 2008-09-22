@@ -12,7 +12,6 @@
 #include "base/timer.h"
 #include "chrome/browser/profile.h"
 #include "chrome/browser/safe_browsing/protocol_parser.h"
-#include "chrome/browser/safe_browsing/safe_browsing_database.h"
 #include "chrome/browser/safe_browsing/safe_browsing_service.h"
 #include "chrome/common/env_util.h"
 #include "chrome/common/env_vars.h"
@@ -562,4 +561,3 @@ void SafeBrowsingProtocolManager::HandleGetHashError() {
   int next = GetNextBackOffTime(&gethash_error_count_, &gethash_back_off_mult_);
   next_gethash_time_ = Time::Now() + TimeDelta::FromSeconds(next);
 }
-

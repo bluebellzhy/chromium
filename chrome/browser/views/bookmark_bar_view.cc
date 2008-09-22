@@ -145,6 +145,21 @@ static const SkColor kInstructionsColor = SkColorSetRGB(128, 128, 142);
 
 namespace {
 
+// Calculates the drop operation given the event and supported set of
+// operations.
+int PreferredDropOperation(const DropTargetEvent& event, int operation) {
+  int common_ops = (event.GetSourceOperations() & operation);
+  if (!common_ops)
+    return 0;
+  if (DragDropTypes::DRAG_COPY & common_ops)
+    return DragDropTypes::DRAG_COPY;
+  if (DragDropTypes::DRAG_LINK & common_ops)
+    return DragDropTypes::DRAG_LINK;
+  if (DragDropTypes::DRAG_MOVE & common_ops)
+    return DragDropTypes::DRAG_MOVE;
+  return DragDropTypes::DRAG_NONE;
+}
+
 // Returns the tooltip text for the specified url and title. The returned
 // text is clipped to fit within the bounds of the monitor.
 //
@@ -248,11 +263,11 @@ class BookmarkButton : public ChromeViews::TextButton {
     paint.setAlpha(static_cast<int>(
         (1.0 - show_animation_->GetCurrentValue()) * 255));
     paint.setShader(gfx::CreateGradientShader(0,
-        GetHeight() + kTopMargin + kBottomMargin,
+        height() + kTopMargin + kBottomMargin,
         kTopBorderColor,
         kBackgroundColor))->safeUnref();
-    canvas->FillRectInt(0, -kTopMargin, GetWidth(),
-                        GetHeight() + kTopMargin + kBottomMargin, paint);
+    canvas->FillRectInt(0, -kTopMargin, width(),
+                        height() + kTopMargin + kBottomMargin, paint);
   }
 
   virtual void AnimationProgressed(const Animation* animation) {
@@ -420,22 +435,15 @@ class MenuRunner : public ChromeViews::MenuDelegate,
     if (drop_data_.is_url)
       return true;
 
-    if (drop_data_.profile_id != view_->GetProfile()->GetID()) {
-      // Always accept drags of bookmark groups from other profiles.
+    BookmarkNode* drag_node = drop_data_.GetNode(view_->GetProfile());
+    if (!drag_node) {
+      // Dragging a group from another profile, always accept.
       return true;
     }
     // Drag originated from same profile and is not a URL. Only accept it if
     // the dragged node is not a parent of the node menu represents.
     BookmarkNode* drop_node = menu_id_to_node_map_[menu->GetCommand()];
     DCHECK(drop_node);
-    BookmarkNode* drag_node =
-        drop_data_.GetNode(view_->GetProfile()->GetBookmarkModel());
-    if (!drag_node) {
-      // Hmmm, can't find the dragged node. This is generally an error
-      // condition and we won't try and do anything fancy.
-      NOTREACHED();
-      return false;
-    }
     BookmarkNode* node = drop_node;
     while (drop_node && drop_node != drag_node)
       drop_node = drop_node->GetParent();
@@ -456,7 +464,7 @@ class MenuRunner : public ChromeViews::MenuDelegate,
       index_to_drop_at = node->GetChildCount();
     }
     DCHECK(drop_parent);
-    return view_->CalculateDropOperation(drop_data_, drop_parent,
+    return view_->CalculateDropOperation(event, drop_data_, drop_parent,
                                          index_to_drop_at);
   }
 
@@ -559,21 +567,21 @@ class ButtonSeparatorView : public ChromeViews::View {
   virtual void Paint(ChromeCanvas* canvas) {
     SkPaint paint;
     paint.setShader(gfx::CreateGradientShader(0,
-                                              GetHeight() / 2,
+                                              height() / 2,
                                               kTopBorderColor,
                                               kSeparatorColor))->safeUnref();
     SkRect rc = {SkIntToScalar(kSeparatorStartX),  SkIntToScalar(0),
-                 SkIntToScalar(1), SkIntToScalar(GetHeight() / 2) };
+                 SkIntToScalar(1), SkIntToScalar(height() / 2) };
     canvas->drawRect(rc, paint);
 
     SkPaint paint_down;
-    paint_down.setShader(gfx::CreateGradientShader(GetHeight() / 2,
-        GetHeight(),
+    paint_down.setShader(gfx::CreateGradientShader(height() / 2,
+        height(),
         kSeparatorColor,
         kBackgroundColor))->safeUnref();
     SkRect rc_down = {
-        SkIntToScalar(kSeparatorStartX),  SkIntToScalar(GetHeight() / 2),
-        SkIntToScalar(1), SkIntToScalar(GetHeight() - 1) };
+        SkIntToScalar(kSeparatorStartX),  SkIntToScalar(height() / 2),
+        SkIntToScalar(1), SkIntToScalar(height() - 1) };
     canvas->drawRect(rc_down, paint_down);
   }
 
@@ -717,8 +725,8 @@ void BookmarkBarView::Layout() {
   // visible region and made invisible.
   int x = kLeftMargin;
   int y = kTopMargin;
-  int width = GetWidth() - kRightMargin - kLeftMargin;
-  int height = GetHeight() - kTopMargin - kBottomMargin;
+  int width = View::width() - kRightMargin - kLeftMargin;
+  int height = View::height() - kTopMargin - kBottomMargin;
   int separator_margin = kSeparatorMargin;
 
   if (IsNewTabPage()) {
@@ -799,7 +807,7 @@ void BookmarkBarView::DidChangeBounds(const CRect& previous,
 
 void BookmarkBarView::ViewHierarchyChanged(bool is_add,
                                            View* parent, View* child) {
-  if (is_add && child == this && GetHeight() > 0) {
+  if (is_add && child == this && height() > 0) {
     // We only layout while parented. When we become parented, if our bounds
     // haven't changed, DidChangeBounds won't get invoked and we won't layout.
     // Therefore we always force a layout when added.
@@ -808,15 +816,12 @@ void BookmarkBarView::ViewHierarchyChanged(bool is_add,
 }
 
 void BookmarkBarView::Paint(ChromeCanvas* canvas) {
-  int width = GetWidth();
-  int height = GetHeight();
-
   if (IsNewTabPage() && (!IsAlwaysShown() || size_animation_->IsAnimating())) {
     // Draw the background to match the new tab page.
-    canvas->FillRectInt(kNewtabBackgroundColor, 0, 0, width, height);
+    canvas->FillRectInt(kNewtabBackgroundColor, 0, 0, width(), height());
 
     // Draw the 'bottom' of the toolbar above our bubble.
-    canvas->FillRectInt(kBottomBorderColor, 0, 0, width, 1);
+    canvas->FillRectInt(kBottomBorderColor, 0, 0, width(), 1);
 
     SkRect rect;
 
@@ -832,8 +837,8 @@ void BookmarkBarView::Paint(ChromeCanvas* canvas) {
         (kNewtabVerticalPadding) * current_state;
     rect.set(SkDoubleToScalar(h_padding - 0.5),
              SkDoubleToScalar(v_padding - 0.5),
-             SkDoubleToScalar(width - h_padding - 0.5),
-             SkDoubleToScalar(height - v_padding - 0.5));
+             SkDoubleToScalar(width() - h_padding - 0.5),
+             SkDoubleToScalar(height() - v_padding - 0.5));
 
     double roundness = static_cast<double>
         (kNewtabBarRoundness) * current_state;
@@ -842,7 +847,7 @@ void BookmarkBarView::Paint(ChromeCanvas* canvas) {
     SkPaint paint;
     paint.setAntiAlias(true);
     paint.setShader(gfx::CreateGradientShader(0,
-                                              height,
+                                              height(),
                                               kTopBorderColor,
                                               kBackgroundColor))->safeUnref();
 
@@ -862,13 +867,13 @@ void BookmarkBarView::Paint(ChromeCanvas* canvas) {
   } else {
     SkPaint paint;
     paint.setShader(gfx::CreateGradientShader(0,
-                                              height,
+                                              height(),
                                               kTopBorderColor,
                                               kBackgroundColor))->safeUnref();
-    canvas->FillRectInt(0, 0, width, height, paint);
+    canvas->FillRectInt(0, 0, width(), height(), paint);
 
-    canvas->FillRectInt(kTopBorderColor, 0, 0, width, 1);
-    canvas->FillRectInt(kBottomBorderColor, 0, height - 1, width, 1);
+    canvas->FillRectInt(kTopBorderColor, 0, 0, width(), 1);
+    canvas->FillRectInt(kBottomBorderColor, 0, height() - 1, width(), 1);
   }
 }
 
@@ -882,20 +887,20 @@ void BookmarkBarView::PaintChildren(ChromeCanvas* canvas) {
     DCHECK(index <= GetBookmarkButtonCount());
     int x = 0;
     int y = 0;
-    int h = GetHeight();
+    int h = height();
     if (index == GetBookmarkButtonCount()) {
       if (index == 0) {
         x = kLeftMargin;
       } else {
-        x = GetBookmarkButton(index - 1)->GetX() +
-            GetBookmarkButton(index - 1)->GetWidth();
+        x = GetBookmarkButton(index - 1)->x() +
+            GetBookmarkButton(index - 1)->width();
       }
     } else {
-      x = GetBookmarkButton(index)->GetX();
+      x = GetBookmarkButton(index)->x();
     }
     if (GetBookmarkButtonCount() > 0 && GetBookmarkButton(0)->IsVisible()) {
-      y = GetBookmarkButton(0)->GetY();
-      h = GetBookmarkButton(0)->GetHeight();
+      y = GetBookmarkButton(0)->y();
+      h = GetBookmarkButton(0)->height();
     }
 
     // Since the drop indicator is painted directly onto the canvas, we must
@@ -931,12 +936,13 @@ int BookmarkBarView::OnDragUpdated(const DropTargetEvent& event) {
     return 0;
 
   if (drop_info_->valid &&
-      (drop_info_->x == event.GetX() && drop_info_->y == event.GetY())) {
+      (drop_info_->x == event.x() && drop_info_->y == event.y())) {
+    // The location of the mouse didn't change, return the last operation.
     return drop_info_->drag_operation;
   }
 
-  drop_info_->x = event.GetX();
-  drop_info_->y = event.GetY();
+  drop_info_->x = event.x();
+  drop_info_->y = event.y();
 
   int drop_index;
   bool drop_on;
@@ -951,6 +957,8 @@ int BookmarkBarView::OnDragUpdated(const DropTargetEvent& event) {
       drop_info_->drop_on == drop_on &&
       drop_info_->is_over_overflow == is_over_overflow &&
       drop_info_->is_over_other == is_over_other) {
+    // The position we're going to drop didn't change, return the last drag
+    // operation we calculated.
     return drop_info_->drag_operation;
   }
 
@@ -1277,10 +1285,10 @@ void BookmarkBarView::WriteDragData(View* sender,
   for (int i = 0; i < GetBookmarkButtonCount(); ++i) {
     if (sender == GetBookmarkButton(i)) {
       ChromeViews::TextButton* button = GetBookmarkButton(i);
-      ChromeCanvas canvas(button->GetWidth(), button->GetHeight(), false);
+      ChromeCanvas canvas(button->width(), button->height(), false);
       button->Paint(&canvas, true);
-      drag_utils::SetDragImageOnDataObject(canvas, button->GetWidth(),
-                                           button->GetHeight(), press_x,
+      drag_utils::SetDragImageOnDataObject(canvas, button->width(),
+                                           button->height(), press_x,
                                            press_y, data);
       WriteDragData(model_->GetBookmarkBarNode()->GetChild(i), data);
       return;
@@ -1293,8 +1301,7 @@ void BookmarkBarView::WriteDragData(BookmarkNode* node,
                                     OSExchangeData* data) {
   DCHECK(node && data);
   BookmarkDragData drag_data(node);
-  drag_data.profile_id = GetProfile()->GetID();
-  drag_data.Write(data);
+  drag_data.Write(profile_, data);
 }
 
 int BookmarkBarView::GetDragOperations(View* sender, int x, int y) {
@@ -1316,12 +1323,12 @@ void BookmarkBarView::RunMenu(ChromeViews::View* view,
 
   // When we set the menu's position, we must take into account the mirrored
   // position of the View relative to its parent. This can be easily done by
-  // passing the right flag to View::GetX().
+  // passing the right flag to View::x().
   int x = view->GetX(APPLY_MIRRORING_TRANSFORMATION);
-  int height = GetHeight() - kMenuOffset;
+  int bar_height = height() - kMenuOffset;
 
   if (IsNewTabPage() && !IsAlwaysShown())
-    height -= kNewtabVerticalPadding;
+    bar_height -= kNewtabVerticalPadding;
 
   int start_index = 0;
   if (view == other_bookmarked_button_) {
@@ -1358,7 +1365,7 @@ void BookmarkBarView::RunMenu(ChromeViews::View* view,
   HWND parent_hwnd = GetViewContainer()->GetHWND();
   menu_runner_->RunMenuAt(parent_hwnd,
                           gfx::Rect(screen_loc.x, screen_loc.y,
-                                    view->GetWidth(), height),
+                                    view->width(), bar_height),
                           anchor_point,
                           false);
 }
@@ -1492,7 +1499,7 @@ void BookmarkBarView::ShowDropFolderForNode(BookmarkNode* node) {
   // Note that both the anchor position and the position of the menu itself
   // change depending on the locale. Also note that we must apply the
   // mirroring transformation when querying for the child View bounds
-  // (View::GetX(), specifically) so that we end up with the correct screen
+  // (View::x(), specifically) so that we end up with the correct screen
   // coordinates if the View in question is mirrored.
   MenuItemView::AnchorPosition anchor = MenuItemView::TOPLEFT;
   if (node == model_->other_node()) {
@@ -1528,8 +1535,8 @@ void BookmarkBarView::ShowDropFolderForNode(BookmarkNode* node) {
   drop_menu_runner_->RunMenuAt(
       GetViewContainer()->GetHWND(),
       gfx::Rect(screen_loc.x, screen_loc.y,
-                view_to_position_menu_from->GetWidth(),
-                view_to_position_menu_from->GetHeight()),
+                view_to_position_menu_from->width(),
+                view_to_position_menu_from->height()),
       anchor, true);
 }
 
@@ -1570,23 +1577,23 @@ int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
   // right-to-left on RTL locales). Thus, in order to make sure the drop
   // coordinates calculation works, we mirror the event's X coordinate if the
   // locale is RTL.
-  int mirrored_x = MirroredXCoordinateInsideView(event.GetX());
+  int mirrored_x = MirroredXCoordinateInsideView(event.x());
 
   *index = -1;
   *drop_on = false;
   *is_over_other = *is_over_overflow = false;
 
-  if (event.GetY() < other_bookmarked_button_->GetY() ||
-      event.GetY() >= other_bookmarked_button_->GetY() +
-                      other_bookmarked_button_->GetHeight()) {
+  if (event.y() < other_bookmarked_button_->y() ||
+      event.y() >= other_bookmarked_button_->y() +
+                      other_bookmarked_button_->height()) {
     // Mouse isn't over a button.
     return DragDropTypes::DRAG_NONE;
   }
 
   bool found = false;
-  const int other_delta_x = mirrored_x - other_bookmarked_button_->GetX();
+  const int other_delta_x = mirrored_x - other_bookmarked_button_->x();
   if (other_delta_x >= 0 &&
-      other_delta_x < other_bookmarked_button_->GetWidth()) {
+      other_delta_x < other_bookmarked_button_->width()) {
     // Mouse is over 'other' folder.
     *is_over_other = true;
     *drop_on = true;
@@ -1594,14 +1601,17 @@ int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
   } else if (!GetBookmarkButtonCount()) {
     // No bookmarks, accept the drop.
     *index = 0;
-    return DragDropTypes::DRAG_COPY;
+    int ops = data.GetNode(profile_)
+        ? DragDropTypes::DRAG_MOVE
+        : DragDropTypes::DRAG_COPY | DragDropTypes::DRAG_LINK;
+    return PreferredDropOperation(event, ops);
   }
 
   for (int i = 0; i < GetBookmarkButtonCount() &&
        GetBookmarkButton(i)->IsVisible() && !found; i++) {
     ChromeViews::TextButton* button = GetBookmarkButton(i);
-    int button_x = mirrored_x - button->GetX();
-    int button_w = button->GetWidth();
+    int button_x = mirrored_x - button->x();
+    int button_w = button->width();
     if (button_x < button_w) {
       found = true;
       BookmarkNode* node = model_->GetBookmarkBarNode()->GetChild(i);
@@ -1626,9 +1636,9 @@ int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
   if (!found) {
     if (overflow_button_->IsVisible()) {
       // Are we over the overflow button?
-      int overflow_delta_x = mirrored_x - overflow_button_->GetX();
+      int overflow_delta_x = mirrored_x - overflow_button_->x();
       if (overflow_delta_x >= 0 &&
-          overflow_delta_x < overflow_button_->GetWidth()) {
+          overflow_delta_x < overflow_button_->width()) {
         // Mouse is over overflow button.
         *index = GetFirstHiddenNodeIndex();
         *is_over_overflow = true;
@@ -1639,7 +1649,7 @@ int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
       } else {
         return DragDropTypes::DRAG_NONE;
       }
-    } else if (mirrored_x < other_bookmarked_button_->GetX()) {
+    } else if (mirrored_x < other_bookmarked_button_->x()) {
       // Mouse is after the last visible button but before more recently
       // bookmarked; use the last visible index.
       *index = GetFirstHiddenNodeIndex();
@@ -1653,49 +1663,33 @@ int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
         *is_over_other ? model_->other_node() :
                          model_->GetBookmarkBarNode()->GetChild(*index);
     int operation =
-        CalculateDropOperation(data, parent, parent->GetChildCount());
-    if (!operation && !data.is_url &&
-        data.profile_id == GetProfile()->GetID()) {
-      if (data.GetNode(model_) == parent) {
-        // Don't open a menu if the node being dragged is the the menu to
-        // open.
-        *drop_on = false;
-      }
+        CalculateDropOperation(event, data, parent, parent->GetChildCount());
+    if (!operation && !data.is_url && data.GetNode(profile_) == parent) {
+      // Don't open a menu if the node being dragged is the the menu to
+      // open.
+      *drop_on = false;
     }
     return operation;
   } else {
-    return CalculateDropOperation(data, model_->GetBookmarkBarNode(), *index);
+    return CalculateDropOperation(event, data, model_->GetBookmarkBarNode(),
+                                  *index);
   }
 }
 
-int BookmarkBarView::CalculateDropOperation(const BookmarkDragData& data,
+int BookmarkBarView::CalculateDropOperation(const DropTargetEvent& event,
+                                            const BookmarkDragData& data,
                                             BookmarkNode* parent,
                                             int index) {
   if (!CanDropAt(data, parent, index))
     return DragDropTypes::DRAG_NONE;
 
-  if (data.is_url) {
-    // User is dragging a URL.
-    BookmarkNode* node = model_->GetNodeByURL(data.url);
-    if (!node) {
-      // We don't have a node with this url.
-      return DragDropTypes::DRAG_COPY;
-    }
-    // Technically we're going to move, but most sources export as copy so that
-    // if we don't accept copy we won't accept the drop.
-    return DragDropTypes::DRAG_MOVE | DragDropTypes::DRAG_COPY;
-  } else if (data.profile_id == GetProfile()->GetID()) {
-    // Dropping a group from the same profile results in a move.
-    BookmarkNode* node = data.GetNode(model_);
-    if (!node) {
-      // Generally shouldn't get here, we originated the drag but couldn't
-      // find the node.
-      return DragDropTypes::DRAG_NONE;
-    }
+  if (data.GetNode(profile_)) {
+    // User is dragging from this profile: move.
     return DragDropTypes::DRAG_MOVE;
   } else {
-    // Dropping a group from different profile. Always accept.
-    return DragDropTypes::DRAG_COPY;
+    // User is dragging from another app, copy.
+    return PreferredDropOperation(
+        event, DragDropTypes::DRAG_COPY | DragDropTypes::DRAG_LINK);
   }
 }
 
@@ -1703,29 +1697,19 @@ bool BookmarkBarView::CanDropAt(const BookmarkDragData& data,
                                 BookmarkNode* parent,
                                 int index) {
   DCHECK(data.is_valid);
-  if (data.is_url) {
-    BookmarkNode* existing_node = model_->GetNodeByURL(data.url);
-    if (existing_node && existing_node->GetParent() == parent) {
-      const int existing_index = parent->IndexOfChild(existing_node);
+  BookmarkNode* dragged_node = data.GetNode(profile_);
+  if (dragged_node) {
+    if (dragged_node->GetParent() == parent) {
+      const int existing_index = parent->IndexOfChild(dragged_node);
       if (index == existing_index || existing_index + 1 == index)
         return false;
     }
-    return true;
-  } else if (data.profile_id == profile_->GetID()) {
-    BookmarkNode* existing_node = data.GetNode(model_);
-    if (existing_node) {
-      if (existing_node->GetParent() == parent) {
-        const int existing_index = parent->IndexOfChild(existing_node);
-        if (index == existing_index || existing_index + 1 == index)
-          return false;
-      }
-      // Allow the drop only if the node we're going to drop on isn't a
-      // descendant of the dragged node.
-      BookmarkNode* test_node = parent;
-      while (test_node && test_node != existing_node)
-        test_node = test_node->GetParent();
-      return (test_node == NULL);
-    }
+    // Allow the drop only if the node we're going to drop on isn't a
+    // descendant of the dragged node.
+    BookmarkNode* test_node = parent;
+    while (test_node && test_node != dragged_node)
+      test_node = test_node->GetParent();
+    return (test_node == NULL);
   }  // else case clones, always allow.
   return true;
 }
@@ -1734,31 +1718,22 @@ bool BookmarkBarView::CanDropAt(const BookmarkDragData& data,
 int BookmarkBarView::PerformDropImpl(const BookmarkDragData& data,
                                      BookmarkNode* parent_node,
                                      int index) {
-  if (data.is_url) {
-    // User is dragging a URL.
-    BookmarkNode* node = model_->GetNodeByURL(data.url);
-    if (!node) {
-      std::wstring title = data.title;
-      if (title.empty()) {
-        // No title, use the host.
-        title = UTF8ToWide(data.url.host());
-        if (title.empty())
-          title = l10n_util::GetString(IDS_BOOMARK_BAR_UNKNOWN_DRAG_TITLE);
-      }
-      model_->AddURL(parent_node, index, title, data.url);
-      return DragDropTypes::DRAG_COPY;
-    }
-    model_->Move(node, parent_node, index);
+  BookmarkNode* dragged_node = data.GetNode(profile_);
+  if (dragged_node) {
+    // Drag from same profile, do a move.
+    model_->Move(dragged_node, parent_node, index);
     return DragDropTypes::DRAG_MOVE;
-  } else if (data.profile_id == GetProfile()->GetID()) {
-    BookmarkNode* node = data.GetNode(model_);
-    if (!node) {
-      // Generally shouldn't get here, we originated the drag but couldn't
-      // find the node. Do nothing.
-      return DragDropTypes::DRAG_COPY;
+  } else if (data.is_url) {
+    // New URL, add it at the specified location.
+    std::wstring title = data.title;
+    if (title.empty()) {
+      // No title, use the host.
+      title = UTF8ToWide(data.url.host());
+      if (title.empty())
+        title = l10n_util::GetString(IDS_BOOMARK_BAR_UNKNOWN_DRAG_TITLE);
     }
-    model_->Move(node, parent_node, index);
-    return DragDropTypes::DRAG_MOVE;
+    model_->AddURL(parent_node, index, title, data.url);
+    return DragDropTypes::DRAG_COPY | DragDropTypes::DRAG_LINK;
   } else {
     // Dropping a group from different profile. Always accept.
     CloneDragData(data, parent_node, index);
@@ -1771,12 +1746,7 @@ void BookmarkBarView::CloneDragData(const BookmarkDragData& data,
                                     int index_to_add_at) {
   DCHECK(data.is_valid && model_);
   if (data.is_url) {
-    BookmarkNode* node = model_->GetNodeByURL(data.url);
-    if (node) {
-      model_->Move(node, parent, index_to_add_at);
-    } else {
-      model_->AddURL(parent, index_to_add_at, data.title, data.url);
-    }
+    model_->AddURL(parent, index_to_add_at, data.title, data.url);
   } else {
     BookmarkNode* new_folder = model_->AddGroup(parent, index_to_add_at,
                                                 data.title);
@@ -1803,7 +1773,7 @@ void BookmarkBarView::StartThrobbing() {
   if (!GetViewContainer())
     return;  // We're not showing, don't do anything.
 
-  BookmarkNode* node = model_->GetNodeByURL(bubble_url_);
+  BookmarkNode* node = model_->GetMostRecentlyAddedNodeForURL(bubble_url_);
   if (!node)
     return;  // Generally shouldn't happen.
 
@@ -1837,4 +1807,3 @@ void BookmarkBarView::StopThrobbing(bool immediate) {
   throbbing_view_->StartThrobbing(immediate ? 0 : 4);
   throbbing_view_ = NULL;
 }
-

@@ -91,8 +91,6 @@ if env['PLATFORM'] == 'win32':
     'process.cc',
 
     'resource_util.cc',  # Uses HMODULE, but may be abstractable.
-
-    'stats_table.cc',  # Amanda is working on this(?).
   ])
 
 if env['PLATFORM'] == 'win32':
@@ -115,6 +113,7 @@ if env['PLATFORM'] == 'win32':
       'process_util_win.cc',
       'registry.cc',
       'shared_memory_win.cc',
+      'sys_info_win.cc',
       'sys_string_conversions_win.cc',
       'thread_local_storage_win.cc',
       'thread_local_win.cc',
@@ -135,6 +134,7 @@ if env['PLATFORM'] in ('darwin', 'posix'):
       'process_util_posix.cc',
       'shared_memory_posix.cc',
       'string16.cc',
+      'sys_info_posix.cc',
       'thread_local_storage_posix.cc',
       'thread_local_posix.cc',
       'time_posix.cc',
@@ -158,6 +158,9 @@ if env['PLATFORM'] == 'posix':
       'atomicops_internals_x86_gcc.cc',
       'base_paths_linux.cc',
       'file_util_linux.cc',
+      'hmac_nss.cc',
+      'message_pump_libevent.cc',
+      'nss_init.cc',
       'sys_string_conversions_linux.cc',
       'worker_pool.cc',
   ])
@@ -227,6 +230,13 @@ if env['PLATFORM'] == 'win32':
       ],
   )
 
+if env['PLATFORM'] == 'posix':
+  env_tests.Append(
+      LIBS = [
+          'event',
+      ],
+  )
+
 # These test files work on *all* platforms; tests that don't work
 # cross-platform live below.
 test_files = [
@@ -257,6 +267,7 @@ test_files = [
     'string_piece_unittest.cc',
     'string_tokenizer_unittest.cc',
     'string_util_unittest.cc',
+    'sys_info_unittest.cc',
     'thread_local_unittest.cc',
     'thread_local_storage_unittest.cc',
     'thread_unittest.cc',
@@ -284,7 +295,6 @@ if env['PLATFORM'] == 'win32':
     'hmac_unittest.cc',
     'idletimer_unittest.cc',
     'process_util_unittest.cc',
-    'run_all_unittests.cc',
     'shared_event_unittest.cc',
     'stats_table_unittest.cc',
     'watchdog_unittest.cc',
@@ -323,12 +333,7 @@ sconscript_dirs = [
 SConscript(sconscript_dirs, exports=['env'])
 
 
-# Setup alias for all base related targets.
-if env['PLATFORM'] == 'win32':
-  icudata = '../icudt38.dll'
-else:
-  icudata = '../icudt38l.dat'
-env.Alias('base', ['.', installed_base_unittests, icudata])
+env.Alias('base', ['.', installed_base_unittests])
 
 # TODO(sgk) should this be moved into base.lib like everything else?  This will
 # require updating a bunch of other SConscripts which link directly against

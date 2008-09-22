@@ -324,7 +324,7 @@
 		7BF892080E7314E9000BAF8A /* pcre_exec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7BF891E10E7311B1000BAF8A /* pcre_exec.cpp */; };
 		82761E970E3FA26F0030D324 /* TextCodecMac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E91C50D7F3CC2001ECF42 /* TextCodecMac.cpp */; };
 		82761F850E3FAC700030D324 /* AccessibilityObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 82761F810E3FAC700030D324 /* AccessibilityObject.cpp */; };
-		82A9A8CF0E3E4EE80038C474 /* FrameMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8F000D7F3C48001ECF42 /* FrameMac.mm */; };
+		827E13880E815A0500183614 /* ResourceLoaderMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DC80D7F3C01001ECF42 /* ResourceLoaderMac.mm */; };
 		E43CE13C0E68621500D8C5B9 /* PausedTimeouts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E43CE13A0E68621500D8C5B9 /* PausedTimeouts.cpp */; };
 		E45062E10E40B5420025A81A /* SkiaUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E45062DF0E40B5420025A81A /* SkiaUtils.cpp */; };
 		E45063BA0E4104700025A81A /* localized_strings.cc in Sources */ = {isa = PBXBuildFile; fileRef = 8254051A0D92E3DA0006B936 /* localized_strings.cc */; };
@@ -602,7 +602,6 @@
 		E456248B0E268E87005E4685 /* loader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DC30D7F3C01001ECF42 /* loader.cpp */; };
 		E456248C0E268E87005E4685 /* ImageDocumentMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B12FBDC0D8F54D900CB6E8F /* ImageDocumentMac.mm */; };
 		E456248D0E268E87005E4685 /* LoaderNSURLExtras.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DC70D7F3C01001ECF42 /* LoaderNSURLExtras.m */; };
-		E456248E0E268E87005E4685 /* ResourceLoaderMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DC80D7F3C01001ECF42 /* ResourceLoaderMac.mm */; };
 		E456248F0E268E87005E4685 /* UserStyleSheetLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DC90D7F3C01001ECF42 /* UserStyleSheetLoader.cpp */; };
 		E45624900E268E87005E4685 /* MainResourceLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DCB0D7F3C01001ECF42 /* MainResourceLoader.cpp */; };
 		E45624910E268E87005E4685 /* NavigationAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8DCD0D7F3C01001ECF42 /* NavigationAction.cpp */; };
@@ -704,7 +703,6 @@
 		E45624F20E268E87005E4685 /* CursorMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90DD0D7F3CC2001ECF42 /* CursorMac.mm */; };
 		E45624F30E268E87005E4685 /* DeprecatedStringListMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90DE0D7F3CC2001ECF42 /* DeprecatedStringListMac.mm */; };
 		E45624F40E268E87005E4685 /* DeprecatedStringMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90DF0D7F3CC2001ECF42 /* DeprecatedStringMac.mm */; };
-		E45624F50E268E87005E4685 /* DragDataMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90E00D7F3CC2001ECF42 /* DragDataMac.mm */; };
 		E45624F60E268E87005E4685 /* DragImageMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90E10D7F3CC2001ECF42 /* DragImageMac.mm */; };
 		E45624F70E268E87005E4685 /* FileChooserMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90E20D7F3CC2001ECF42 /* FileChooserMac.mm */; };
 		E45624F80E268E87005E4685 /* FileSystemMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90E30D7F3CC2001ECF42 /* FileSystemMac.mm */; };
@@ -1152,6 +1150,11 @@
 		E4E4C8560E7832E2009A687C /* PlatformContextSkia.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E4C8530E7832DC009A687C /* PlatformContextSkia.cpp */; };
 		E4E4C88F0E783E49009A687C /* SkGraphicsContextMac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E4C88E0E783E49009A687C /* SkGraphicsContextMac.cpp */; };
 		E4E4C94A0E797648009A687C /* ImageSourceCG.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8FBD0D7F3CC1001ECF42 /* ImageSourceCG.cpp */; };
+		E4E4CA470E8027ED009A687C /* FontCacheMacPending.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E4CA190E80208A009A687C /* FontCacheMacPending.cpp */; };
+		E4E4CA710E803415009A687C /* DragDataMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E90E00D7F3CC2001ECF42 /* DragDataMac.mm */; };
+		E4E4CA910E803BB9009A687C /* AXObjectCacheMac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E4CA900E803BB9009A687C /* AXObjectCacheMac.cpp */; };
+		E4E4CCF50E83F328009A687C /* FrameMac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7B5E8F000D7F3C48001ECF42 /* FrameMac.mm */; };
+		E4E4CD180E84018A009A687C /* WebCoreFrameBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4E4CD170E84018A009A687C /* WebCoreFrameBridge.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -3702,6 +3705,10 @@
 		E4E4C7F80E781B5B009A687C /* webplugin_impl_mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = webplugin_impl_mac.mm; sourceTree = "<group>"; };
 		E4E4C8530E7832DC009A687C /* PlatformContextSkia.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PlatformContextSkia.cpp; sourceTree = "<group>"; };
 		E4E4C88E0E783E49009A687C /* SkGraphicsContextMac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SkGraphicsContextMac.cpp; sourceTree = "<group>"; };
+		E4E4CA190E80208A009A687C /* FontCacheMacPending.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontCacheMacPending.cpp; path = mac/FontCacheMacPending.cpp; sourceTree = "<group>"; };
+		E4E4CA900E803BB9009A687C /* AXObjectCacheMac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AXObjectCacheMac.cpp; sourceTree = "<group>"; };
+		E4E4CAE60E805325009A687C /* webkit_staticlib.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = webkit_staticlib.xcconfig; path = build/webkit_staticlib.xcconfig; sourceTree = SOURCE_ROOT; };
+		E4E4CD170E84018A009A687C /* WebCoreFrameBridge.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = WebCoreFrameBridge.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -5940,6 +5947,7 @@
 				7BF8842E0E71C120000BAF8A /* executable.xcconfig */,
 				7BF8842F0E71C120000BAF8A /* release.xcconfig */,
 				7BF884300E71C120000BAF8A /* staticlib.xcconfig */,
+				E4E4CAE60E805325009A687C /* webkit_staticlib.xcconfig */,
 			);
 			name = Configuration;
 			path = ../build;
@@ -6521,6 +6529,7 @@
 		822B1BE70DC77910005C9A96 /* graphics */ = {
 			isa = PBXGroup;
 			children = (
+				E4E4CA190E80208A009A687C /* FontCacheMacPending.cpp */,
 				82C2604A0DCB9AC1005CFE91 /* ImageSourceSkia.cpp */,
 				82C2604B0DCB9AC1005CFE91 /* ImageSourceSkia.h */,
 				E48A07220E3F95A000172919 /* NativeImageSkia.cpp */,
@@ -6757,7 +6766,9 @@
 		E4A970880E3614F200E8EF3B /* page */ = {
 			isa = PBXGroup;
 			children = (
+				E4E4CA900E803BB9009A687C /* AXObjectCacheMac.cpp */,
 				E4A9708A0E36150500E8EF3B /* ChromeClientWin.h */,
+				E4E4CD170E84018A009A687C /* WebCoreFrameBridge.mm */,
 			);
 			path = page;
 			sourceTree = "<group>";
@@ -7423,7 +7434,7 @@
 				E45624A10E268E87005E4685 /* DragController.cpp in Sources */,
 				E45624A90E268E87005E4685 /* DragControllerMac.mm in Sources */,
 				E45624BD0E268E87005E4685 /* DragData.cpp in Sources */,
-				E45624F50E268E87005E4685 /* DragDataMac.mm in Sources */,
+				E4E4CA710E803415009A687C /* DragDataMac.mm in Sources */,
 				E45624BE0E268E87005E4685 /* DragImage.cpp in Sources */,
 				E45624F60E268E87005E4685 /* DragImageMac.mm in Sources */,
 				E45623BE0E268E87005E4685 /* DynamicNodeList.cpp in Sources */,
@@ -7464,6 +7475,7 @@
 				E45624C70E268E87005E4685 /* Font.cpp in Sources */,
 				E45624C80E268E87005E4685 /* FontCache.cpp in Sources */,
 				E45624D60E268E87005E4685 /* FontCacheMac.mm in Sources */,
+				E4E4CA470E8027ED009A687C /* FontCacheMacPending.cpp in Sources */,
 				E45624D70E268E87005E4685 /* FontCustomPlatformData.cpp in Sources */,
 				E45624C90E268E87005E4685 /* FontData.cpp in Sources */,
 				E45624CA0E268E87005E4685 /* FontFallbackList.cpp in Sources */,
@@ -7479,7 +7491,7 @@
 				E45624860E268E87005E4685 /* FormState.cpp in Sources */,
 				E45624A40E268E87005E4685 /* Frame.cpp in Sources */,
 				E45624870E268E87005E4685 /* FrameLoader.cpp in Sources */,
-				82A9A8CF0E3E4EE80038C474 /* FrameMac.mm in Sources */,
+				E4E4CCF50E83F328009A687C /* FrameMac.mm in Sources */,
 				E45624A50E268E87005E4685 /* FrameTree.cpp in Sources */,
 				E45624A60E268E87005E4685 /* FrameView.cpp in Sources */,
 				E45624880E268E87005E4685 /* FTPDirectoryDocument.cpp in Sources */,
@@ -7752,7 +7764,7 @@
 				E456251F0E268E87005E4685 /* ResourceErrorMac.mm in Sources */,
 				E45625250E268E87005E4685 /* ResourceHandle.cpp in Sources */,
 				E45624960E268E87005E4685 /* ResourceLoader.cpp in Sources */,
-				E456248E0E268E87005E4685 /* ResourceLoaderMac.mm in Sources */,
+				827E13880E815A0500183614 /* ResourceLoaderMac.mm in Sources */,
 				E45625260E268E87005E4685 /* ResourceRequestBase.cpp in Sources */,
 				E45625270E268E87005E4685 /* ResourceResponseBase.cpp in Sources */,
 				E45625930E268E87005E4685 /* RootInlineBox.cpp in Sources */,
@@ -8129,6 +8141,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4E4CA910E803BB9009A687C /* AXObjectCacheMac.cpp in Sources */,
 				E45627EF0E2694B8005E4685 /* BackForwardList.cpp in Sources */,
 				E45627EA0E2694B8005E4685 /* BMPImageDecoder.cpp in Sources */,
 				E45627E90E2694B8005E4685 /* BMPImageReader.cpp in Sources */,
@@ -8147,6 +8160,7 @@
 				E45062E10E40B5420025A81A /* SkiaUtils.cpp in Sources */,
 				E45627E70E2694B8005E4685 /* SkPaintContext.cpp in Sources */,
 				E45627E40E2694B8005E4685 /* V8Bridge.cpp in Sources */,
+				E4E4CD180E84018A009A687C /* WebCoreFrameBridge.mm in Sources */,
 				E45627EC0E2694B8005E4685 /* XBMImageDecoder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -8610,7 +8624,7 @@
 		};
 		E45627130E268F03005E4685 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7BF884300E71C120000BAF8A /* staticlib.xcconfig */;
+			baseConfigurationReference = E4E4CAE60E805325009A687C /* webkit_staticlib.xcconfig */;
 			buildSettings = {
 				GCC_PREFIX_HEADER = ../third_party/WebKit/WebCore/WebCorePrefix.h;
 				HEADER_SEARCH_PATHS = (
@@ -8627,7 +8641,7 @@
 		};
 		E45627140E268F03005E4685 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7BF884300E71C120000BAF8A /* staticlib.xcconfig */;
+			baseConfigurationReference = E4E4CAE60E805325009A687C /* webkit_staticlib.xcconfig */;
 			buildSettings = {
 				GCC_PREFIX_HEADER = ../third_party/WebKit/WebCore/WebCorePrefix.h;
 				HEADER_SEARCH_PATHS = (

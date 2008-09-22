@@ -81,6 +81,7 @@ Settings::Settings(Page* page)
     , m_zoomsTextOnly(false)
     , m_enforceCSSMIMETypeInStrictMode(true)
 	, m_usesEncodingDetector(false)
+    , m_allow_scripts_to_close_windows(false)
 {
     // A Frame may not have been created yet, so we initialize the AtomicString 
     // hash before trying to use it.
@@ -382,6 +383,11 @@ void Settings::setEnforceCSSMIMETypeInStrictMode(bool enforceCSSMIMETypeInStrict
 void Settings::setUsesUniversalDetector(bool usesEncodingDetector)
 {
     m_usesEncodingDetector = usesEncodingDetector;
+}
+
+void Settings::setAllowScriptsToCloseWindows(bool allow_scripts_to_close_windows)
+{
+    m_allow_scripts_to_close_windows = allow_scripts_to_close_windows;
 }
 
 } // namespace WebCore

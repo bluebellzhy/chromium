@@ -42,12 +42,11 @@ AboutChromeView::AboutChromeView(Profile* profile)
       about_title_label_(NULL),
       version_label_(NULL),
       main_text_label_(NULL),
-      check_button_status_(CHECKBUTTON_HIDDEN),
-      google_updater_(NULL) {
+      check_button_status_(CHECKBUTTON_HIDDEN) {
   DCHECK(profile);
   Init();
 
-  google_updater_ = new GoogleUpdate();  // This object deletes itself.
+  google_updater_ = new GoogleUpdate();
   google_updater_->AddStatusChangeListener(this);
 }
 
@@ -176,8 +175,8 @@ void AboutChromeView::Layout() {
   // Then we have the version number right below it.
   version_label_->GetPreferredSize(&sz);
   version_label_->SetBounds(kPanelHorizMargin,
-                            about_title_label_->GetY() +
-                                about_title_label_->GetHeight() +
+                            about_title_label_->y() +
+                                about_title_label_->height() +
                                 kRelatedControlVerticalSpacing,
                             kVersionFieldWidth,
                             sz.cy);
@@ -223,7 +222,7 @@ void AboutChromeView::Layout() {
   // the throbber. We specify width to the end of the dialog because it contains
   // variable length messages.
   update_label_.GetPreferredSize(&sz);
-  int update_label_x = throbber_->GetX() + throbber_->GetWidth() +
+  int update_label_x = throbber_->x() + throbber_->width() +
                        kRelatedControlHorizontalSpacing;
   update_label_.SetHorizontalAlignment(ChromeViews::Label::ALIGN_LEFT);
   update_label_.SetBounds(update_label_x,
@@ -259,6 +258,7 @@ void AboutChromeView::ViewHierarchyChanged(bool is_add,
       int service_pack_major = 0, service_pack_minor = 0;
       win_util::GetServicePackLevel(&service_pack_major, &service_pack_minor);
       if (win_util::UserAccountControlIsEnabled() ||
+          win_util::GetWinVersion() == win_util::WINVERSION_XP ||
           (win_util::GetWinVersion() == win_util::WINVERSION_VISTA &&
            service_pack_major >= 1)) {
         UpdateStatus(UPGRADE_CHECK_STARTED, GOOGLE_UPDATE_NO_ERROR);
@@ -341,7 +341,7 @@ bool AboutChromeView::Accept() {
   // that an update is available, at which point this pointer should have been
   // null-ed out.
   DCHECK(!google_updater_);
-  google_updater_ = new GoogleUpdate();  // This object deletes itself.
+  google_updater_ = new GoogleUpdate();
   google_updater_->AddStatusChangeListener(this);
   google_updater_->CheckForUpdate(true);  // true=upgrade if new version found.
 
@@ -358,8 +358,7 @@ ChromeViews::View* AboutChromeView::GetContentsView() {
 void AboutChromeView::OnReportResults(GoogleUpdateUpgradeResult result,
                                       GoogleUpdateErrorCode error_code,
                                       const std::wstring& version) {
-  // The object will free itself after reporting its status, so we should
-  // no longer refer to it.
+  // Drop the last reference to the object so that it gets cleaned up here.
   google_updater_ = NULL;
 
   // Make a note of which version Google Update is reporting is the latest

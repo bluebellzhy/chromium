@@ -301,6 +301,14 @@ class DefaultPolicy : public SSLPolicy {
         // For now we handle the DENIED as the UNKNOWN, which means a blocking
         // page is shown to the user every time he comes back to the page.
       case net::X509Certificate::Policy::UNKNOWN:
+        if (error->resource_type() != ResourceType::MAIN_FRAME) {
+          // A sub-resource has a certificate error.  The user doesn't really
+          // have a context for making the right decision, so block the
+          // request hard, without an info bar to allow showing the insecure
+          // content.
+          error->DenyRequest();
+          break;
+        }
         // We don't know how to handle this error.  Ask our sub-policies.
         sub_policies_[index]->OnCertError(main_frame_url, error);
         break;

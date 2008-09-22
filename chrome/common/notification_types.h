@@ -49,19 +49,16 @@ enum NotificationType {
   NOTIFY_NAV_ENTRY_COMMITTED,
 
   // Indicates that the NavigationController given in the Source has decreased
-  // its back/forward list count. This is usually the result of going back and
-  // then doing a new navigation, meaning all the "forward" items are deleted.
+  // its back/forward list count by removing entries from either the front or
+  // back of its list. This is usually the result of going back and then doing a
+  // new navigation, meaning all the "forward" items are deleted.
   //
   // This normally happens as a result of a new navigation. It will be followed
   // by a NOTIFY_NAV_ENTRY_COMMITTED message for the new page that caused the
   // pruning. It could also be a result of removing an item from the list to fix
   // up after interstitials.
   //
-  // The details are an integer indicating the number of items pruned.
-  // Watch out: the NavigationController may start throwing entries away once
-  // the list is a certain size, so you can't use the current size of the
-  // navigation list to tell how many items were pruned, you have to use the
-  // details provided here.
+  // The details are NavigationController::PrunedDetails.
   NOTIFY_NAV_LIST_PRUNED,
 
   // Indicates that a NavigationEntry has changed. The source will be the
@@ -98,12 +95,6 @@ enum NotificationType {
   // in which the load occurred.  Details in the form of a
   // LoadFromMemoryCacheDetails object are provided.
   NOTIFY_LOAD_FROM_MEMORY_CACHE,
-
-  // A provisional content load has committed.  The source will be a
-  // Source<NavigationController> corresponding to the tab in which the load
-  // occurred.  Details in the form of a ProvisionalLoadDetails object are
-  // provided.
-  NOTIFY_FRAME_PROVISIONAL_LOAD_COMMITTED,
 
   // A provisional content load has failed with an error.  The source will be a
   // Source<NavigationController> corresponding to the tab
@@ -364,7 +355,7 @@ enum NotificationType {
   // No details are expected.
   NOTIFY_AUTH_SUPPLIED,
 
-  // History, bookmarks --------------------------------------------------------
+  // History -------------------------------------------------------------------
 
   // Sent when a history service is created on the main thread. This is sent
   // after history is created, but before it has finished loading. Use
@@ -398,20 +389,22 @@ enum NotificationType {
   // the details is history::URLsDeletedDetails that lists the deleted URLs.
   NOTIFY_HISTORY_URLS_DELETED,
 
-  // This is sent when the "starred" button is clicked, toggling the
-  // starredness of a tab's current URL. The source is a Profile and the
-  // details is history::URLsStarredDetails that contains the list of URLs and
-  // whether they were starred or unstarred.
+  // Sent by history when the favicon of a URL changes.
+  // The source is the profile, and the details is
+  // history::FavIconChangeDetails (see history_notifications.h).
+  NOTIFY_FAVICON_CHANGED,
+
+  // Bookmarks -----------------------------------------------------------------
+
+  // Sent when the starred state of a URL changes. A URL is starred if there is
+  // at least one bookmark for it. The source is a Profile and the details is
+  // history::URLsStarredDetails that contains the list of URLs and whether
+  // they were starred or unstarred.
   NOTIFY_URLS_STARRED,
 
   // Sent when the bookmark bar model finishes loading. This source is the
   // Profile, and the details aren't used.
   NOTIFY_BOOKMARK_MODEL_LOADED,
-
-  // Sent by history when the favicon of a URL changes.
-  // The source is the profile, and the details is
-  // history::FavIconChangeDetails (see history_notifications.h).
-  NOTIFY_FAVICON_CHANGED,
 
   // Sent when the bookmark bubble is shown for a particular URL. The source
   // is the profile, the details the URL.

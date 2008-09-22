@@ -68,16 +68,12 @@ class ActiveWindowResources : public WindowResources {
  public:
   ActiveWindowResources() {
     InitClass();
-    WindowResources::InitClass();
   }
   virtual ~ActiveWindowResources() { }
 
   // WindowResources implementation:
   virtual SkBitmap* GetPartBitmap(FramePartBitmap part) const {
     return standard_frame_bitmaps_[part];
-  }
-  virtual const ChromeFont& GetTitleFont() const {
-    return title_font_;
   }
 
  private:
@@ -109,8 +105,6 @@ class ActiveWindowResources : public WindowResources {
         if (id != 0)
           standard_frame_bitmaps_[i] = rb.GetBitmapNamed(id);
       }
-      title_font_ =
-          rb.GetFont(ResourceBundle::BaseFont).DeriveFont(1, ChromeFont::BOLD);
       initialized = true;
     }
   }
@@ -125,16 +119,12 @@ class InactiveWindowResources : public WindowResources {
  public:
   InactiveWindowResources() {
     InitClass();
-    WindowResources::InitClass();
   }
   virtual ~InactiveWindowResources() { }
 
   // WindowResources implementation:
   virtual SkBitmap* GetPartBitmap(FramePartBitmap part) const {
     return standard_frame_bitmaps_[part];
-  }
-  virtual const ChromeFont& GetTitleFont() const {
-    return title_font_;
   }
 
  private:
@@ -166,8 +156,6 @@ class InactiveWindowResources : public WindowResources {
         if (id != 0)
           standard_frame_bitmaps_[i] = rb.GetBitmapNamed(id);
       }
-      title_font_ =
-          rb.GetFont(ResourceBundle::BaseFont).DeriveFont(1, ChromeFont::BOLD);
       initialized = true;
     }
   }
@@ -182,7 +170,6 @@ class OTRActiveWindowResources : public WindowResources {
  public:
   OTRActiveWindowResources() {
     InitClass();
-    WindowResources::InitClass();
   }
   virtual ~OTRActiveWindowResources() { }
 
@@ -190,10 +177,7 @@ class OTRActiveWindowResources : public WindowResources {
   virtual SkBitmap* GetPartBitmap(FramePartBitmap part) const {
     return standard_frame_bitmaps_[part];
   }
-  virtual const ChromeFont& GetTitleFont() const {
-    return title_font_;
-  }
-
+  
  private:
   static void InitClass() {
     static bool initialized = false;
@@ -223,14 +207,11 @@ class OTRActiveWindowResources : public WindowResources {
         if (id != 0)
           standard_frame_bitmaps_[i] = rb.GetBitmapNamed(id);
       }
-      title_font_ =
-          rb.GetFont(ResourceBundle::BaseFont).DeriveFont(1, ChromeFont::BOLD);
       initialized = true;
     }
   }
 
   static SkBitmap* standard_frame_bitmaps_[FRAME_PART_BITMAP_COUNT];
-  static ChromeFont title_font_;
 
   DISALLOW_EVIL_CONSTRUCTORS(OTRActiveWindowResources);
 };
@@ -239,16 +220,12 @@ class OTRInactiveWindowResources : public WindowResources {
  public:
   OTRInactiveWindowResources() {
     InitClass();
-    WindowResources::InitClass();
   }
   virtual ~OTRInactiveWindowResources() { }
 
   // WindowResources implementation:
   virtual SkBitmap* GetPartBitmap(FramePartBitmap part) const {
     return standard_frame_bitmaps_[part];
-  }
-  virtual const ChromeFont& GetTitleFont() const {
-    return title_font_;
   }
 
  private:
@@ -281,8 +258,6 @@ class OTRInactiveWindowResources : public WindowResources {
         if (id != 0)
           standard_frame_bitmaps_[i] = rb.GetBitmapNamed(id);
       }
-      title_font_ =
-          rb.GetFont(ResourceBundle::BaseFont).DeriveFont(1, ChromeFont::BOLD);
       initialized = true;
     }
   }
@@ -294,19 +269,19 @@ class OTRInactiveWindowResources : public WindowResources {
 };
 // static
 SkBitmap* ActiveWindowResources::standard_frame_bitmaps_[];
-ChromeFont ActiveWindowResources::title_font_;
 SkBitmap* InactiveWindowResources::standard_frame_bitmaps_[];
-ChromeFont InactiveWindowResources::title_font_;
 SkBitmap* OTRActiveWindowResources::standard_frame_bitmaps_[];
-ChromeFont OTRActiveWindowResources::title_font_;
 SkBitmap* OTRInactiveWindowResources::standard_frame_bitmaps_[];
-ChromeFont OTRInactiveWindowResources::title_font_;
 
 WindowResources* OpaqueNonClientView::active_resources_ = NULL;
 WindowResources* OpaqueNonClientView::inactive_resources_ = NULL;
 WindowResources* OpaqueNonClientView::active_otr_resources_ = NULL;
 WindowResources* OpaqueNonClientView::inactive_otr_resources_ = NULL;
 SkBitmap OpaqueNonClientView::distributor_logo_;
+SkBitmap OpaqueNonClientView::app_top_left_;
+SkBitmap OpaqueNonClientView::app_top_center_;
+SkBitmap OpaqueNonClientView::app_top_right_;
+ChromeFont OpaqueNonClientView::title_font_;
 
 // The distance between the top of the window and the top of the window
 // controls when the window is restored.
@@ -368,6 +343,9 @@ static const int kOTRAvatarIconMargin = 9;
 // The distance from the top of the window of the OTR avatar icon when the
 // window is maximized.
 static const int kNoTitleOTRZoomedTopSpacing = 3;
+// Horizontal distance between the right edge of the new tab icon and the left
+// edge of the window minimize icon when the window is maximized.
+static const int kNewTabIconWindowControlsSpacing = 10;
 
 ///////////////////////////////////////////////////////////////////////////////
 // OpaqueNonClientView, public:
@@ -379,7 +357,7 @@ OpaqueNonClientView::OpaqueNonClientView(OpaqueFrame* frame,
       maximize_button_(new ChromeViews::Button),
       restore_button_(new ChromeViews::Button),
       close_button_(new ChromeViews::Button),
-      window_icon_(new TabIconView(this)),
+      window_icon_(NULL),
       frame_(frame),
       browser_view_(browser_view) {
   InitClass();
@@ -452,9 +430,17 @@ OpaqueNonClientView::OpaqueNonClientView(OpaqueFrame* frame,
   close_button_->SetAccessibleName(l10n_util::GetString(IDS_ACCNAME_CLOSE));
   AddChildView(close_button_);
 
-  window_icon_->set_is_light(true);
-  AddChildView(window_icon_);
-  window_icon_->Update();
+  // Initializing the TabIconView is expensive, so only do it if we need to.
+  if (browser_view_->ShouldShowWindowIcon()) {
+    window_icon_ = new TabIconView(this);
+    window_icon_->set_is_light(true);
+    AddChildView(window_icon_);
+    window_icon_->Update();
+  }
+  // Only load the title font if we're going to need to use it to paint.
+  // Loading fonts is expensive.
+  if (browser_view_->ShouldShowWindowTitle())
+    InitAppWindowResources();
 }
 
 OpaqueNonClientView::~OpaqueNonClientView() {
@@ -474,12 +460,15 @@ gfx::Rect OpaqueNonClientView::GetWindowBoundsForClientBounds(
 gfx::Rect OpaqueNonClientView::GetBoundsForTabStrip(TabStrip* tabstrip) {
   int tabstrip_height = tabstrip->GetPreferredHeight();
   int tabstrip_x = otr_avatar_bounds_.right();
-  return gfx::Rect(tabstrip_x, 0, minimize_button_->GetX() - tabstrip_x,
-                   tabstrip_height);
+  int tabstrip_width = minimize_button_->x() - tabstrip_x;
+  if (frame_->IsMaximized())
+    tabstrip_width -= kNewTabIconWindowControlsSpacing;
+  return gfx::Rect(tabstrip_x, 0, tabstrip_width, tabstrip_height);
 }
 
 void OpaqueNonClientView::UpdateWindowIcon() {
-  window_icon_->Update();
+  if (window_icon_)
+    window_icon_->Update();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -528,8 +517,7 @@ gfx::Size OpaqueNonClientView::CalculateWindowSizeForClientSize(
 }
 
 CPoint OpaqueNonClientView::GetSystemMenuPoint() const {
-  CPoint system_menu_point(window_icon_->GetX(),
-                           window_icon_->GetY() + window_icon_->GetHeight());
+  CPoint system_menu_point(icon_bounds_.x(), icon_bounds_.bottom());
   MapWindowPoints(frame_->GetHWND(), HWND_DESKTOP, &system_menu_point, 1);
   return system_menu_point;
 }
@@ -557,9 +545,11 @@ int OpaqueNonClientView::NonClientHitTest(const gfx::Point& point) {
   minimize_button_->GetBounds(&bounds, APPLY_MIRRORING_TRANSFORMATION);
   if (bounds.PtInRect(test_point))
     return HTMINBUTTON;
-  window_icon_->GetBounds(&bounds, APPLY_MIRRORING_TRANSFORMATION);
-  if (bounds.PtInRect(test_point))
-    return HTSYSMENU;
+  if (window_icon_) {
+    window_icon_->GetBounds(&bounds, APPLY_MIRRORING_TRANSFORMATION);
+    if (bounds.PtInRect(test_point))
+      return HTSYSMENU;
+  }
 
   component = GetHTComponentForFrame(
       point,
@@ -710,17 +700,12 @@ void OpaqueNonClientView::SetWindowIcon(SkBitmap window_icon) {
 }
 
 int OpaqueNonClientView::CalculateNonClientTopHeight() const {
-  if (frame_->window_delegate()->ShouldShowWindowTitle()) {
-    return kTitleTopOffset + resources()->GetTitleFont().height() +
-        kTitleBottomSpacing;
-  }
+  if (frame_->window_delegate()->ShouldShowWindowTitle())
+    return kTitleTopOffset + title_font_.height() + kTitleBottomSpacing;
   return frame_->IsMaximized() ? kNoTitleZoomedTopSpacing : kNoTitleTopSpacing;
 }
 
 void OpaqueNonClientView::PaintFrameBorder(ChromeCanvas* canvas) {
-  int width = GetWidth();
-  int height = GetHeight();
-
   SkBitmap* top_left_corner =
       resources()->GetPartBitmap(FRAME_TOP_LEFT_CORNER);
   SkBitmap* top_right_corner =
@@ -737,33 +722,33 @@ void OpaqueNonClientView::PaintFrameBorder(ChromeCanvas* canvas) {
   // Top.
   canvas->DrawBitmapInt(*top_left_corner, 0, 0);
   canvas->TileImageInt(*top_edge, top_left_corner->width(), 0,
-                       width - top_right_corner->width(), top_edge->height());
+                       width() - top_right_corner->width(), top_edge->height());
   canvas->DrawBitmapInt(*top_right_corner,
-                        width - top_right_corner->width(), 0);
+                        width() - top_right_corner->width(), 0);
 
   // Right.
   int top_stack_height = top_right_corner->height();
-  canvas->TileImageInt(*right_edge, width - right_edge->width(),
+  canvas->TileImageInt(*right_edge, width() - right_edge->width(),
                        top_stack_height, right_edge->width(),
-                       height - top_stack_height -
+                       height() - top_stack_height -
                            bottom_right_corner->height());
 
   // Bottom.
   canvas->DrawBitmapInt(*bottom_right_corner,
-                        width - bottom_right_corner->width(),
-                        height - bottom_right_corner->height());
+                        width() - bottom_right_corner->width(),
+                        height() - bottom_right_corner->height());
   canvas->TileImageInt(*bottom_edge, bottom_left_corner->width(),
-                       height - bottom_edge->height(),
-                       width - bottom_left_corner->width() -
+                       height() - bottom_edge->height(),
+                       width() - bottom_left_corner->width() -
                            bottom_right_corner->width(),
                        bottom_edge->height());
   canvas->DrawBitmapInt(*bottom_left_corner, 0,
-                        height - bottom_left_corner->height());
+                        height() - bottom_left_corner->height());
 
   // Left.
   top_stack_height = top_left_corner->height();
   canvas->TileImageInt(*left_edge, 0, top_stack_height, left_edge->width(),
-                       height - top_stack_height -
+                       height() - top_stack_height -
                            bottom_left_corner->height());
 }
 
@@ -771,9 +756,9 @@ void OpaqueNonClientView::PaintMaximizedFrameBorder(ChromeCanvas* canvas) {
   SkBitmap* top_edge = resources()->GetPartBitmap(FRAME_MAXIMIZED_TOP_EDGE);
   SkBitmap* bottom_edge =
       resources()->GetPartBitmap(FRAME_MAXIMIZED_BOTTOM_EDGE);
-  canvas->TileImageInt(*top_edge, 0, 0, GetWidth(), top_edge->height());
-  canvas->TileImageInt(*bottom_edge, 0, GetHeight() - bottom_edge->height(),
-                       GetWidth(), bottom_edge->height());
+  canvas->TileImageInt(*top_edge, 0, 0, width(), top_edge->height());
+  canvas->TileImageInt(*bottom_edge, 0, height() - bottom_edge->height(),
+                       width(), bottom_edge->height());
 }
 
 void OpaqueNonClientView::PaintOTRAvatar(ChromeCanvas* canvas) {
@@ -797,11 +782,9 @@ void OpaqueNonClientView::PaintTitleBar(ChromeCanvas* canvas) {
   // The window icon is painted by the TabIconView.
   ChromeViews::WindowDelegate* d = frame_->window_delegate();
   if (d->ShouldShowWindowTitle()) {
-    canvas->DrawStringInt(d->GetWindowTitle(),
-                          resources()->GetTitleFont(),
-                          resources()->GetTitleColor(), title_bounds_.x(),
-                          title_bounds_.y(), title_bounds_.width(),
-                          title_bounds_.height());
+    canvas->DrawStringInt(d->GetWindowTitle(), title_font_, SK_ColorWHITE,
+                          title_bounds_.x(), title_bounds_.y(),
+                          title_bounds_.width(), title_bounds_.height());
   }
 }
 
@@ -854,9 +837,9 @@ void OpaqueNonClientView::PaintClientEdge(ChromeCanvas* canvas) {
   int fudge = frame_->window_delegate()->ShouldShowWindowTitle() ? 0 : 1;
   client_area_bounds.SetRect(
       client_area_bounds.x(),
-      frame_->client_view()->GetY() + toolbar_bounds.bottom() - fudge,
+      frame_->client_view()->y() + toolbar_bounds.bottom() - fudge,
       client_area_bounds.width(),
-      std::max(0, GetHeight() - frame_->client_view()->GetY() -
+      std::max(0, height() - frame_->client_view()->y() -
           toolbar_bounds.bottom() + fudge - kWindowVerticalBorderBottomSize));
 
   // Now the fudge inverts for app vs browser windows.
@@ -877,18 +860,15 @@ void OpaqueNonClientView::PaintClientEdge(ChromeCanvas* canvas) {
                        left->width(), client_area_bounds.height() - fudge);
 
   if (frame_->window_delegate()->ShouldShowWindowTitle()) {
-    SkBitmap app_top_left = resources()->app_top_left();
-    SkBitmap app_top_center = resources()->app_top_center();
-    SkBitmap app_top_right = resources()->app_top_right();
-    canvas->DrawBitmapInt(app_top_left,
-                          client_area_bounds.x() - app_top_left.width(),
-                          client_area_bounds.y() - app_top_left.height() +
+    canvas->DrawBitmapInt(app_top_left_,
+                          client_area_bounds.x() - app_top_left_.width(),
+                          client_area_bounds.y() - app_top_left_.height() +
                               fudge);
-    canvas->TileImageInt(app_top_center, client_area_bounds.x(),
-                         client_area_bounds.y() - app_top_center.height(),
-                         client_area_bounds.width(), app_top_center.height());
-    canvas->DrawBitmapInt(app_top_right, client_area_bounds.right(),
-                          client_area_bounds.y() - app_top_right.height() +
+    canvas->TileImageInt(app_top_center_, client_area_bounds.x(),
+                         client_area_bounds.y() - app_top_center_.height(),
+                         client_area_bounds.width(), app_top_center_.height());
+    canvas->DrawBitmapInt(app_top_right_, client_area_bounds.right(),
+                          client_area_bounds.y() - app_top_right_.height() +
                               fudge);
   }
 }
@@ -905,46 +885,46 @@ void OpaqueNonClientView::LayoutWindowControls() {
     close_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                      ChromeViews::Button::ALIGN_BOTTOM);
     close_button_->SetBounds(
-        GetWidth() - ps.cx - kWindowControlsRightZoomedOffset,
+        width() - ps.cx - kWindowControlsRightZoomedOffset,
         0, ps.cx + kWindowControlsRightZoomedOffset,
         ps.cy + kWindowControlsTopZoomedOffset);
 
     restore_button_->GetPreferredSize(&ps);
     restore_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                        ChromeViews::Button::ALIGN_BOTTOM);
-    restore_button_->SetBounds(close_button_->GetX() - ps.cx, 0, ps.cx,
+    restore_button_->SetBounds(close_button_->x() - ps.cx, 0, ps.cx,
                                ps.cy + kWindowControlsTopZoomedOffset);
 
     minimize_button_->GetPreferredSize(&ps);
     minimize_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                         ChromeViews::Button::ALIGN_BOTTOM);
-    minimize_button_->SetBounds(restore_button_->GetX() - ps.cx, 0, ps.cx,
+    minimize_button_->SetBounds(restore_button_->x() - ps.cx, 0, ps.cx,
                                 ps.cy + kWindowControlsTopZoomedOffset);
   } else if (frame_->IsMinimized()) {
     close_button_->GetPreferredSize(&ps);
     close_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                      ChromeViews::Button::ALIGN_BOTTOM);
     close_button_->SetBounds(
-        GetWidth() - ps.cx - kWindowControlsRightZoomedOffset,
+        width() - ps.cx - kWindowControlsRightZoomedOffset,
         0, ps.cx + kWindowControlsRightZoomedOffset,
         ps.cy + kWindowControlsTopZoomedOffset);
 
     restore_button_->GetPreferredSize(&ps);
     restore_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                        ChromeViews::Button::ALIGN_BOTTOM);
-    restore_button_->SetBounds(close_button_->GetX() - ps.cx, 0, ps.cx,
+    restore_button_->SetBounds(close_button_->x() - ps.cx, 0, ps.cx,
                                ps.cy + kWindowControlsTopZoomedOffset);
 
     minimize_button_->GetPreferredSize(&ps);
     minimize_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                         ChromeViews::Button::ALIGN_BOTTOM);
-    minimize_button_->SetBounds(restore_button_->GetX() - ps.cx, 0, ps.cx,
+    minimize_button_->SetBounds(restore_button_->x() - ps.cx, 0, ps.cx,
                                 ps.cy + kWindowControlsTopZoomedOffset);
   } else {
     close_button_->GetPreferredSize(&ps);
     close_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                      ChromeViews::Button::ALIGN_TOP);
-    close_button_->SetBounds(GetWidth() - kWindowControlsRightOffset - ps.cx,
+    close_button_->SetBounds(width() - kWindowControlsRightOffset - ps.cx,
                              kWindowControlsTopOffset, ps.cx, ps.cy);
 
     restore_button_->SetVisible(false);
@@ -953,13 +933,13 @@ void OpaqueNonClientView::LayoutWindowControls() {
     maximize_button_->GetPreferredSize(&ps);
     maximize_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                         ChromeViews::Button::ALIGN_TOP);
-    maximize_button_->SetBounds(close_button_->GetX() - ps.cx,
+    maximize_button_->SetBounds(close_button_->x() - ps.cx,
                                 kWindowControlsTopOffset, ps.cx, ps.cy);
 
     minimize_button_->GetPreferredSize(&ps);
     minimize_button_->SetImageAlignment(ChromeViews::Button::ALIGN_LEFT,
                                         ChromeViews::Button::ALIGN_TOP);
-    minimize_button_->SetBounds(maximize_button_->GetX() - ps.cx,
+    minimize_button_->SetBounds(maximize_button_->x() - ps.cx,
                                 kWindowControlsTopOffset, ps.cx, ps.cy);
   }
 }
@@ -995,7 +975,7 @@ void OpaqueNonClientView::LayoutDistributorLogo() {
                                 APPLY_MIRRORING_TRANSFORMATION);
     logo_x = minimize_bounds.right + kDistributorLogoHorizontalOffset;
   } else {
-    logo_x = minimize_button_->GetX() - logo_w -
+    logo_x = minimize_button_->x() - logo_w -
         kDistributorLogoHorizontalOffset;
   }
   logo_bounds_.SetRect(logo_x, kDistributorLogoVerticalOffset, logo_w, logo_h);
@@ -1005,31 +985,30 @@ void OpaqueNonClientView::LayoutTitleBar() {
   int top_offset = frame_->IsMaximized() ? kWindowTopMarginZoomed : 0;
   ChromeViews::WindowDelegate* d = frame_->window_delegate();
 
-  // Size the window icon, if visible.
-  if (d->ShouldShowWindowIcon()) {
-    window_icon_->SetBounds(kWindowIconLeftOffset, kWindowIconLeftOffset,
-                            kWindowIconSize, kWindowIconSize);
-  } else {
-    // Put the menu in the right place at least even if it is hidden so we
-    // can size the title based on its position.
-    window_icon_->SetBounds(kWindowIconLeftOffset, kWindowIconTopOffset, 0, 0);
-  }
+  // Size the window icon, even if it is hidden so we can size the title based
+  // on its position.
+  bool show_icon = d->ShouldShowWindowIcon();
+  icon_bounds_.SetRect(kWindowIconLeftOffset, kWindowIconLeftOffset,
+                       show_icon ? kWindowIconSize : 0,
+                       show_icon ? kWindowIconSize : 0);
+  if (window_icon_)
+    window_icon_->SetBounds(icon_bounds_.ToRECT());
 
   // Size the title, if visible.
   if (d->ShouldShowWindowTitle()) {
     int spacing = d->ShouldShowWindowIcon() ? kWindowIconTitleSpacing : 0;
-    int title_right = minimize_button_->GetX();
-    int icon_right = window_icon_->GetX() + window_icon_->GetWidth();
+    int title_right = minimize_button_->x();
+    int icon_right = icon_bounds_.right();
     int title_left = icon_right + spacing;
     title_bounds_.SetRect(title_left, kTitleTopOffset + top_offset,
         std::max(0, static_cast<int>(title_right - icon_right)),
-        resources()->GetTitleFont().height());
+        title_font_.height());
   }
 }
 
 void OpaqueNonClientView::LayoutClientView() {
   gfx::Rect client_bounds(
-      CalculateClientAreaBounds(GetWidth(), GetHeight()));
+      CalculateClientAreaBounds(width(), height()));
   frame_->client_view()->SetBounds(client_bounds.ToRECT());
 }
 
@@ -1045,7 +1024,20 @@ void OpaqueNonClientView::InitClass() {
     if (!image->isNull())
       distributor_logo_ = *image;
 
+    app_top_left_ = *rb.GetBitmapNamed(IDR_APP_TOP_LEFT);
+    app_top_center_ = *rb.GetBitmapNamed(IDR_APP_TOP_CENTER);
+    app_top_right_ = *rb.GetBitmapNamed(IDR_APP_TOP_RIGHT);      
+
     initialized = true;
   }
 }
 
+// static
+void OpaqueNonClientView::InitAppWindowResources() {
+  static bool initialized = false;
+  if (!initialized) {
+    title_font_ = ResourceBundle::GetSharedInstance().GetFont(
+        ResourceBundle::BaseFont).DeriveFont(1, ChromeFont::BOLD);
+    initialized = true;
+  }
+}

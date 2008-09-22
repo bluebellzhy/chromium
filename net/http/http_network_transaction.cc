@@ -5,6 +5,7 @@
 #include "net/http/http_network_transaction.h"
 
 #include "base/string_util.h"
+#include "base/trace_event.h"
 #include "net/base/client_socket_factory.h"
 #include "net/base/host_resolver.h"
 #include "net/base/load_flags.h"
@@ -68,7 +69,13 @@ int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,
 
 int HttpNetworkTransaction::RestartIgnoringLastError(
     CompletionCallback* callback) {
-  return ERR_FAILED;  // TODO(darin): implement me!
+  // TODO(wtc): If the connection is no longer alive, call
+  // connection_.socket()->ReconnectIgnoringLastError().
+  next_state_ = STATE_WRITE_HEADERS;
+  int rv = DoLoop(OK);
+  if (rv == ERR_IO_PENDING)
+    user_callback_ = callback;
+  return rv; 
 }
 
 int HttpNetworkTransaction::RestartWithAuth(
@@ -248,66 +255,84 @@ int HttpNetworkTransaction::DoLoop(int result) {
     switch (state) {
       case STATE_RESOLVE_PROXY:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.resolve_proxy", request_, request_->url.spec());
         rv = DoResolveProxy();
         break;
       case STATE_RESOLVE_PROXY_COMPLETE:
         rv = DoResolveProxyComplete(rv);
+        TRACE_EVENT_END("http.resolve_proxy", request_, request_->url.spec());
         break;
       case STATE_INIT_CONNECTION:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.init_conn", request_, request_->url.spec());
         rv = DoInitConnection();
         break;
       case STATE_INIT_CONNECTION_COMPLETE:
         rv = DoInitConnectionComplete(rv);
+        TRACE_EVENT_END("http.init_conn", request_, request_->url.spec());
         break;
       case STATE_RESOLVE_HOST:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.resolve_host", request_, request_->url.spec());
         rv = DoResolveHost();
         break;
       case STATE_RESOLVE_HOST_COMPLETE:
         rv = DoResolveHostComplete(rv);
+        TRACE_EVENT_END("http.resolve_host", request_, request_->url.spec());
         break;
       case STATE_CONNECT:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.connect", request_, request_->url.spec());
         rv = DoConnect();
         break;
       case STATE_CONNECT_COMPLETE:
         rv = DoConnectComplete(rv);
+        TRACE_EVENT_END("http.connect", request_, request_->url.spec());
         break;
       case STATE_SSL_CONNECT_OVER_TUNNEL:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.ssl_tunnel", request_, request_->url.spec());
         rv = DoSSLConnectOverTunnel();
         break;
       case STATE_SSL_CONNECT_OVER_TUNNEL_COMPLETE:
         rv = DoSSLConnectOverTunnelComplete(rv);
+        TRACE_EVENT_END("http.ssl_tunnel", request_, request_->url.spec());
         break;
       case STATE_WRITE_HEADERS:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.write_headers", request_, request_->url.spec());
         rv = DoWriteHeaders();
         break;
       case STATE_WRITE_HEADERS_COMPLETE:
         rv = DoWriteHeadersComplete(rv);
+        TRACE_EVENT_END("http.write_headers", request_, request_->url.spec());
         break;
       case STATE_WRITE_BODY:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.write_body", request_, request_->url.spec());
         rv = DoWriteBody();
         break;
       case STATE_WRITE_BODY_COMPLETE:
         rv = DoWriteBodyComplete(rv);
+        TRACE_EVENT_END("http.write_body", request_, request_->url.spec());
         break;
       case STATE_READ_HEADERS:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.read_headers", request_, request_->url.spec());
         rv = DoReadHeaders();
         break;
       case STATE_READ_HEADERS_COMPLETE:
         rv = DoReadHeadersComplete(rv);
+        TRACE_EVENT_END("http.read_headers", request_, request_->url.spec());
         break;
       case STATE_READ_BODY:
         DCHECK(rv == OK);
+        TRACE_EVENT_BEGIN("http.read_body", request_, request_->url.spec());
         rv = DoReadBody();
         break;
       case STATE_READ_BODY_COMPLETE:
         rv = DoReadBodyComplete(rv);
+        TRACE_EVENT_END("http.read_body", request_, request_->url.spec());
         break;
       default:
         NOTREACHED() << "bad state";
@@ -436,6 +461,8 @@ int HttpNetworkTransaction::DoConnectComplete(int result) {
     next_state_ = STATE_WRITE_HEADERS;
     if (using_tunnel_)
       establishing_tunnel_ = true;
+  } else if (IsCertificateError(result)) {
+    result = HandleCertificateError(result);
   }
   return result;
 }
@@ -450,8 +477,11 @@ int HttpNetworkTransaction::DoSSLConnectOverTunnel() {
 }
 
 int HttpNetworkTransaction::DoSSLConnectOverTunnelComplete(int result) {
-  if (result == OK)
+  if (result == OK) {
     next_state_ = STATE_WRITE_HEADERS;
+  } else if (IsCertificateError(result)) {
+    result = HandleCertificateError(result);
+  }
   return result;
 }
 
@@ -760,6 +790,38 @@ int HttpNetworkTransaction::DidReadResponseHeaders() {
   }
 
   return OK;
+}
+
+int HttpNetworkTransaction::HandleCertificateError(int error) {
+  DCHECK(using_ssl_);
+
+  const int kCertFlags = LOAD_IGNORE_CERT_COMMON_NAME_INVALID |
+                         LOAD_IGNORE_CERT_DATE_INVALID |
+                         LOAD_IGNORE_CERT_AUTHORITY_INVALID |
+                         LOAD_IGNORE_CERT_WRONG_USAGE;
+  if (request_->load_flags & kCertFlags) {
+    switch (error) {
+      case ERR_CERT_COMMON_NAME_INVALID:
+        if (request_->load_flags & LOAD_IGNORE_CERT_COMMON_NAME_INVALID)
+          error = OK;
+        break;
+      case ERR_CERT_DATE_INVALID:
+        if (request_->load_flags & LOAD_IGNORE_CERT_DATE_INVALID)
+          error = OK;
+        break;
+      case ERR_CERT_AUTHORITY_INVALID:
+        if (request_->load_flags & LOAD_IGNORE_CERT_AUTHORITY_INVALID)
+          error = OK;
+        break;
+    }
+  }
+
+  if (error != OK) {
+    SSLClientSocket* ssl_socket =
+        reinterpret_cast<SSLClientSocket*>(connection_.socket());
+    ssl_socket->GetSSLInfo(&response_.ssl_info);
+  }
+  return error;
 }
 
 // This method determines whether it is safe to resend the request after an

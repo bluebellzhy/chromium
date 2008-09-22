@@ -28,11 +28,16 @@ namespace {
 // Invoked when entries have been pruned, or removed. For example, if the
 // current entries are [google, digg, yahoo], with the current entry google,
 // and the user types in cnet, then digg and yahoo are pruned.
-void NotifyPrunedEntries(NavigationController* nav_controller) {
+void NotifyPrunedEntries(NavigationController* nav_controller,
+                         bool from_front,
+                         int count) {
+  NavigationController::PrunedDetails details;
+  details.from_front = from_front;
+  details.count = count;
   NotificationService::current()->Notify(
       NOTIFY_NAV_LIST_PRUNED,
       Source<NavigationController>(nav_controller),
-      NotificationService::NoDetails());
+      Details<NavigationController::PrunedDetails>(&details));
 }
 
 // Ensure the given NavigationEntry has a valid state, so that WebKit does not
@@ -119,9 +124,8 @@ class TabContentsCollector : public Task {
 
 // NavigationController ---------------------------------------------------
 
-// The maximum number of entries that a navigation controller can store.
 // static
-const static size_t kMaxEntryCount = 50;
+size_t NavigationController::max_entry_count_ = 50;
 
 // static
 bool NavigationController::check_for_repost_ = true;
@@ -164,9 +168,7 @@ NavigationController::NavigationController(TabContents* contents,
       pending_entry_(NULL),
       last_committed_entry_index_(-1),
       pending_entry_index_(-1),
-      max_entry_count_(kMaxEntryCount),
       active_contents_(contents),
-      alternate_nav_url_fetcher_entry_unique_id_(0),
       max_restored_page_id_(-1),
       ssl_manager_(this, NULL),
       needs_reload_(false),
@@ -186,9 +188,7 @@ NavigationController::NavigationController(
       pending_entry_(NULL),
       last_committed_entry_index_(-1),
       pending_entry_index_(-1),
-      max_entry_count_(kMaxEntryCount),
       active_contents_(NULL),
-      alternate_nav_url_fetcher_entry_unique_id_(0),
       max_restored_page_id_(-1),
       ssl_manager_(this, NULL),
       needs_reload_(true),
@@ -492,14 +492,6 @@ const SkBitmap& NavigationController::GetLazyFavIcon() const {
   }
 }
 
-void NavigationController::SetAlternateNavURLFetcher(
-    AlternateNavURLFetcher* alternate_nav_url_fetcher) {
-  DCHECK(!alternate_nav_url_fetcher_.get());
-  DCHECK(pending_entry_);
-  alternate_nav_url_fetcher_.reset(alternate_nav_url_fetcher);
-  alternate_nav_url_fetcher_entry_unique_id_ = pending_entry_->unique_id();
-}
-
 bool NavigationController::RendererDidNavigate(
     const ViewHostMsg_FrameNavigate_Params& params,
     bool is_interstitial,
@@ -571,31 +563,9 @@ bool NavigationController::RendererDidNavigate(
   details->entry = GetActiveEntry();
   details->is_in_page = IsURLInPageNavigation(params.url);
   details->is_main_frame = PageTransition::IsMainFrame(params.transition);
+  details->is_interstitial = is_interstitial;
+  details->serialized_security_info = params.security_info;
   NotifyNavigationEntryCommitted(details);
-
-  // Because this call may synchronously show an infobar, we do it last, to
-  // make sure all other state is stable and the infobar won't get blown away
-  // by some transition.
-  //
-  // TODO(brettw) bug 1324500: This logic should be moved out of here, it should
-  // listen for the notification instead.
-  if (alternate_nav_url_fetcher_.get())
-    alternate_nav_url_fetcher_->OnNavigatedToEntry();
-
-  // Broadcast the NOTIFY_FRAME_PROVISIONAL_LOAD_COMMITTED notification for use
-  // by the SSL manager.
-  //
-  // TODO(brettw) bug 1352803: this information should be combined with
-  // NOTIFY_NAV_ENTRY_COMMITTED so this one can be deleted.
-  ProvisionalLoadDetails provisional_details(details->is_main_frame,
-                                             is_interstitial,
-                                             details->is_in_page,
-                                             params.url,
-                                             params.security_info);
-  NotificationService::current()->
-      Notify(NOTIFY_FRAME_PROVISIONAL_LOAD_COMMITTED,
-             Source<NavigationController>(this),
-             Details<ProvisionalLoadDetails>(&provisional_details));
 
   // It is now a safe time to schedule collection for any tab contents of a
   // different type, because a navigation is necessary to get back to them.
@@ -880,7 +850,7 @@ void NavigationController::RemoveLastEntryForInterstitial() {
       NotifyNavigationEntryCommitted(&details);
     }
 
-    NotifyPrunedEntries(this);
+    NotifyPrunedEntries(this, false, 1);
   }
 }
 
@@ -959,18 +929,20 @@ void NavigationController::InsertEntry(NavigationEntry* entry) {
 
   // Prune any entries which are in front of the current entry.
   if (current_size > 0) {
-    bool pruned = false;
+    int num_pruned = 0;
     while (last_committed_entry_index_ < (current_size - 1)) {
-      pruned = true;
+      num_pruned++;
       entries_.pop_back();
       current_size--;
     }
-    if (pruned)  // Only notify if we did prune something.
-      NotifyPrunedEntries(this);
+    if (num_pruned > 0)  // Only notify if we did prune something.
+      NotifyPrunedEntries(this, false, num_pruned);
   }
 
-  if (entries_.size() >= max_entry_count_)
+  if (entries_.size() >= max_entry_count_) {
     RemoveEntryAtIndex(0);
+    NotifyPrunedEntries(this, true, 1);
+  }
 
   entries_.push_back(linked_ptr<NavigationEntry>(entry));
   last_committed_entry_index_ = static_cast<int>(entries_.size()) - 1;
@@ -1026,18 +998,6 @@ void NavigationController::NavigateToPendingEntry(bool reload) {
 
 void NavigationController::NotifyNavigationEntryCommitted(
     LoadCommittedDetails* details) {
-  // Reset the Alternate Nav URL Fetcher if we're loading some page it doesn't
-  // care about.  We must do this before calling Notify() below as that may
-  // result in the creation of a new fetcher.
-  //
-  // TODO(brettw) bug 1324500: this logic should be moved out of the controller!
-  const NavigationEntry* const entry = GetActiveEntry();
-  if (!entry ||
-      (entry->unique_id() != alternate_nav_url_fetcher_entry_unique_id_)) {
-    alternate_nav_url_fetcher_.reset();
-    alternate_nav_url_fetcher_entry_unique_id_ = 0;
-  }
-
   // TODO(pkasting): http://b/1113079 Probably these explicit notification paths
   // should be removed, and interested parties should just listen for the
   // notification below instead.

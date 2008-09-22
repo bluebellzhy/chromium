@@ -399,8 +399,6 @@ TEST_F(FileUtilTest, Move) {
   EXPECT_TRUE(file_util::PathExists(file_name_to));
 }
 
-// TODO(erikkay): implement
-#if defined(OS_WIN)
 TEST_F(FileUtilTest, CopyDirectoryRecursively) {
   // Create a directory.
   std::wstring dir_name_from(test_dir_);
@@ -497,7 +495,6 @@ TEST_F(FileUtilTest, CopyDirectory) {
   EXPECT_TRUE(file_util::PathExists(file_name_to));
   EXPECT_FALSE(file_util::PathExists(subdir_name_to));
 }
-#endif
 
 TEST_F(FileUtilTest, CopyFile) {
   // Create a directory
@@ -820,6 +817,18 @@ TEST_F(FileUtilTest, ReplaceExtensionTest) {
     file_util::ReplaceExtension(&file_name, kReplaceExtension[i].extension);
     EXPECT_EQ(file_name, kReplaceExtension[i].result);
   }
+}
+
+// Make sure ReplaceExtension doesn't replace an extension that occurs as one of
+// the directory names of the path.
+TEST_F(FileUtilTest, ReplaceExtensionTestWithPathSeparators) {
+  std::wstring path;
+  file_util::AppendToPath(&path, L"foo.bar");
+  file_util::AppendToPath(&path, L"foo");
+  // '/foo.bar/foo' with extension '.baz'
+  std::wstring result_path = path;
+  file_util::ReplaceExtension(&result_path, L".baz");
+  EXPECT_EQ(path + L".baz", result_path);
 }
 
 TEST_F(FileUtilTest, FileEnumeratorTest) {

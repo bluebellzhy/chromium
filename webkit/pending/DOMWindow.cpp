@@ -53,6 +53,7 @@
 #include "PlatformString.h"
 #include "Screen.h"
 #include "SecurityOrigin.h"
+#include "Settings.h"
 #include "ScriptController.h"
 #include <algorithm>
 #include <wtf/MathExtras.h>
@@ -497,7 +498,13 @@ void DOMWindow::close()
     if (!m_frame)
         return;
 
-    if (m_frame->loader()->openedByDOM() || m_frame->loader()->getHistoryLength() <= 1)
+    Settings* settings = m_frame->settings();
+    bool allow_scripts_to_close_windows =
+        (settings && settings->allowScriptsToCloseWindows());
+
+    if (m_frame->loader()->openedByDOM()
+        || m_frame->loader()->getHistoryLength() <= 1
+        || allow_scripts_to_close_windows)
         m_frame->scheduleClose();
 }
 

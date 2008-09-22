@@ -22,6 +22,7 @@
 #include "base/shared_event.h"
 #include "base/shared_memory.h"
 #include "base/string_util.h"
+#include "base/sys_info.h"
 #include "base/thread.h"
 #include "base/win_util.h"
 #include "chrome/app/result_codes.h"
@@ -35,6 +36,7 @@
 #include "chrome/browser/renderer_security_policy.h"
 #include "chrome/browser/resource_message_filter.h"
 #include "chrome/browser/sandbox_policy.h"
+#include "chrome/browser/spellchecker.h"
 #include "chrome/browser/visitedlink_master.h"
 #include "chrome/browser/web_contents.h"
 #include "chrome/common/chrome_constants.h"
@@ -73,7 +75,7 @@ unsigned int GetMaxRendererProcessCount() {
 
   static unsigned int max_count = 0;
   if (!max_count) {
-    int memory_tier = env_util::GetPhysicalMemoryMB() / 256;
+    int memory_tier = base::SysInfo::AmountOfPhysicalMemoryMB() / 256;
     if (memory_tier >= arraysize(kMaxRenderersByRamTier))
       max_count = chrome::kMaxRendererProcessCount;
     else
@@ -367,6 +369,11 @@ bool RenderProcessHost::Init() {
         if (!AddGenericPolicy(policy)) {
           NOTREACHED();
           return false;
+        }
+
+        if (!AddDllEvictionPolicy(policy)) {
+          NOTREACHED();
+          return false;          
         }
 
         result = broker_service->SpawnTarget(renderer_path.c_str(),
@@ -720,6 +727,12 @@ void RenderProcessHost::WidgetHidden() {
     DCHECK(!backgrounded_);
     SetBackgrounded(true);
   }
+}
+
+void RenderProcessHost::AddWord(const std::wstring& word) {
+  base::Thread* io_thread = g_browser_process->io_thread();
+  io_thread->message_loop()->PostTask(FROM_HERE, NewRunnableMethod(
+      profile_->GetSpellChecker(), &SpellChecker::AddWord, word));
 }
 
 // NotificationObserver implementation.

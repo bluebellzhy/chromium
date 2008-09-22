@@ -5,10 +5,13 @@
 #ifndef WEBKIT_GLUE_WEBFRAMELOADERCLIENT_IMPL_H__
 #define WEBKIT_GLUE_WEBFRAMELOADERCLIENT_IMPL_H__
 
-#pragma warning(push, 0)
-#include "FrameLoaderClient.h"
-#pragma warning(pop)
+#include "base/compiler_specific.h"
 
+MSVC_PUSH_WARNING_LEVEL(0);
+#include "FrameLoaderClient.h"
+MSVC_POP_WARNING();
+
+#include "build/build_config.h"
 #include "googleurl/src/gurl.h"
 #include "webkit/glue/webview_delegate.h"
 #include "webkit/glue/window_open_disposition.h"

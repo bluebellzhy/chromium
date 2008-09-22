@@ -10,6 +10,8 @@
 #include "base/path_service.h"
 #include "chrome/app/chrome_dll_resource.h"
 #include "chrome/app/theme/theme_resources.h"
+#include "chrome/browser/bookmarks/bookmark_drag_data.h"
+#include "chrome/browser/bookmarks/bookmark_model.h"
 #include "chrome/browser/browser.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/character_encoding.h"
@@ -277,11 +279,11 @@ void BrowserToolbarView::Layout() {
     back_->SetBounds(kControlIndent, kControlVertOffset, sz.cx, sz.cy);
 
     forward_->GetPreferredSize(&sz);
-    forward_->SetBounds(back_->GetX() + back_->GetWidth(), kControlVertOffset,
+    forward_->SetBounds(back_->x() + back_->width(), kControlVertOffset,
                         sz.cx, sz.cy);
 
     reload_->GetPreferredSize(&sz);
-    reload_->SetBounds(forward_->GetX() + forward_->GetWidth() +
+    reload_->SetBounds(forward_->x() + forward_->width() +
                            kControlHorizOffset,
                        kControlVertOffset, sz.cx, sz.cy);
 
@@ -294,11 +296,11 @@ void BrowserToolbarView::Layout() {
       sz = CSize(0, 0);
       home_->SetVisible(false);
     }
-    home_->SetBounds(reload_->GetX() + reload_->GetWidth() + offset,
+    home_->SetBounds(reload_->x() + reload_->width() + offset,
                      kControlVertOffset, sz.cx, sz.cy);
 
     star_->GetPreferredSize(&sz);
-    star_->SetBounds(home_->GetX() + home_->GetWidth() + kControlHorizOffset,
+    star_->SetBounds(home_->x() + home_->width() + kControlHorizOffset,
                      kControlVertOffset, sz.cx, sz.cy);
 
     page_menu_->GetPreferredSize(&sz);
@@ -311,7 +313,7 @@ void BrowserToolbarView::Layout() {
     location_bar_height = sz.cy;
     right_side_width += sz.cx;
 
-    left_side_width = star_->GetX() + star_->GetWidth();
+    left_side_width = star_->x() + star_->width();
   } else {
     CSize temp;
     location_bar_->GetPreferredSize(&temp);
@@ -322,20 +324,20 @@ void BrowserToolbarView::Layout() {
   }
 
   location_bar_->SetBounds(left_side_width, location_bar_y,
-                           GetWidth() - left_side_width - right_side_width,
+                           width() - left_side_width - right_side_width,
                            location_bar_height);
 
   if (IsDisplayModeNormal()) {
-    go_->SetBounds(location_bar_->GetX() + location_bar_->GetWidth(),
+    go_->SetBounds(location_bar_->x() + location_bar_->width(),
                    kControlVertOffset, sz.cx, sz.cy);
 
     // Make sure the Page menu never overlaps the location bar.
-    int page_x = go_->GetX() + go_->GetWidth() + kMenuButtonOffset;
+    int page_x = go_->x() + go_->width() + kMenuButtonOffset;
     page_menu_->GetPreferredSize(&sz);
-    page_menu_->SetBounds(page_x, kControlVertOffset, sz.cx, go_->GetHeight());
+    page_menu_->SetBounds(page_x, kControlVertOffset, sz.cx, go_->height());
     app_menu_->GetPreferredSize(&sz);
-    app_menu_->SetBounds(page_menu_->GetX() + page_menu_->GetWidth(),
-                         page_menu_->GetY(), sz.cx, go_->GetHeight());
+    app_menu_->SetBounds(page_menu_->x() + page_menu_->width(),
+                         page_menu_->y(), sz.cx, go_->height());
   }
 }
 
@@ -668,6 +670,11 @@ int BrowserToolbarView::GetDragOperations(ChromeViews::View* sender,
       !tab_->GetURL().is_valid()) {
     return DragDropTypes::DRAG_NONE;
   }
+  if (profile_ && profile_->GetBookmarkModel() &&
+      profile_->GetBookmarkModel()->IsBookmarked(tab_->GetURL())) {
+    return DragDropTypes::DRAG_MOVE | DragDropTypes::DRAG_COPY |
+           DragDropTypes::DRAG_LINK;
+  }
   return DragDropTypes::DRAG_COPY | DragDropTypes::DRAG_LINK;
 }
 
@@ -679,6 +686,18 @@ void BrowserToolbarView::WriteDragData(ChromeViews::View* sender,
       GetDragOperations(sender, press_x, press_y) != DragDropTypes::DRAG_NONE);
 
   UserMetrics::RecordAction(L"Toolbar_DragStar", profile_);
+
+  // If there is a bookmark for the URL, add the bookmark drag data for it. We
+  // do this to ensure the bookmark is moved, rather than creating an new
+  // bookmark.
+  if (profile_ && profile_->GetBookmarkModel()) {
+    BookmarkNode* node = profile_->GetBookmarkModel()->
+        GetMostRecentlyAddedNodeForURL(tab_->GetURL());
+    if (node) {
+      BookmarkDragData bookmark_data(node);
+      bookmark_data.Write(profile_, data);
+    }
+  }
 
   drag_utils::SetURLAndDragImage(tab_->GetURL(), tab_->GetTitle(),
                                  tab_->GetFavIcon(), data);

@@ -168,6 +168,8 @@ void FreeChunks(std::deque<SBChunk>* chunks) {
   }
 }
 
+#if defined(OS_WIN)
+// TODO(port): remove conditional #ifs when google_util is ported
 GURL GeneratePhishingReportUrl(const std::string& report_page,
                                const std::string& url_to_report) {
   Locale locale = Locale::getDefault();
@@ -183,6 +185,7 @@ GURL GeneratePhishingReportUrl(const std::string& report_page,
                                current_esc.c_str()));
   return google_util::AppendGoogleLocaleParam(report_url);
 }
+#endif
 
 }  // namespace safe_browsing_util
 
@@ -476,7 +479,6 @@ void SBHostInfo::RemoveSubEntry(int list_id, int chunk_id) {
       data.reset(new char[entry->Size()]);
       new_sub_entry = reinterpret_cast<SBEntry*>(data.get());
       memcpy(new_sub_entry, entry, entry->Size());
-      int new_prefix_count = 0;
       // Remove any matching prefixes.
       for (int i = 0; i < new_sub_entry->prefix_count(); ++i) {
         if (new_sub_entry->ChunkIdAtPrefix(i) == chunk_id)
@@ -613,4 +615,3 @@ bool SBHostInfo::GetNextEntry(const SBEntry** entry) {
 
   return false;
 }
-

@@ -178,6 +178,9 @@ namespace WebCore {
         void setEnforceCSSMIMETypeInStrictMode(bool);
         bool enforceCSSMIMETypeInStrictMode() { return m_enforceCSSMIMETypeInStrictMode; }
         
+        void setAllowScriptsToCloseWindows(bool);
+        bool allowScriptsToCloseWindows() const { return m_allow_scripts_to_close_windows; }
+
     private:
         Page* m_page;
         
@@ -226,6 +229,7 @@ namespace WebCore {
         bool m_zoomsTextOnly : 1;
         bool m_enforceCSSMIMETypeInStrictMode : 1;
 		bool m_usesEncodingDetector : 1;
+        bool m_allow_scripts_to_close_windows : 1;
     };
 
 } // namespace WebCore

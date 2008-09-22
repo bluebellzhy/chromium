@@ -14,7 +14,8 @@ elif p == 'name':
   Progress('$TARGET\r', overwrite=True, file=open('con', 'w'))
 
 
-SetOption('warn', ['no-missing-sconscript'] + GetOption('warn'))
+default_warnings = ['no-missing-sconscript', 'no-no-parallel-support']
+SetOption('warn', default_warnings + GetOption('warn'))
 
 
 load = ARGUMENTS.get('LOAD')
@@ -62,6 +63,7 @@ env = Environment(
     BSPATCH_DIR           = '$THIRD_PARTY_DIR/bspatch',
     BZIP2_DIR             = '$THIRD_PARTY_DIR/bzip2',
     ICU38_DIR             = '$THIRD_PARTY_DIR/icu38',
+    LIBEVENT_DIR          = '$THIRD_PARTY_DIR/libevent',
     LIBJPEG_DIR           = '$THIRD_PARTY_DIR/libjpeg',
     LIBPNG_DIR            = '$THIRD_PARTY_DIR/libpng',
     LIBXML_DIR            = '$THIRD_PARTY_DIR/libxml',
@@ -311,21 +313,10 @@ elif env['PLATFORM'] == 'posix':
       'webkit',
   ]
 
-  # TODO: fix code that triggers these warnings.
   excluded_warnings = [
-    '-Wno-unknown-pragmas',  # TODO: remove all the Windows-specific #pragmas.
-    '-Wno-unused-function',  # TODO: there's just one Skia function.
-    '-Wno-unused-variable',  # TODO: there's just one v8 function.
-    '-Wno-switch',           # TODO: this is likely masking real bugs.
-    '-Wno-sign-compare',     # TODO: this is likely masking real bugs.
-    '-Wno-missing-braces',   # TODO: just a file in net.
-
-    # Not TODO: This is technically nonstandard, but a lot of the image
-    # decoding code depends on it and osx wants this.
-    '-Wno-multichar',
-
-    '-Wno-deprecated',  # Needed for using ext/hash_map on GCC 4.3
-    '-Wno-reorder',     # TODO: many tedious small fixes.
+    # TODO: Clean up uses of ext/hash_map and remove this.
+    # (see unordered_map and base/hash_tables.h)
+    '-Wno-deprecated'  # Needed for using ext/hash_map on GCC 4.3
   ]
   env.Replace(
       CCFLAGS = ['-m32', '-g', '-pthread'],
@@ -465,6 +456,9 @@ if LoadComponent('breakpad'):
 if LoadComponent('chrome'):
   sconscripts.append('$CHROME_DIR/SConscript')
 
+if LoadComponent('gears'):
+  sconscripts.append('$GEARS_DIR/SConscript')
+
 if LoadComponent('google_update'):
   sconscripts.append('$GOOGLE_UPDATE_DIR/SConscript')
 
@@ -506,6 +500,10 @@ if LoadComponent('third_party'):
       '$LIBJPEG_DIR/SConscript',
       '$LIBXML_DIR/SConscript',
       '$LIBXSLT_DIR/SConscript',
+    ])
+  if env['PLATFORM'] == 'posix':
+    sconscripts.extend([
+      '$LIBEVENT_DIR/SConscript',
     ])
   # This is temporary until we get this lib to build on other platforms.
   if env['PLATFORM'] == 'win32':

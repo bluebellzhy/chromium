@@ -606,9 +606,7 @@ void WebPluginDelegateImpl::MoveWindow(HWND window,
   // so we don't need to call DeleteObject(hrgn)
   ::SetWindowRgn(window, hrgn, FALSE);
 
-  // Move the window now, but do not paint it.  We expect to be painted later,
-  // when our parent window paints.
-  unsigned long flags = SWP_NOREDRAW;
+  unsigned long flags = 0;
   if (visible)
     flags |= SWP_SHOWWINDOW;
   else
@@ -1002,7 +1000,18 @@ WebCursor::Type WebPluginDelegateImpl::GetCursorType(
 
 WebPluginResourceClient* WebPluginDelegateImpl::CreateResourceClient(
     int resource_id, const std::string &url, bool notify_needed,
-    void *notify_data) {
+    void *notify_data, void* existing_stream) {
+  // Stream already exists. This typically happens for range requests
+  // initiated via NPN_RequestRead.
+  if (existing_stream) {
+    NPAPI::PluginStream* plugin_stream =
+        reinterpret_cast<NPAPI::PluginStream*>(existing_stream);
+    
+    plugin_stream->CancelRequest();
+
+    return plugin_stream->AsResourceClient();
+  }
+
   if (notify_needed) {
     instance()->SetURLLoadData(GURL(url.c_str()), notify_data);
   }

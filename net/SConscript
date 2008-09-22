@@ -92,7 +92,7 @@ if env['PLATFORM'] == 'win32':
       'base/upload_data_stream.cc',
       'base/wininet_util.cc',
       'base/winsock_init.cc',
-      'base/x509_certificate.cc',
+      'base/x509_certificate_win.cc',
       'http/http_network_layer.cc',
       'http/http_network_transaction.cc',
       'http/http_transaction_winhttp.cc',
@@ -126,12 +126,14 @@ if env['PLATFORM'] == 'win32':
 if env['PLATFORM'] == 'darwin':
   input_files.extend([
       'base/platform_mime_util_mac.mm',
+      'base/x509_certificate_mac.cc',
   ])
 
 if env['PLATFORM'] == 'posix':
   input_files.extend([
       # TODO(tc): gnome-vfs? xdgmime? /etc/mime.types?
       'base/platform_mime_util_linux.cc',
+      'base/tcp_client_socket_libevent.cc',
   ])
 
 if env['PLATFORM'] in ('darwin', 'posix'):
@@ -206,6 +208,13 @@ if env['PLATFORM'] == 'win32':
       ],
   )
 
+if env['PLATFORM'] == 'posix':
+  env_tests.Append(
+      LIBS = [
+          'event',
+      ],
+  )
+
 
 unittest_files = [
     'base/auth_cache_unittest.cc',
@@ -222,7 +231,10 @@ unittest_files = [
     'base/net_util_unittest.cc',
     'base/registry_controlled_domain_unittest.cc',
     'base/run_all_unittests.cc',
+    'base/tcp_client_socket_unittest.cc',
+    'base/test_completion_callback_unittest.cc',
     'disk_cache/addr_unittest.cc',
+    'disk_cache/backend_unittest.cc',
     'disk_cache/block_files_unittest.cc',
     'disk_cache/disk_cache_test_base.cc',
     'disk_cache/disk_cache_test_util.cc',
@@ -240,9 +252,7 @@ if env['PLATFORM'] == 'win32':
       'base/directory_lister_unittest.cc',
       'base/ssl_config_service_unittest.cc',
       'base/ssl_client_socket_unittest.cc',
-      'base/tcp_client_socket_unittest.cc',
       'base/wininet_util_unittest.cc',
-      'disk_cache/backend_unittest.cc',
       'http/http_cache_unittest.cc',
       'http/http_network_layer_unittest.cc',
       'http/http_network_transaction_unittest.cc',
@@ -328,9 +338,4 @@ if env['PLATFORM'] == 'win32':
   SConscript(sconscript_files, exports=['env'])
 
 
-# Setup alias for building all parts of net.
-if env['PLATFORM'] == 'win32':
-  icudata = '../icudt38.dll'
-else:
-  icudata = '../icudt38l.dat'
-env.Alias('net', ['.', installed_tests, icudata])
+env.Alias('net', ['.', installed_tests])

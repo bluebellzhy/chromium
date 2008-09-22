@@ -9,7 +9,6 @@
 
 #include "base/linked_ptr.h"
 #include "base/ref_counted.h"
-#include "chrome/browser/alternate_nav_url_fetcher.h"
 #include "chrome/browser/session_service.h"
 #include "chrome/browser/site_instance.h"
 #include "chrome/browser/ssl_manager.h"
@@ -42,6 +41,8 @@ class NavigationController {
   };
 
   // Provides the details for a NOTIFY_NAV_ENTRY_COMMITTED notification.
+  // TODO(brettw) this mostly duplicates ProvisionalLoadDetails, it would be
+  // nice to unify these somehow.
   struct LoadCommittedDetails {
     // By default, the entry will be filled according to a new main frame
     // navigation.
@@ -49,7 +50,8 @@ class NavigationController {
         : entry(NULL),
           is_auto(false),
           is_in_page(false),
-          is_main_frame(true) {
+          is_main_frame(true),
+          is_interstitial(false) {
     }
 
     // The committed entry. This will be the active entry in the controller.
@@ -73,6 +75,16 @@ class NavigationController {
     // sub-frame.
     bool is_main_frame;
 
+    // True when this navigation is for an interstitial page. Many consumers
+    // won't care about interstitial loads.
+    bool is_interstitial;
+
+    // When the committed load is a web page from the renderer, this string
+    // specifies the security state if the page is secure.
+    // See ViewHostMsg_FrameNavigate_Params.security_info, where it comes from.
+    // Use SSLManager::DeserializeSecurityInfo to decode it.
+    std::string serialized_security_info;
+
     // Returns whether the user probably felt like they navigated somewhere new.
     // We often need this logic for showing or hiding something, and this
     // returns true only for main frame loads that the user initiated, that go
@@ -80,6 +92,16 @@ class NavigationController {
     bool is_user_initiated_main_frame_load() const {
       return !is_auto && !is_in_page && is_main_frame;
     }
+  };
+
+  // Details sent for NOTIFY_NAV_LIST_PRUNED.
+  struct PrunedDetails {
+    // If true, count items were removed from the front of the list, otherwise
+    // count items were removed from the back of the list.
+    bool from_front;
+
+    // Number of items removed.
+    int count;
   };
 
   // ---------------------------------------------------------------------------
@@ -311,10 +333,6 @@ class NavigationController {
   const std::wstring& GetLazyTitle() const;
   const SkBitmap& GetLazyFavIcon() const;
 
-  // TODO(brettw) bug 1324500: move this out of here.
-  void SetAlternateNavURLFetcher(
-      AlternateNavURLFetcher* alternate_nav_url_fetcher);
-
   // Returns the identifier used by session restore.
   const SessionID& session_id() const { return session_id_; }
 
@@ -336,8 +354,13 @@ class NavigationController {
   // testing.
   static void DisablePromptOnRepost();
 
+  // Maximum number of entries before we start removing entries from the front.
+  static void set_max_entry_count(size_t max_entry_count) {
+    max_entry_count_ = max_entry_count;
+  }
+  static size_t max_entry_count() { return max_entry_count_; }
+
  private:
-  FRIEND_TEST(NavigationControllerTest, EnforceMaxNavigationCount);
   class RestoreHelper;
   friend class RestoreHelper;
   friend class TabContents;  // For invoking OnReservedPageIDRange.
@@ -512,10 +535,6 @@ class NavigationController {
   // The tab contents that is currently active.
   TabContents* active_contents_;
 
-  // The AlternateNavURLFetcher and its associated active entry, if any.
-  scoped_ptr<AlternateNavURLFetcher> alternate_nav_url_fetcher_;
-  int alternate_nav_url_fetcher_entry_unique_id_;
-
   // The max restored page ID in this controller, if it was restored.  We must
   // store this so that WebContents can tell any renderer in charge of one of
   // the restored entries to update its max page ID.
@@ -544,7 +563,7 @@ class NavigationController {
   static bool check_for_repost_;
 
   // The maximum number of entries that a navigation controller can store.
-  size_t max_entry_count_;
+  static size_t max_entry_count_;
 
   DISALLOW_COPY_AND_ASSIGN(NavigationController);
 };

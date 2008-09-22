@@ -165,10 +165,18 @@ void Window::UpdateWindowIcon() {
   SkBitmap icon = window_delegate_->GetWindowIcon();
   if (!icon.isNull()) {
     HICON windows_icon = IconUtil::CreateHICONFromSkBitmap(icon);
-    SendMessage(GetHWND(), WM_SETICON, ICON_SMALL,
-                reinterpret_cast<LPARAM>(windows_icon));
-    SendMessage(GetHWND(), WM_SETICON, ICON_BIG,
-                reinterpret_cast<LPARAM>(windows_icon));
+    // We need to make sure to destroy the previous icon, otherwise we'll leak
+    // these GDI objects until we crash!
+    HICON old_icon = reinterpret_cast<HICON>(
+        SendMessage(GetHWND(), WM_SETICON, ICON_SMALL,
+                    reinterpret_cast<LPARAM>(windows_icon)));
+    if (old_icon)
+      DestroyIcon(old_icon);
+    old_icon = reinterpret_cast<HICON>(
+        SendMessage(GetHWND(), WM_SETICON, ICON_BIG,
+                    reinterpret_cast<LPARAM>(windows_icon)));
+    if (old_icon)
+      DestroyIcon(old_icon);
   }
 }
 
@@ -435,8 +443,8 @@ LRESULT Window::OnSetCursor(HWND window, UINT hittest_code, UINT message) {
 }
 
 void Window::OnSize(UINT size_param, const CSize& new_size) {
-  if (root_view_->GetWidth() == new_size.cx &&
-      root_view_->GetHeight() == new_size.cy)
+  if (root_view_->width() == new_size.cx &&
+      root_view_->height() == new_size.cy)
     return;
 
   SaveWindowPosition();

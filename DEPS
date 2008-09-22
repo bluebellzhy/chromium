@@ -1,6 +1,6 @@
 deps = {
   "src/breakpad/src":
-    "http://google-breakpad.googlecode.com/svn/trunk/src@281",
+    "http://google-breakpad.googlecode.com/svn/trunk/src@285",
 
   "src/googleurl":
     "http://google-url.googlecode.com/svn/trunk@92",
@@ -15,7 +15,7 @@ deps = {
     "/trunk/deps/third_party/cygwin@1788",
 
   "src/third_party/icu38":
-    "/trunk/deps/third_party/icu38@2100",
+    "/trunk/deps/third_party/icu38@2280",
 
   "src/third_party/python_24":
     "/trunk/deps/third_party/python_24@1790",
@@ -24,7 +24,7 @@ deps = {
     "/trunk/deps/third_party/svn@1791",
 
   "src/v8":
-    "http://v8.googlecode.com/svn/trunk@267",
+    "http://v8.googlecode.com/svn/trunk@329",
 
   "src/webkit/data/layout_tests/LayoutTests":
     "http://svn.webkit.org/repository/webkit/trunk/LayoutTests@36102",

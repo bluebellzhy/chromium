@@ -4,6 +4,7 @@
 
 #include "chrome/browser/google_url_tracker.h"
 
+#include "base/compiler_specific.h"
 #include "base/string_util.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/profile.h"
@@ -15,10 +16,9 @@ const char GoogleURLTracker::kDefaultGoogleHomepage[] =
     "http://www.google.com/";
 
 GoogleURLTracker::GoogleURLTracker()
-    : google_url_(g_browser_process->local_state()->GetString(
-          prefs::kLastKnownGoogleURL)),
-#pragma warning(suppress: 4355)  // Okay to pass "this" here.
-      fetcher_factory_(this),
+    : google_url_(WideToUTF8(g_browser_process->local_state()->GetString(
+          prefs::kLastKnownGoogleURL))),
+      ALLOW_THIS_IN_INITIALIZER_LIST(fetcher_factory_(this)),
       in_startup_sleep_(true),
       already_fetched_(false),
       need_to_fetch_(false),
@@ -120,7 +120,11 @@ void GoogleURLTracker::StartFetchIfDesirable() {
                             // run of the browser.
   fetcher_.reset(new URLFetcher(GURL(kDefaultGoogleHomepage), URLFetcher::HEAD,
                                 this));
-  fetcher_->set_load_flags(net::LOAD_DISABLE_CACHE);
+  // We don't want this fetch to affect existing state in the profile.  For
+  // example, if a user has no Google cookies, this automatic check should not
+  // cause one to be set, lest we alarm the user.
+  fetcher_->set_load_flags(net::LOAD_DISABLE_CACHE |
+                           net::LOAD_DO_NOT_SAVE_COOKIES);
   fetcher_->set_request_context(Profile::GetDefaultRequestContext());
   fetcher_->Start();
 }

@@ -8,6 +8,7 @@
 #define SECURITY_WIN32  // Needs to be defined before including security.h
 
 #include <windows.h>
+#include <wincrypt.h>
 #include <security.h>
 
 #include <string>
@@ -66,6 +67,7 @@ class SSLClientSocket : public ClientSocket {
   int DoPayloadWriteComplete(int result);
 
   int DidCompleteHandshake();
+  int VerifyServerCert();
 
   CompletionCallbackImpl<SSLClientSocket> io_callback_;
   scoped_ptr<ClientSocket> transport_;
@@ -94,6 +96,8 @@ class SSLClientSocket : public ClientSocket {
   State next_state_;
 
   SecPkgContext_StreamSizes stream_sizes_;
+  PCCERT_CONTEXT server_cert_;
+  int server_cert_status_;
 
   CredHandle creds_;
   CtxtHandle ctxt_;

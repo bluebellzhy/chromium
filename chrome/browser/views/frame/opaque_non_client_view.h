@@ -100,6 +100,9 @@ class OpaqueNonClientView : public ChromeViews::NonClientView,
   // The layout rect of the title, if visible.
   gfx::Rect title_bounds_;
 
+  // The layout rect of the window icon.
+  gfx::Rect icon_bounds_;
+
   // The layout rect of the distributor logo, if visible.
   gfx::Rect logo_bounds_;
 
@@ -129,11 +132,16 @@ class OpaqueNonClientView : public ChromeViews::NonClientView,
   std::wstring accessible_name_;
 
   static void InitClass();
+  static void InitAppWindowResources();
   static SkBitmap distributor_logo_;
+  static SkBitmap app_top_left_;
+  static SkBitmap app_top_center_;
+  static SkBitmap app_top_right_;
   static WindowResources* active_resources_;
   static WindowResources* inactive_resources_;
   static WindowResources* active_otr_resources_;
   static WindowResources* inactive_otr_resources_;
+  static ChromeFont title_font_;
 
   DISALLOW_EVIL_CONSTRUCTORS(OpaqueNonClientView);
 };
