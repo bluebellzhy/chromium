@@ -150,7 +150,7 @@ class WebPluginImpl : public WebPlugin,
   // Returns true on success.
   bool InitiateHTTPRequest(int resource_id, WebPluginResourceClient* client,
                            const char* method, const char* buf, int buf_len,
-                           const GURL& url
+                           const GURL& url,
                            const char* range_info);
 
   gfx::Rect GetWindowClipRect(const gfx::Rect& rect);
