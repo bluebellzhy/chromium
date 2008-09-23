@@ -1124,13 +1124,6 @@ void WebViewImpl::SetPreferences(const WebPreferences& preferences) {
   // draw some form controls.  We let it know each time the size changes.
   WebCore::RenderThemeWin::setDefaultFontSize(preferences.default_font_size);
 #endif
-
-  // Used to make sure if the frameview needs layout, layout is triggered
-  // during Document::updateLayout().  TODO(tc): See bug 1199269 for more
-  // details.
-  FrameView* frameview = main_frame()->frameview();
-  if (frameview && frameview->needsLayout())
-    frameview->setNeedsLayout();
 }
 
 const WebPreferences& WebViewImpl::GetPreferences() {

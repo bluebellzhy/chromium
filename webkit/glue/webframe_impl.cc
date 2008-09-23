@@ -1414,12 +1414,9 @@ WebFrameImpl* WebFrameImpl::FromFrame(WebCore::Frame* frame) {
 
 void WebFrameImpl::Layout() {
   // layout this frame
-  if (frame_->document())
-    frame_->document()->updateLayout();
-  // layout child frames
-  Frame* child = frame_->tree()->firstChild();
-  for (; child; child = child->tree()->nextSibling())
-    FromFrame(child)->Layout();
+  FrameView* view = frame_->view();
+  if (view)
+    view->layout();
 }
 
 void WebFrameImpl::Paint(gfx::PlatformCanvas* canvas, const gfx::Rect& rect) {
