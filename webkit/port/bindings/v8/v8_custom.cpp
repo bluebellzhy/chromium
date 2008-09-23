@@ -3375,8 +3375,10 @@ ACCESSOR_SETTER(HTMLOptionsCollectionLength) {
 
 ACCESSOR_GETTER(SVGLengthValue) {
   INC_STATS(L"DOM.SVGLength.value");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
+  V8SVGPODTypeWrapper<SVGLength>* wrapper = V8Proxy::FastToNativeObject<V8SVGPODTypeWrapper<SVGLength> >(V8ClassIndex::SVGLENGTH, info.Holder());
+  SVGLength imp_instance = *wrapper;
+  SVGLength* imp = &imp_instance;
+  return v8::Number::New(imp->value(V8Proxy::GetSVGContext(wrapper)));
 }
 
 CALLBACK_FUNC_DECL(SVGLengthConvertToSpecifiedUnits) {

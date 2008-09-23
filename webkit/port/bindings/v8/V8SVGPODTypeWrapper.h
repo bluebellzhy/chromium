@@ -160,11 +160,14 @@ struct PODTypeReadWriteHashInfo {
     { }
 
     // Deleted value
-    explicit PODTypeReadWriteHashInfo(bool)
+    explicit PODTypeReadWriteHashInfo(WTF::HashTableDeletedValueType)
         : creator(reinterpret_cast<PODTypeCreator*>(-1))
-        , getter(0)
-        , setter(0)
-    { }
+    {
+    }
+    bool isHashTableDeletedValue() const
+    {
+        return creator == reinterpret_cast<PODTypeCreator*>(-1);
+    }
 
     PODTypeReadWriteHashInfo(PODTypeCreator* _creator, GetterMethod _getter, SetterMethod _setter)
         : creator(_creator)
@@ -173,11 +176,6 @@ struct PODTypeReadWriteHashInfo {
     {
         ASSERT(creator);
         ASSERT(getter);
-    }
-
-    bool isHashTableDeletedValue() const
-    {
-        return creator == reinterpret_cast<PODTypeCreator*>(-1);
     }
 
     bool operator==(const PODTypeReadWriteHashInfo& other) const
@@ -214,7 +212,7 @@ struct PODTypeReadWriteHashInfoTraits : WTF::GenericHashTraits<PODTypeReadWriteH
 
     static const CacheInfo& emptyValue()
     {
-        static CacheInfo key(true);
+        static CacheInfo key;
         return key;
     }
 
@@ -271,7 +269,7 @@ public:
             if (it->second != wrapper)
                 continue;
 
-            // It's guaruanteed that there's just one object we need to take care of.
+            // It's guaranteed that there's just one object we need to take care of.
             map.remove(it->first);
             break;
         }
