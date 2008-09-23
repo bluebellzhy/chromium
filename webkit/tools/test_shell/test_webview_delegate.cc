@@ -335,6 +335,12 @@ void TestWebViewDelegate::DidFinishDocumentLoadForFrame(WebView* webview,
   if (shell_->ShouldDumpFrameLoadCallbacks()) {
     printf("%S - didFinishDocumentLoadForFrame\n",
            GetFrameDescription(frame).c_str());
+  } else {
+    unsigned pending_unload_events = frame->PendingFrameUnloadEventCount();
+    if (pending_unload_events) {
+      printf("%S - has %u onunload handler(s)\n",
+          GetFrameDescription(frame).c_str(), pending_unload_events);
+    }
   }
 }
 

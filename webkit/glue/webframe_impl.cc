@@ -91,6 +91,7 @@
 #include "DocumentLoader.h"
 #include "DOMWindow.h"
 #include "Editor.h"
+#include "EventHandler.h"
 #include "Frame.h"
 #include "FrameLoader.h"
 #include "FrameLoadRequest.h"
@@ -1812,4 +1813,8 @@ bool WebFrameImpl::IsReloadAllowingStaleData() const {
            loader->policyLoadType();
   }
   return false;
+}
+
+int WebFrameImpl::PendingFrameUnloadEventCount() const {
+  return frame()->eventHandler()->pendingFrameUnloadEventCount();
 }

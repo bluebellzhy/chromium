@@ -421,6 +421,9 @@ class WebFrameImpl : public WebFrame {
   // was searched.
   bool ShouldScopeMatches(FindInPageRequest request);
 
+  // Only for test_shell
+  int PendingFrameUnloadEventCount() const;
+
   // Determines whether to invalidate the content area and scrollbar.
   void InvalidateIfNecessary();
 

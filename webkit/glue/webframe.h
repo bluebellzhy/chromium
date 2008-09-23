@@ -350,6 +350,9 @@ class WebFrame : public base::RefCounted<WebFrame> {
   // but no additional loads should occur.
   virtual bool IsReloadAllowingStaleData() const = 0;
 
+  // Only for test_shell
+  virtual int PendingFrameUnloadEventCount() const = 0;
+
  private:
   DISALLOW_EVIL_CONSTRUCTORS(WebFrame);
 };
