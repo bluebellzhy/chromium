@@ -1824,8 +1824,6 @@ v8::Handle<v8::Value> V8Proxy::ToV8Object(V8ClassIndex::V8WrapperType type, void
       return StyleSheetToV8Object(static_cast<StyleSheet*>(imp));
     case V8ClassIndex::DOMWINDOW:
       return WindowToV8Object(static_cast<DOMWindow*>(imp));
-    case V8ClassIndex::CANVASRENDERINGCONTEXT2D:
-      return CanvasRenderingContext2DToV8Object(static_cast<CanvasRenderingContext2D*>(imp));
 #if ENABLE(SVG)
     SVGNONNODE_WRAPPER_TYPES(MAKE_CASE)
       if (type == V8ClassIndex::SVGELEMENTINSTANCE)
@@ -2616,12 +2614,6 @@ v8::Handle<v8::Object> V8Proxy::CSSRuleToV8Object(CSSRule* rule)
         // Only update the DOM object map if the result is non-empty.
         dom_object_map().set(rule, v8::Persistent<v8::Object>::New(result));
     return result;
-}
-
-v8::Handle<v8::Object> V8Proxy::CanvasRenderingContext2DToV8Object(CanvasRenderingContext2D* ctx)
-{
-  v8::Handle<v8::Object> result = InstantiateV8Object(V8ClassIndex::CANVASRENDERINGCONTEXT2D, ctx);
-  return result;
 }
 
 v8::Handle<v8::Object> V8Proxy::WindowToV8Object(DOMWindow* window)
