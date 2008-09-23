@@ -368,6 +368,17 @@ V8 # LayoutTests/http/tests/security/postMessage/domain-unaffected-by-document-d
 V8 # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-domain.html = TIMEOUT
 V8 # LayoutTests/http/tests/messaging/cross-domain-message-send.html = TIMEOUT
 
+// these came to rely on window.postMessage for the testing needs ...
+V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame-uppercase.html = FAIL
+V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame.html = FAIL
+V8 # LayoutTests/http/tests/security/javascriptURL/xss-ALLOWED-to-javascript-url-sub-frame.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-JSTargetNode-onclick-addEventListener.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-JSTargetNode-onclick-shortcut.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-XMLHttpRequest-addEventListener.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-XMLHttpRequest-shortcut.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-window-onclick-addEventListener.html = FAIL
+V8 # LayoutTests/http/tests/security/listener/xss-window-onclick-shortcut.html = FAIL
+
 // Bug 1135948: Fails because we cannot call plugins as functions.
 V8 # LayoutTests/plugins/bindings-test.html = FAIL
 
