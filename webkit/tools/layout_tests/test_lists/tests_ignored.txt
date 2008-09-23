@@ -175,3 +175,6 @@ KJS | V8 # SKIP : chrome/http/tests/plugins/get-file-url.html = FAIL | PASS | TI
 // See Bug 1205552
 KJS # SKIP : chrome/fast/dom/set-document-body-no-crash.html = FAIL
 KJS # SKIP : chrome/fast/dom/set-table-head-no-crash.html = FAIL
+
+// Dashboard-related test
+KJS | V8 # SKIP : LayoutTests/fast/css/dashboard-region-parser.html = FAIL
