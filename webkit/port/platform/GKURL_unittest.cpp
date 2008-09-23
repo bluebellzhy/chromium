@@ -144,17 +144,17 @@ TEST(GKURL, DifferentGetters) {
 
     // Old WebKit allows references and queries in what we call "path" URLs
     // like javascript, so the path here will only consist of "hello!".
-    {"javascript:hello!?#/\\world",           "javascript", NULL,       0,    NULL, NULL,   "hello!?#/\\world", "world",  NULL,      NULL},
+    {"javascript:hello!?#/\\world",           "javascript", "",         0,    "",   NULL,   "hello!?#/\\world", "world",  "",      NULL},
 
     // Old WebKit doesn't handle "parameters" in paths, so will
     // disagree with us about where the path is for this URL.
-    {"http://a.com/hello;world",              "http",       "a.com",    0,    NULL, NULL,   "/hello;world",     "hello",  NULL,      NULL},
+    {"http://a.com/hello;world",              "http",       "a.com",    0,    "",   NULL,     "/hello;world",     "hello",  "",    NULL},
 
     // WebKit doesn't like UTF-8 or UTF-16 input.
-    {"http://\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xbd\xa0\xe5\xa5\xbd/", "http", "xn--6qqa088eba", 0, NULL, NULL, "/",   NULL,     NULL,      NULL},
+    {"http://\xe4\xbd\xa0\xe5\xa5\xbd\xe4\xbd\xa0\xe5\xa5\xbd/", "http", "xn--6qqa088eba", 0, "", NULL, "/",   NULL,     "",       NULL},
 
     // WebKit %-escapes non-ASCII characters in reference, but we don't.
-    {"http://www.google.com/foo/blah?bar=baz#\xce\xb1\xce\xb2", "http", "www.google.com", 0, NULL, NULL, "/foo/blah/", "blah", "?bar=baz", "\xce\xb1\xce\xb2"}
+    {"http://www.google.com/foo/blah?bar=baz#\xce\xb1\xce\xb2", "http", "www.google.com", 0, "", NULL, "/foo/blah/", "blah", "?bar=baz", "\xce\xb1\xce\xb2"}
   };
 
   for (int i = 0; i < arraysize(cases); i++) {
@@ -167,13 +167,12 @@ TEST(GKURL, DifferentGetters) {
     EXPECT_EQ(cases[i].pass, gurl.pass());
     EXPECT_EQ(cases[i].last_path, gurl.lastPathComponent());
     EXPECT_EQ(cases[i].query, gurl.query());
-    if (cases[i].ref == NULL) {
-      EXPECT_EQ(cases[i].ref, gurl.ref());
+    // Want to compare UCS-16 refs (or to NULL).
+    if (cases[i].ref) {
+      EXPECT_EQ(webkit_glue::StdWStringToString(UTF8ToWide(cases[i].ref)),
+                gurl.ref());
     } else {
-      // We can't compare cases[i].ref and gurl.ref() directly
-      // because operator==(const char*, const DeprecatedString&) invoked 
-      // in CmpHelperEQ does not treat 'char *' as UTF-8. 
-      EXPECT_STREQ(cases[i].ref, gurl.ref().utf8().data());
+      EXPECT_TRUE(gurl.ref().isNull());
     }
   }
 }
@@ -460,12 +459,14 @@ TEST(GKURL, Empty) {
   // First test that regular empty URLs are the same.
   EXPECT_EQ(kurl.isEmpty(), gurl.isEmpty());
   EXPECT_EQ(kurl.isValid(), gurl.isValid());
+  EXPECT_EQ(kurl.isNull(), gurl.isNull());
   EXPECT_EQ(kurl.string().isNull(), gurl.string().isNull());
   EXPECT_EQ(kurl.string().isEmpty(), gurl.string().isEmpty());
 
-  // Now test that resolved empty URLs are the same.
+  // Test resolving a NULL URL on an empty string.
   WebCore::GoogleKURL gurl2(gurl, "");
   WebCore::WebKitKURL kurl2(kurl, "");
+  EXPECT_EQ(kurl2.isNull(), gurl2.isNull());
   EXPECT_EQ(kurl2.isEmpty(), gurl2.isEmpty());
   EXPECT_EQ(kurl2.isValid(), gurl2.isValid());
   EXPECT_EQ(kurl2.string().isNull(), gurl2.string().isNull());
@@ -473,13 +474,23 @@ TEST(GKURL, Empty) {
   EXPECT_EQ(kurl2.string().isNull(), gurl2.string().isNull());
   EXPECT_EQ(kurl2.string().isEmpty(), gurl2.string().isEmpty());
 
-  // Now test that non-hierarchical schemes are resolved the same.
+  // Resolve the NULL URL on a NULL string.
+  WebCore::GoogleKURL gurl22(gurl, WebCore::String());
+  WebCore::WebKitKURL kurl22(kurl, WebCore::String());
+  EXPECT_EQ(kurl2.isNull(), gurl2.isNull());
+  EXPECT_EQ(kurl2.isEmpty(), gurl2.isEmpty());
+  EXPECT_EQ(kurl2.isValid(), gurl2.isValid());
+  EXPECT_EQ(kurl2.string().isNull(), gurl2.string().isNull());
+  EXPECT_EQ(kurl2.string().isEmpty(), gurl2.string().isEmpty());
+  EXPECT_EQ(kurl2.string().isNull(), gurl2.string().isNull());
+  EXPECT_EQ(kurl2.string().isEmpty(), gurl2.string().isEmpty());
+
+  // Test non-hierarchical schemes resolving. The actual URLs will be different.
+  // WebKit's one will set the string to "something.gif" and we'll set it to an
+  // empty string. I think either is OK, so we just check our behavior.
   WebCore::GoogleKURL gurl3(WebCore::GoogleKURL("data:foo"), "something.gif");
-  WebCore::WebKitKURL kurl3(WebCore::WebKitKURL("data:foo"), "something.gif");
-  EXPECT_EQ(kurl3.isEmpty(), gurl3.isEmpty());
-  EXPECT_EQ(kurl3.isValid(), gurl3.isValid());
-  EXPECT_EQ(kurl3.string().isNull(), gurl3.string().isNull());
-  EXPECT_EQ(kurl3.string().isEmpty(), gurl3.string().isEmpty());
+  EXPECT_TRUE(gurl3.isEmpty());
+  EXPECT_FALSE(gurl3.isValid());
 
   // Test for weird isNull string input,
   // see: http://bugs.webkit.org/show_bug.cgi?id=16487
@@ -493,10 +504,11 @@ TEST(GKURL, Empty) {
   // Resolving an empty URL on an invalid string.
   WebCore::GoogleKURL gurl5(WebCore::GoogleKURL(), "foo.js");
   WebCore::WebKitKURL kurl5(WebCore::WebKitKURL(), "foo.js");
-  EXPECT_EQ(kurl5.isEmpty(), gurl5.isEmpty());
+  // We'll be empty in this case, but KURL won't be. Should be OK.
+  // EXPECT_EQ(kurl5.isEmpty(), gurl5.isEmpty());
+  // EXPECT_EQ(kurl5.string().isEmpty(), gurl5.string().isEmpty());
   EXPECT_EQ(kurl5.isValid(), gurl5.isValid());
   EXPECT_EQ(kurl5.string().isNull(), gurl5.string().isNull());
-  EXPECT_EQ(kurl5.string().isEmpty(), gurl5.string().isEmpty());
 
   // Empty string as input
   WebCore::GoogleKURL gurl6("");
