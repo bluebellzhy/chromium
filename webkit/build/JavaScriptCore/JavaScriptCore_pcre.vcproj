@@ -134,7 +134,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\..\..\third_party\WebKit\JavaScriptCore\pcre\pcre_exec.cpp"
+			RelativePath="..\..\pending\pcre_exec.cpp"
 			>
 		</File>
 		<File
