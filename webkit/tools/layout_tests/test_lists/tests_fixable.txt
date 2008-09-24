@@ -801,6 +801,12 @@ V8 # pending/http/tests/security/cross-frame-access-protocol.html = PASS | TIMEO
 V8 # LayoutTests/fast/js/date-DST-time-cusps.html = FAIL | PASS
 V8 # LayoutTests/fast/js/date-big-setdate.html = FAIL | PASS
 
+# These three tests have their results changed on WebKit trunk that matches our
+# current results: http://trac.webkit.org/changeset/36652
+# When we pick up that revision of WebKit, we can remove these exceptions.
+V8 # LayoutTests/fast/events/onunload.html = FAIL
+V8 # LayoutTests/fast/events/onunload-window-property.html = FAIL
+V8 # LayoutTests/fast/forms/button-state-restore.html = FAIL
 
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
