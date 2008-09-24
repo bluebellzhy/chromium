@@ -318,7 +318,7 @@ TEST_F(DomSerializerTests, SerialzeXMLDocWithBuiltInEntities) {
   ASSERT_TRUE(HasSerializedFrame(page_url));
   const std::string& serialized_contents =
       GetSerializedContentForFrame(page_url);
-  ASSERT_EQ(serialized_contents, orginal_contents);
+  ASSERT_EQ(orginal_contents, serialized_contents);
 }
 
 // When serializing DOM, we add MOTW declaration before html tag.
@@ -507,7 +507,7 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithEntitiesInText) {
   ASSERT_TRUE(body_ele != NULL);
   WebCore::Node* text_node = body_ele->firstChild();
   ASSERT_TRUE(text_node->isTextNode());
-  ASSERT_TRUE(createMarkup(text_node) == "&<>\"\'");
+  ASSERT_TRUE(createMarkup(text_node) == "&amp;&lt;&gt;\"\'");
   // Do serialization.
   SerializeDomForURL(page_url, false);
   // Compare the serialized contents with original contents.
@@ -519,7 +519,7 @@ TEST_F(DomSerializerTests, SerialzeHTMLDOMWithEntitiesInText) {
   std::wstring motw_declaration =
     webkit_glue::DomSerializer::GenerateMarkOfTheWebDeclaration(page_url);
   orginal_contents = WideToASCII(motw_declaration) + orginal_contents;
-  ASSERT_EQ(serialized_contents, orginal_contents);
+  ASSERT_EQ(orginal_contents, serialized_contents);
 }
 
 // Test situation of html entities in attribute value when serializing

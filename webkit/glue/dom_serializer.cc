@@ -454,22 +454,7 @@ void DomSerializer::BuildContentForNode(const WebCore::Node* node,
       break;
     }
     case WebCore::Node::TEXT_NODE: {
-      WebCore::String result;
-      WebCore::String s = createMarkup(node);
-      if (param->is_html_document) {
-        // For html document, do not convert entity notation in code
-        // block of style tag and script tag.
-        if (param->is_in_script_or_style_tag)
-          result += s;
-        else
-          ConvertCorrespondingSymbolToEntity(&result, s,
-              param->is_html_document);
-      } else {
-        ConvertCorrespondingSymbolToEntity(&result, s,
-            param->is_html_document);
-      }
-
-      SaveHtmlContentToBuffer(result, param);
+      SaveHtmlContentToBuffer(createMarkup(node), param);
       break;
     }
     case WebCore::Node::ATTRIBUTE_NODE:
