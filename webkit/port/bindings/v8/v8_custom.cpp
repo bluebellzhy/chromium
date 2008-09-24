@@ -24,7 +24,7 @@
 #include "config.h"
 
 #include <Assertions.h>
-#include <ASCIICType.h>
+#include <wtf/ASCIICType.h>
 
 #include "v8_proxy.h"
 #include "v8_events.h"
@@ -1588,6 +1588,32 @@ INDEXED_PROPERTY_SETTER(HTMLSelectElementCollection) {
   return OptionsCollectionSetter(index, value, select);
 }
 
+// Check for a CSS prefix.
+// Passed prefix is all lowercase.
+// First character of the prefix within the property name may be upper or lowercase.
+// Other characters in the prefix within the property name must be lowercase.
+// The prefix within the property name must be followed by a capital letter.
+static bool hasCSSPropertyNamePrefix(const String& propertyName, const char* prefix)
+{
+#ifndef NDEBUG
+    ASSERT(*prefix);
+    for (const char* p = prefix; *p; ++p)
+        ASSERT(WTF::isASCIILower(*p));
+    ASSERT(propertyName.length());
+#endif
+
+    if (WTF::toASCIILower(propertyName[0]) != prefix[0])
+        return false;
+
+    unsigned length = propertyName.length();
+    for (unsigned i = 1; i < length; ++i) {
+        if (!prefix[i])
+            return WTF::isASCIIUpper(propertyName[i]);
+        if (propertyName[i] != prefix[i])
+            return false;
+    }
+    return false;
+}
 
 // When getting properties on CSSStyleDeclarations, the name used from
 // Javascript and the actual name of the property are not the same, so
@@ -1600,12 +1626,12 @@ INDEXED_PROPERTY_SETTER(HTMLSelectElementCollection) {
 // Also, certain prefixes such as 'pos', 'css-' and 'pixel-' are stripped
 // and the pixel_or_pos_prefix out parameter is used to indicate whether or
 // not the property name was prefixed with 'pos-' or 'pixel-'.
-static String CSSPropertyName(const String &p, bool *hadPixelOrPosPrefix = 0)
+static String cssPropertyName(const String& propertyName, bool* hadPixelOrPosPrefix = 0)
 {
     if (hadPixelOrPosPrefix)
         *hadPixelOrPosPrefix = false;
 
-    unsigned length = p.length();
+    unsigned length = propertyName.length();
     if (!length)
         return String();
 
@@ -1614,29 +1640,29 @@ static String CSSPropertyName(const String &p, bool *hadPixelOrPosPrefix = 0)
 
     unsigned i = 0;
 
-    if (p.startsWith("css-"))
+    if (hasCSSPropertyNamePrefix(propertyName, "css"))
         i += 3;
-    else if (p.startsWith("pixel-")) {
+    else if (hasCSSPropertyNamePrefix(propertyName, "pixel")) {
         i += 5;
         if (hadPixelOrPosPrefix)
             *hadPixelOrPosPrefix = true;
-    } else if (p.startsWith("pos-")) {
+    } else if (hasCSSPropertyNamePrefix(propertyName, "pos")) {
         i += 3;
         if (hadPixelOrPosPrefix)
             *hadPixelOrPosPrefix = true;
-    } else if (p.startsWith("webkit-")
-            || p.startsWith("khtml-")
-            || p.startsWith("apple-"))
+    } else if (hasCSSPropertyNamePrefix(propertyName, "webkit")
+            || hasCSSPropertyNamePrefix(propertyName, "khtml")
+            || hasCSSPropertyNamePrefix(propertyName, "apple"))
         name.append('-');
     else {
-        if (WTF::isASCIIUpper(p[0]))
+        if (WTF::isASCIIUpper(propertyName[0]))
             return String();
     }
 
-    name.append(WTF::toASCIILower(p[i++]));
+    name.append(WTF::toASCIILower(propertyName[i++]));
 
     for (; i < length; ++i) {
-        UChar c = p[i];
+        UChar c = propertyName[i];
         if (!WTF::isASCIIUpper(c))
             name.append(c);
         else {
@@ -1647,7 +1673,6 @@ static String CSSPropertyName(const String &p, bool *hadPixelOrPosPrefix = 0)
 
     return String::adopt(name);
 }
-
 
 NAMED_PROPERTY_GETTER(CSSStyleDeclaration) {
   INC_STATS(L"DOM.CSSStyleDeclaration.NamedPropertyGetter");
@@ -1662,7 +1687,7 @@ NAMED_PROPERTY_GETTER(CSSStyleDeclaration) {
 
   bool pixel_or_pos;
   String p = ToWebCoreString(name);
-  String prop = CSSPropertyName(p, &pixel_or_pos);
+  String prop = cssPropertyName(p, &pixel_or_pos);
 
   // Do not handle non-property names.
   if (!CSSStyleDeclaration::isPropertyName(prop)) {
@@ -1701,7 +1726,7 @@ NAMED_PROPERTY_SETTER(CSSStyleDeclaration) {
   int ec = 0;
 
   bool pixel_or_pos;
-  String prop = CSSPropertyName(property_name, &pixel_or_pos);
+  String prop = cssPropertyName(property_name, &pixel_or_pos);
   if (!CSSStyleDeclaration::isPropertyName(prop)) {
     return v8::Handle<v8::Value>();  // do not block the call
   }
