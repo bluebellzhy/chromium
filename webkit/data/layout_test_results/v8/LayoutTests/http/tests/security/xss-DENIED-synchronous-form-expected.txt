@@ -1,4 +1,0 @@
-CONSOLE MESSAGE: line 11: Uncaught TypeError: Object [object global] has no method 'postMessage'
-
-Waiting for iframe...
-FAIL: Cross-domain iframe was able to access this frame

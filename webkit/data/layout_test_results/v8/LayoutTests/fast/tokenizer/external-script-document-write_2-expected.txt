@@ -1,4 +1,4 @@
-CONSOLE MESSAGE: line 2: Uncaught SyntaxError: Unexpected token <
+CONSOLE MESSAGE: line 1: Uncaught SyntaxError: Unexpected token <
 layer at (0,0) size 800x600
   RenderView at (0,0) size 800x600
 layer at (0,0) size 800x600
