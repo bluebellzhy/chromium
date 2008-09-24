@@ -53,12 +53,33 @@ namespace WebCore {
 
     typedef int ExceptionCode;
 
-    class CanvasRenderingContext2D : Noncopyable {
+    class CanvasRenderingContext2D : Noncopyable
+#if USE(V8)
+        , Peerable
+#endif
+    {
     public:
         CanvasRenderingContext2D(HTMLCanvasElement*);
         
         void ref();
         void deref();
+
+#if USE(V8)
+        virtual void setPeer(void* peer)
+        {
+            ASSERT(m_peer != peer);
+            if (peer)
+                ref();
+            else
+                deref();
+            m_peer = peer;
+            
+        }
+        virtual void* peer() const
+        {
+            return m_peer;
+        }
+#endif
         
         HTMLCanvasElement* canvas() const { return m_canvas; }
 
@@ -244,6 +265,9 @@ namespace WebCore {
 
         HTMLCanvasElement* m_canvas;
         Vector<State, 1> m_stateStack;
+#if USE(V8)
+        void* m_peer;
+#endif
     };
 
 } // namespace WebCore
