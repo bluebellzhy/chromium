@@ -4034,11 +4034,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\html\CanvasRenderingContext2D.cpp"
+				RelativePath="..\..\pending\CanvasRenderingContext2D.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\third_party\WebKit\WebCore\html\CanvasRenderingContext2D.h"
+				RelativePath="..\..\pending\CanvasRenderingContext2D.h"
 				>
 			</File>
 			<File
