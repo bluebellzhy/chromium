@@ -506,7 +506,7 @@ const char* EditorClientImpl::interpretKeyEvent(
 
   if (evt->type() == WebCore::EventNames::keydownEvent) {
     int mapKey = modifiers << 16 | evt->keyCode();
-      return mapKey ? keyDownCommandsMap->get(mapKey) : 0;
+    return mapKey ? keyDownCommandsMap->get(mapKey) : 0;
   }
 
   int mapKey = modifiers << 16 | evt->charCode();

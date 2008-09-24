@@ -41,7 +41,7 @@ static inline void SetupKeyDownEvent(WebKeyboardEvent& keyboard_event,
 
 static inline const char* InterpretCtrlKeyPress(char key_code) {
   WebKeyboardEvent keyboard_event;
-  SetupKeyDownEvent(keyboard_event, 0xD, WebInputEvent::CTRL_KEY);
+  SetupKeyDownEvent(keyboard_event, key_code, WebInputEvent::CTRL_KEY);
 
   return InterpretKeyEvent(keyboard_event, PlatformKeyboardEvent::RawKeyDown);
 }
@@ -52,27 +52,27 @@ TEST(KeyboardUnitTestKeyDown, TestCtrlReturn) {
   // TODO(eseidel): This should be in a SETUP call using TEST_F
   WebCore::EventNames::init();
 
-  EXPECT_STREQ(InterpretCtrlKeyPress(0xD), "InsertNewline");
+  EXPECT_STREQ("InsertNewline", InterpretCtrlKeyPress(0xD));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlZ) {
-  EXPECT_STREQ(InterpretCtrlKeyPress('Z'), "Undo");
+  EXPECT_STREQ("Undo", InterpretCtrlKeyPress('Z'));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlA) {
-  EXPECT_STREQ(InterpretCtrlKeyPress('A'), "SelectAll");
+  EXPECT_STREQ("SelectAll", InterpretCtrlKeyPress('A'));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlX) {
-  EXPECT_STREQ(InterpretCtrlKeyPress('X'), "Cut");
+  EXPECT_STREQ("Cut", InterpretCtrlKeyPress('X'));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlC) {
-  EXPECT_STREQ(InterpretCtrlKeyPress('C'), "Copy");
+  EXPECT_STREQ("Copy", InterpretCtrlKeyPress('C'));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestCtrlV) {
-  EXPECT_STREQ(InterpretCtrlKeyPress('V'), "Paste");
+  EXPECT_STREQ("Paste", InterpretCtrlKeyPress('V'));
 }
 
 TEST(KeyboardUnitTestKeyDown, TestEscape) {
@@ -81,7 +81,7 @@ TEST(KeyboardUnitTestKeyDown, TestEscape) {
 
   const char* result = InterpretKeyEvent(keyboard_event,
                                          PlatformKeyboardEvent::RawKeyDown);
-  EXPECT_STREQ(result, "Cancel");
+  EXPECT_STREQ("Cancel", result);
 }
 
 TEST(KeyboardUnitTestKeyDown, TestRedo) {
@@ -95,11 +95,11 @@ static inline const char* InterpretTab(int modifiers) {
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertTab) {
-  EXPECT_STREQ(InterpretTab(no_modifiers), "InsertTab");
+  EXPECT_STREQ("InsertTab", InterpretTab(no_modifiers));
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertBackTab) {
-  EXPECT_STREQ(InterpretTab(WebInputEvent::SHIFT_KEY), "InsertBacktab");
+  EXPECT_STREQ("InsertBacktab", InterpretTab(WebInputEvent::SHIFT_KEY));
 }
 
 static inline const char* InterpretNewLine(int modifiers) {
@@ -109,19 +109,19 @@ static inline const char* InterpretNewLine(int modifiers) {
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertNewline) {
-  EXPECT_STREQ(InterpretNewLine(no_modifiers), "InsertNewline");
+  EXPECT_STREQ("InsertNewline", InterpretNewLine(no_modifiers));
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertNewline2) {
-  EXPECT_STREQ(InterpretNewLine(WebInputEvent::CTRL_KEY), "InsertNewline");
+  EXPECT_STREQ("InsertNewline", InterpretNewLine(WebInputEvent::CTRL_KEY));
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertlinebreak) {
-  EXPECT_STREQ(InterpretNewLine(WebInputEvent::SHIFT_KEY), "InsertNewline");
+  EXPECT_STREQ("InsertLineBreak", InterpretNewLine(WebInputEvent::SHIFT_KEY));
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertNewline3) {
-  EXPECT_STREQ(InterpretNewLine(WebInputEvent::ALT_KEY), "InsertNewline");
+  EXPECT_STREQ("InsertNewline", InterpretNewLine(WebInputEvent::ALT_KEY));
 }
 
 TEST(KeyboardUnitTestKeyPress, TestInsertNewline4) {
