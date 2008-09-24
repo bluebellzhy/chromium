@@ -238,23 +238,23 @@ String Path::debugString() const
         verb = iter.next(pts);
         switch (verb) {
         case SkPath::kMove_Verb:
-            result += String::format("M%.2f,%.2f", pts[0].fX, pts[0].fY);
+            result += String::format("M%.2f,%.2f ", pts[0].fX, pts[0].fY);
             numPoints -= 1;
             break;
         case SkPath::kLine_Verb:
           if (!iter.isCloseLine()) {
-                result += String::format("L%.2f,%.2f", pts[1].fX, pts[1].fY); 
+                result += String::format("L%.2f,%.2f ", pts[1].fX, pts[1].fY); 
                 numPoints -= 1;
             }
             break;
         case SkPath::kQuad_Verb:
-            result += String::format("Q%.2f,%.2f,%.2f,%.2f",
+            result += String::format("Q%.2f,%.2f,%.2f,%.2f ",
                 pts[1].fX, pts[1].fY,
                 pts[2].fX, pts[2].fY);
             numPoints -= 2;
             break;
         case SkPath::kCubic_Verb:
-            result += String::format("C%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+            result += String::format("C%.2f,%.2f,%.2f,%.2f,%.2f,%.2f ",
                 pts[1].fX, pts[1].fY,
                 pts[2].fX, pts[2].fY,
                 pts[3].fX, pts[3].fY);
@@ -273,10 +273,10 @@ String Path::debugString() const
     if (numPoints) {
         ASSERT(numPoints==1);
         m_path->getLastPt(pts);
-        result += String::format("M%.2f,%.2f", pts[0].fX, pts[0].fY);
+        result += String::format("M%.2f,%.2f ", pts[0].fX, pts[0].fY);
     }
 
-    return result;
+    return result.stripWhiteSpace();
 }
 
 } // namespace WebCore
