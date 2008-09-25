@@ -256,7 +256,11 @@ String ScriptController::evaluate(const String& filename, int baseLine,
 
     v8::Context::Scope scope(context);
 
-    v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine, code, node);
+    // HTMLTokenizer used to use base zero line numbers for scripts, now it
+    // uses base 1. This confuses v8, which uses line offsets from the
+    // first line.
+    v8::Local<v8::Value> obj = m_proxy->Evaluate(filename, baseLine - 1, code,
+                                                 node);
 
     if (obj.IsEmpty() || obj->IsUndefined())
         return result;
