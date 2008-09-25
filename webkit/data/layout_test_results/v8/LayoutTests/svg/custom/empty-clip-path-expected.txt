@@ -1,5 +1,5 @@
-KCanvasResource {id="nothing" [type=CLIPPER] [clip data=[[winding=EVEN-ODD] [path=M0.00,0.00L0.00,0.00L0.00,0.00L0.00,0.00]]]}
-KCanvasResource {id="emptyrect" [type=CLIPPER] [clip data=[[winding=EVEN-ODD] [path=M0.00,0.00L0.00,0.00L0.00,0.00L0.00,0.00]]]}
+KCanvasResource {id="nothing" [type=CLIPPER] [clip data=[[winding=EVEN-ODD] [path=M0.00,0.00 L0.00,0.00 L0.00,0.00 L0.00,0.00]]]}
+KCanvasResource {id="emptyrect" [type=CLIPPER] [clip data=[[winding=EVEN-ODD] [path=M0.00,0.00 L0.00,0.00 L0.00,0.00 L0.00,0.00]]]}
 layer at (0,0) size 800x600
   RenderView at (0,0) size 800x600
 layer at (0,0) size 800x600

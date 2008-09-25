@@ -1,5 +1,5 @@
-KCanvasResource {id="clip1" [type=CLIPPER] [clip data=[[winding=NON-ZERO] [path=M200.00,10.00L260.00,10.00L260.00,110.00L200.00,110.00]]]}
-KCanvasResource {id="clip2" [type=CLIPPER] [clip data=[[winding=NON-ZERO] [path=M90.00,150.00L265.00,150.00L265.00,250.00L90.00,250.00], [winding=NON-ZERO] [path=M225.00,160.00L320.00,160.00L320.00,235.00L225.00,235.00]]]}
+KCanvasResource {id="clip1" [type=CLIPPER] [clip data=[[winding=NON-ZERO] [path=M200.00,10.00 L260.00,10.00 L260.00,110.00 L200.00,110.00]]]}
+KCanvasResource {id="clip2" [type=CLIPPER] [clip data=[[winding=NON-ZERO] [path=M90.00,150.00 L265.00,150.00 L265.00,250.00 L90.00,250.00], [winding=NON-ZERO] [path=M225.00,160.00 L320.00,160.00 L320.00,235.00 L225.00,235.00]]]}
 layer at (0,0) size 480x360
   RenderView at (0,0) size 480x360
 layer at (0,0) size 480x360
