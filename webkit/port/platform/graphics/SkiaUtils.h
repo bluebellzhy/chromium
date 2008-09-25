@@ -7,12 +7,14 @@
 #ifndef SkiaUtils_h
 #define SkiaUtils_h
 
+#include <wtf/PassRefPtr.h>
 #include "base/float_util.h"
 #include "GraphicsContext.h"
 #include "SkPath.h"
 #include "SkShader.h"
 #include "PlatformContextSkia.h"
 
+class WebCore::SharedBuffer;
 class SkRegion;
 
 // Converts a WebCore composit operation (WebCore::Composite*) to the
@@ -49,5 +51,7 @@ void ClipRectToCanvas(const SkCanvas& canvas, const SkRect& src_rect,
 // Determine if a given WebKit point is contained in a path
 bool SkPathContainsPoint(SkPath* orig_path, WebCore::FloatPoint point, SkPath::FillType ft);
 
-#endif  // SkiaUtils_h
+// Constructs a BMP V4 bitmap from an SkBitmap.
+PassRefPtr<WebCore::SharedBuffer> SerializeSkBitmap(const SkBitmap&);
 
+#endif  // SkiaUtils_h

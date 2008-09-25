@@ -77,42 +77,6 @@ void TransformDimensions(const SkMatrix& matrix,
     *dest_height = SkScalarToFloat((dest_points[2] - dest_points[0]).length());
 }
 
-// Constructs a BMP V4 bitmap from an SkBitmap.
-PassRefPtr<SharedBuffer> SerializeBitmap(const SkBitmap& bitmap)
-{
-    int width = bitmap.width();
-    int height = bitmap.height();
-
-    // Create a BMP v4 header that we can serialize.
-    BITMAPV4HEADER v4Header;
-    gfx::CreateBitmapV4Header(width, height, &v4Header);
-    v4Header.bV4SizeImage = width * sizeof(uint32_t) * height;
-
-    // Serialize the bitmap.
-    BITMAPFILEHEADER fileHeader;
-    fileHeader.bfType = 0x4d42;  // "BM" header
-    fileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + v4Header.bV4Size;
-    fileHeader.bfSize = fileHeader.bfOffBits + v4Header.bV4SizeImage;
-    fileHeader.bfReserved1 = fileHeader.bfReserved2 = 0;
-
-    // Write BITMAPFILEHEADER
-    RefPtr<SharedBuffer> buffer(SharedBuffer::create(
-        reinterpret_cast<const char*>(&fileHeader),
-        sizeof(BITMAPFILEHEADER)));
-
-    // Write BITMAPINFOHEADER
-    buffer->append(reinterpret_cast<const char*>(&v4Header),
-                   sizeof(BITMAPV4HEADER));
-
-    // Write the image body.
-    SkAutoLockPixels bitmap_lock(bitmap);
-    buffer->append(reinterpret_cast<const char*>(bitmap.getAddr32(0, 0)),
-                   v4Header.bV4SizeImage);
-
-    return buffer;
-}
-
-
 // Creates an Image for the text area resize corner. We do this by drawing the
 // theme native control into a memory buffer then converting the memory buffer
 // into a BMP byte stream, then feeding it into the Image object.  We have to
@@ -139,7 +103,7 @@ static PassRefPtr<Image> GetTextAreaResizeCorner()
     gfx::NativeTheme::instance()->PaintStatusGripper(hdc, SP_GRIPPER, 0, 0,
                                                      &widgetRect);
     device.postProcessGDI(0, 0, width, height);
-    image->setData(SerializeBitmap(device.accessBitmap(false)), true);
+    image->setData(SerializeSkBitmap(device.accessBitmap(false)), true);
     return image.release();
 }
 

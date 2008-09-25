@@ -48,7 +48,7 @@ Cursor::Cursor(Image* img, const IntPoint& hotspot)
     // If we don't have a valid bitmap, then fallback to the default
     // cursor (ARROW).
     NativeImageSkia* bitmap = img->nativeImageForCurrentFrame();
-    if (bitmap)
+    if (!bitmap)
         return;
 
     m_impl.set_type(WebCursor::CUSTOM);
