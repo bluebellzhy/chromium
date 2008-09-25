@@ -363,9 +363,15 @@ V8 | KJS # LayoutTests/http/tests/navigation/post-goback1.html = FAIL
 V8 # LayoutTests/http/tests/security/cross-frame-access-delete.html = TIMEOUT
 V8 # LayoutTests/http/tests/security/cross-frame-access-history-put.html = TIMEOUT
 V8 # LayoutTests/http/tests/security/cross-frame-access-location-put.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/delivery-order.html = TIMEOUT
 V8 # LayoutTests/http/tests/security/postMessage/domain-and-uri-unaffected-by-base-tag.html = TIMEOUT
 V8 # LayoutTests/http/tests/security/postMessage/domain-unaffected-by-document-domain.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/invalid-origin-throws-exception.html = TIMEOUT
 V8 # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-domain.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-origin.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-base-tag.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-document-domain.html = TIMEOUT
+V8 # LayoutTests/http/tests/security/postMessage/target-origin.html = TIMEOUT
 V8 # LayoutTests/http/tests/messaging/cross-domain-message-send.html = TIMEOUT
 
 // these came to rely on window.postMessage for the testing needs ...
@@ -1298,12 +1304,6 @@ V8 | KJS # LayoutTests/http/tests/security/cross-frame-access-DOMImplementation.
 V8 | KJS # LayoutTests/http/tests/security/cross-frame-access-object-prototype.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/cross-origin-xsl-BLOCKED.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/object-literals.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/delivery-order.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/invalid-origin-throws-exception.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-origin.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-base-tag.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-document-domain.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/postMessage/target-origin.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/xss-DENIED-synchronous-form.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/xss-DENIED-xsl-document.xml = FAIL
 V8 | KJS # LayoutTests/http/tests/security/xss-DENIED-xsl-external-entity.xml = FAIL
