@@ -819,25 +819,25 @@ V8 # LayoutTests/fast/js/date-set-to-nan.html = FAIL
 
 # V8 failures as a result of the WebKit merge.
 # http://code.google.com/p/v8/issues/detail?id=92
-LayoutTests/fast/js/constructor-attributes.html
-LayoutTests/fast/js/eval-cross-window.html
-LayoutTests/fast/js/eval-keyword-vs-function.html
-LayoutTests/fast/js/exception-expression-offset.html
-LayoutTests/fast/js/exception-sequencing-binops2.html
-LayoutTests/fast/js/exception-try-finally-scope-error.html
-LayoutTests/fast/js/function-dot-arguments-and-caller.html
-LayoutTests/fast/js/function-name.html
-LayoutTests/fast/js/global-recursion-on-full-stack.html
-LayoutTests/fast/js/invalid-syntax-for-function.html
-LayoutTests/fast/js/pic/cached-prototype-setter.html
-LayoutTests/fast/js/removing-Cf-characters.html
-LayoutTests/fast/js/static-scope-object.html
-LayoutTests/fast/js/delete-getters-setters.html
-LayoutTests/fast/js/function-toString-object-literals.html
-LayoutTests/fast/js/kde/garbage-n.html
-LayoutTests/fast/js/kde/string-1-n.html
-LayoutTests/fast/js/kde/string-2-n.html
-LayoutTests/fast/js/toString-prefix-postfix-preserve-parens.html
+V8 # LayoutTests/fast/js/constructor-attributes.html = FAIL
+V8 # LayoutTests/fast/js/eval-cross-window.html = FAIL
+V8 # LayoutTests/fast/js/eval-keyword-vs-function.html = FAIL
+V8 # LayoutTests/fast/js/exception-expression-offset.html = FAIL
+V8 # LayoutTests/fast/js/exception-sequencing-binops2.html = FAIL
+V8 # LayoutTests/fast/js/exception-try-finally-scope-error.html = FAIL
+V8 # LayoutTests/fast/js/function-dot-arguments-and-caller.html = FAIL
+V8 # LayoutTests/fast/js/function-name.html = FAIL
+V8 # LayoutTests/fast/js/global-recursion-on-full-stack.html = FAIL
+V8 # LayoutTests/fast/js/invalid-syntax-for-function.html = FAIL
+V8 # LayoutTests/fast/js/pic/cached-prototype-setter.html = FAIL
+V8 # LayoutTests/fast/js/removing-Cf-characters.html = FAIL
+V8 # LayoutTests/fast/js/static-scope-object.html = FAIL
+V8 # LayoutTests/fast/js/delete-getters-setters.html = FAIL
+V8 # LayoutTests/fast/js/function-toString-object-literals.html = FAIL
+V8 # LayoutTests/fast/js/kde/garbage-n.html = FAIL
+V8 # LayoutTests/fast/js/kde/string-1-n.html = FAIL
+V8 # LayoutTests/fast/js/kde/string-2-n.html = FAIL
+V8 # LayoutTests/fast/js/toString-prefix-postfix-preserve-parens.html = FAIL
 
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
