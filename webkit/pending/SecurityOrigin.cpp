@@ -115,9 +115,6 @@ void SecurityOrigin::setDomainFromDOM(const String& newDomain)
 
 bool SecurityOrigin::canAccess(const SecurityOrigin* other) const
 {  
-    if (isLocal())
-        return true;
-
     if (m_noAccess || other->m_noAccess)
         return false;
 
