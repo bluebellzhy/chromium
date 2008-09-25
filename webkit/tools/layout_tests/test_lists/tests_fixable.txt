@@ -58,8 +58,6 @@ V8 # LayoutTests/fast/dom/Window/setting-properties-on-closed-window.html = PASS
 
 // Consistently fails on KJS only
 KJS # LayoutTests/http/tests/security/cross-frame-access-call.html = FAIL
-// Maybe flaky and need to be forked?
-V8 | KJS # LayoutTests/http/tests/security/cross-frame-access-enumeration.html = TIMEOUT | PASS
 // Difference in caching headers
 V8 | KJS # LayoutTests/http/tests/xmlhttprequest/cache-override.html = FAIL
 // LightTPD doesn't accept unknown HTTP methods
@@ -358,32 +356,6 @@ V8 | KJS # LayoutTests/svg/custom/svgsvgelement-ctm.xhtml = FAIL
 
 // Bug 1204878
 V8 | KJS # LayoutTests/http/tests/navigation/post-goback1.html = FAIL
-
-// Bug 1203341: Requires a working postMessage implementation
-V8 # LayoutTests/http/tests/security/cross-frame-access-delete.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/cross-frame-access-history-put.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/cross-frame-access-location-put.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/delivery-order.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/domain-and-uri-unaffected-by-base-tag.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/domain-unaffected-by-document-domain.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/invalid-origin-throws-exception.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-domain.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/javascript-page-still-sends-origin.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-base-tag.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/origin-unaffected-by-document-domain.html = TIMEOUT
-V8 # LayoutTests/http/tests/security/postMessage/target-origin.html = TIMEOUT
-V8 # LayoutTests/http/tests/messaging/cross-domain-message-send.html = TIMEOUT
-
-// these came to rely on window.postMessage for the testing needs ...
-V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame-uppercase.html = FAIL
-V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame.html = FAIL
-V8 # LayoutTests/http/tests/security/javascriptURL/xss-ALLOWED-to-javascript-url-sub-frame.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-JSTargetNode-onclick-addEventListener.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-JSTargetNode-onclick-shortcut.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-XMLHttpRequest-addEventListener.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-XMLHttpRequest-shortcut.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-window-onclick-addEventListener.html = FAIL
-V8 # LayoutTests/http/tests/security/listener/xss-window-onclick-shortcut.html = FAIL
 
 // Bug 1135948: Fails because we cannot call plugins as functions.
 V8 # LayoutTests/plugins/bindings-test.html = FAIL
