@@ -992,19 +992,19 @@
 				>
 			</File>
 			<File
-				RelativePath="$(IntDir)\DerivedSources\V8InspectorController.cpp"
-				>
-			</File>
-			<File
-				RelativePath="$(IntDir)\DerivedSources\V8InspectorController.h"
-				>
-			</File>
-			<File
 				RelativePath="$(IntDir)\DerivedSources\V8ImageData.cpp"
 				>
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8ImageData.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8InspectorController.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8InspectorController.h"
 				>
 			</File>
 			<File
@@ -1240,6 +1240,14 @@
 				>
 			</File>
 			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateColorElement.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateColorElement.h"
+				>
+			</File>
+			<File
 				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimatedAngle.cpp"
 				>
 			</File>
@@ -1341,6 +1349,30 @@
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimatedTransformList.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateElement.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateElement.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateTransformElement.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimateTransformElement.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimationElement.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGAnimationElement.h"
 				>
 			</File>
 			<File
@@ -1872,6 +1904,14 @@
 				>
 			</File>
 			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGSetElement.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8SVGSetElement.h"
+				>
+			</File>
+			<File
 				RelativePath="$(IntDir)\DerivedSources\V8SVGStopElement.cpp"
 				>
 			</File>
@@ -2104,19 +2144,19 @@
 				>
 			</File>
 			<File
-				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.cpp"
-				>
-			</File>
-			<File
-				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.h"
-				>
-			</File>
-			<File
 				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestException.cpp"
 				>
 			</File>
 			<File
 				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestException.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.cpp"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8XMLHttpRequestUpload.h"
 				>
 			</File>
 			<File
