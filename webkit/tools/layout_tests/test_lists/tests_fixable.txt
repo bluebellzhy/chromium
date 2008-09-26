@@ -156,12 +156,6 @@ V8 | KJS # LayoutTests/http/tests/navigation/onload-navigation-iframe.html = FAI
 // PENDING TESTS (forked to pending/, need to be sent upstream)
 // -----------------------------------------------------------------
 
-// BUG 792023. See http://bugs.webkit.org/show_bug.cgi?id=15690 and 16494
-// Fixed tests are in pending directory. (The originals still pass consistently
-// in KJS.)
-V8 # LayoutTests/dom/html/level2/html/HTMLFrameElement09.html = FAIL
-V8 # LayoutTests/dom/html/level2/html/HTMLIFrameElement11.html = FAIL
-
 // Bug 972450: These tests don't work with fast timers due to setTimeout
 // races. Pending versions have these fixed.
 V8 | KJS # LayoutTests/fast/history/history_reload.html = PASS | FAIL
