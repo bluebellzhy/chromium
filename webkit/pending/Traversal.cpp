@@ -25,12 +25,9 @@
 #include "config.h"
 #include "Traversal.h"
 
+#include "ExceptionContext.h"
 #include "Node.h"
 #include "NodeFilter.h"
-
-#if USE(JSC)
-using namespace KJS;
-#endif
 
 namespace WebCore {
 
@@ -42,8 +39,7 @@ Traversal::Traversal(PassRefPtr<Node> rootNode, unsigned whatToShow, PassRefPtr<
 {
 }
 
-#if USE(JSC)
-short Traversal::acceptNode(ExecState* exec, Node* node) const
+short Traversal::acceptNode(ExceptionContext* exec, Node* node) const
 {
     // FIXME: To handle XML properly we would have to check m_expandEntityReferences.
 
@@ -55,6 +51,5 @@ short Traversal::acceptNode(ExecState* exec, Node* node) const
         return NodeFilter::FILTER_ACCEPT;
     return m_filter->acceptNode(exec, node);
 }
-#endif
 
 } // namespace WebCore

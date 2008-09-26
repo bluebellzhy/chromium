@@ -27,15 +27,13 @@
 
 #include "NodeFilter.h"
 
-#if USE(JSC)
-using namespace KJS;
-
 namespace WebCore {
 
-short NodeFilterCondition::acceptNode(ExecState*, Node*) const
+class ExceptionContext;
+
+short NodeFilterCondition::acceptNode(ExceptionContext*, Node*) const
 {
     return NodeFilter::FILTER_ACCEPT;
 }
 
 } // namespace WebCore
-#endif

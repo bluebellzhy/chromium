@@ -27,59 +27,32 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "config.h"
 
-#include "v8_nodefilter.h"
-#include "v8_proxy.h"
-#include "ExceptionContext.h"
-#include "NodeFilter.h"
-#include "Node.h"
+// The wrapper for a JS object that implements NSResolver interface.
+
+#ifndef JSNSResolver_h
+#define JSNSResolver_h
+
+#include <v8.h>
+#include <wtf/RefCounted.h>
+#include "NSResolver.h"
 
 namespace WebCore {
 
-V8NodeFilterCondition::V8NodeFilterCondition(v8::Handle<v8::Value> filter) {
-  m_filter = v8::Persistent<v8::Value>::New(filter);
-#ifndef NDEBUG
-  V8Proxy::RegisterGlobalHandle(NODE_FILTER, this, m_filter);
-#endif
+class ExceptionContext;
+class String;
+
+class JSNSResolver : public NSResolver {
+public:
+    JSNSResolver(v8::Handle<v8::Object>);
+    virtual ~JSNSResolver();
+
+    virtual String lookupNamespaceURI(ExceptionContext*, const String&);
+
+private:
+    v8::Handle<v8::Object> m_resolver;  // Handle to resolver object.
+};
+
 }
 
-V8NodeFilterCondition::~V8NodeFilterCondition() {
-#ifndef NDEBUG
-  V8Proxy::UnregisterGlobalHandle(this, m_filter);
-#endif
-  m_filter.Dispose();
-  m_filter.Clear();
-}
-
-short V8NodeFilterCondition::acceptNode(ExceptionContext* exception_context,
-                                        Node* node) const {
-  ASSERT(v8::Context::InContext());
-
-  if (!m_filter->IsFunction()) return NodeFilter::FILTER_ACCEPT;
-
-  ExceptionCatcher exception_catcher(exception_context);
-
-  v8::Handle<v8::Object> this_obj = v8::Context::GetCurrent()->Global();
-  v8::Handle<v8::Function> callback =
-      v8::Handle<v8::Function>::Cast(m_filter);
-  v8::Handle<v8::Value>* args = new v8::Handle<v8::Value>[1];
-  args[0] = V8Proxy::ToV8Object(V8ClassIndex::NODE, node);
-
-  V8Proxy* proxy = V8Proxy::retrieve();
-  ASSERT(proxy);
-
-  v8::Handle<v8::Value> result =
-      proxy->CallFunction(callback, this_obj, 1, args);
-  delete[] args;
-
-  if (exception_context->hadException()) {
-    return NodeFilter::FILTER_REJECT;
-  }
-
-  ASSERT(!result.IsEmpty());
-
-  return result->Int32Value();
-}
-
-}  // namespace WebCore
+#endif // !defined(JSNSResolver_h)

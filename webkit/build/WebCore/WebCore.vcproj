@@ -3370,6 +3370,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pending\NSResolver.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\pending\Node.cpp"
 				>
 			</File>

@@ -237,11 +237,6 @@ public:
     static void gcProtectJSWrapper(void* object);
     static void gcUnprotectJSWrapper(void* object);
 
-    // Returns a non-exception code object.
-    static JSException NoException();
-    // Returns true if the parameter is a JS exception object.
-    static bool IsException(JSException);
-
     // Get/Set RecordPlaybackMode flag.
     // This is a special mode where JS helps the browser implement
     // playback/record mode.  Generally, in this mode, some functions

@@ -1223,6 +1223,10 @@
 				RelativePath="..\..\pending\ScriptController.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\pending\ExceptionContext.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="history"

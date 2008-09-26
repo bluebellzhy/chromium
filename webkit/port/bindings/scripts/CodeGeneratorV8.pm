@@ -1380,6 +1380,7 @@ sub IsRefPtrType
     return 1 if $type eq "NodeList";
     return 1 if $type eq "NodeFilter";
     return 1 if $type eq "NodeIterator";
+    return 1 if $type eq "NSResolver";
     return 1 if $type eq "ProcessingInstruction";
     return 1 if $type eq "Range";
     return 1 if $type eq "Text";
@@ -1455,6 +1456,7 @@ my %typeCanFailConversion = (
     "HTMLOptionElement" => 0,
     "Node" => 0,
     "NodeFilter" => 0,
+    "NSResolver" => 0,
     "Range" => 0,
     "SQLResultSet" => 0,
     "SVGAngle" => 0,

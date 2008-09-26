@@ -25,12 +25,10 @@
 #include "config.h"
 #include "NodeIterator.h"
 
-#include <kjs/ExecState.h>
 #include "Document.h"
 #include "ExceptionCode.h"
+#include "ExceptionContext.h"
 #include "NodeFilter.h"
-
-using namespace KJS;
 
 namespace WebCore {
 
@@ -86,8 +84,7 @@ NodeIterator::~NodeIterator()
     root()->document()->detachNodeIterator(this);
 }
 
-#if USE(JSC)
-PassRefPtr<Node> NodeIterator::nextNode(ExecState* exec, ExceptionCode& ec)
+PassRefPtr<Node> NodeIterator::nextNode(ExceptionContext* exec, ExceptionCode& ec)
 {
     if (m_detached) {
         ec = INVALID_STATE_ERR;
@@ -116,7 +113,7 @@ PassRefPtr<Node> NodeIterator::nextNode(ExecState* exec, ExceptionCode& ec)
     return result.release();
 }
 
-PassRefPtr<Node> NodeIterator::previousNode(ExecState* exec, ExceptionCode& ec)
+PassRefPtr<Node> NodeIterator::previousNode(ExceptionContext* exec, ExceptionCode& ec)
 {
     if (m_detached) {
         ec = INVALID_STATE_ERR;
@@ -144,7 +141,6 @@ PassRefPtr<Node> NodeIterator::previousNode(ExecState* exec, ExceptionCode& ec)
     m_candidateNode.clear();
     return result.release();
 }
-#endif
 
 void NodeIterator::detach()
 {
@@ -228,5 +224,14 @@ void NodeIterator::updateForNodeRemoval(Node* removedNode, NodePointer& referenc
     }
 }
 
+PassRefPtr<Node> NodeIterator::nextNode(ExceptionCode& ec)
+{
+    return nextNode(ExceptionContext::createFromNode(referenceNode()), ec);
+}
+
+PassRefPtr<Node> NodeIterator::previousNode(ExceptionCode& ec)
+{
+    return previousNode(ExceptionContext::createFromNode(referenceNode()), ec);
+}
 
 } // namespace WebCore

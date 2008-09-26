@@ -25,13 +25,11 @@
 #include "config.h"
 #include "TreeWalker.h"
 
-#include <kjs/ExecState.h>
 #include "ExceptionCode.h"
+#include "ExceptionContext.h"
 #include "Node.h"
 #include "NodeFilter.h"
 #include <wtf/PassRefPtr.h>
-
-using namespace KJS;
 
 namespace WebCore {
 
@@ -56,8 +54,7 @@ inline Node* TreeWalker::setCurrent(PassRefPtr<Node> node)
     return m_current.get();
 }
 
-#if USE(JSC)
-Node* TreeWalker::parentNode(ExecState* exec)
+Node* TreeWalker::parentNode(ExceptionContext* exec)
 {
     RefPtr<Node> node = m_current;
     while (node != root()) {
@@ -73,7 +70,7 @@ Node* TreeWalker::parentNode(ExecState* exec)
     return 0;
 }
 
-Node* TreeWalker::firstChild(ExecState* exec)
+Node* TreeWalker::firstChild(ExceptionContext* exec)
 {
     for (RefPtr<Node> node = m_current->firstChild(); node; ) {
         short acceptNodeResult = acceptNode(exec, node.get());
@@ -106,7 +103,7 @@ Node* TreeWalker::firstChild(ExecState* exec)
     return 0;
 }
 
-Node* TreeWalker::lastChild(ExecState* exec)
+Node* TreeWalker::lastChild(ExceptionContext* exec)
 {
     for (RefPtr<Node> node = m_current->lastChild(); node; ) {
         short acceptNodeResult = acceptNode(exec, node.get());
@@ -139,7 +136,7 @@ Node* TreeWalker::lastChild(ExecState* exec)
     return 0;
 }
 
-Node* TreeWalker::previousSibling(ExecState* exec)
+Node* TreeWalker::previousSibling(ExceptionContext* exec)
 {
     RefPtr<Node> node = m_current;
     if (node == root())
@@ -175,7 +172,7 @@ Node* TreeWalker::previousSibling(ExecState* exec)
     }
 }
 
-Node* TreeWalker::nextSibling(ExecState* exec)
+Node* TreeWalker::nextSibling(ExceptionContext* exec)
 {
     RefPtr<Node> node = m_current;
     if (node == root())
@@ -211,7 +208,7 @@ Node* TreeWalker::nextSibling(ExecState* exec)
     }
 }
 
-Node* TreeWalker::previousNode(ExecState* exec)
+Node* TreeWalker::previousNode(ExceptionContext* exec)
 {
     RefPtr<Node> node = m_current;
     while (node != root()) {
@@ -250,7 +247,7 @@ Node* TreeWalker::previousNode(ExecState* exec)
     return 0;
 }
 
-Node* TreeWalker::nextNode(ExecState* exec)
+Node* TreeWalker::nextNode(ExceptionContext* exec)
 {
     RefPtr<Node> node = m_current;
 Children:
@@ -276,6 +273,5 @@ Children:
     }
     return 0;
 }
-#endif // USE(JSC)
 
 } // namespace WebCore

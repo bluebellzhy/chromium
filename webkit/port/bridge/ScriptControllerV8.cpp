@@ -107,16 +107,6 @@ void ScriptController::gcUnprotectJSWrapper(void* dom_object)
     V8Proxy::GCUnprotect(static_cast<Peerable*>(dom_object));
 }
 
-JSException ScriptController::NoException()
-{
-    return v8::Local<v8::Value>();
-}
-
-bool ScriptController::IsException(JSException exception)
-{
-    return !exception.IsEmpty();
-}
-
 void ScriptController::pauseTimeouts(OwnPtr<PausedTimeouts>& result)
 {
     DOMWindow* window = m_frame->domWindow();

@@ -739,6 +739,7 @@ all : \
     V8NodeIterator.h \
     V8NodeList.h \
     V8Notation.h \
+    V8NSResolver.h \
     V8OverflowEvent.h \
     V8ProcessingInstruction.h \
     V8ProgressEvent.h \

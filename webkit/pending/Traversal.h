@@ -28,15 +28,10 @@
 #include <wtf/Forward.h>
 #include <wtf/RefPtr.h>
 
-#if USE(JSC)
-namespace KJS {
-    class JSValue;
-    class ExecState;
-}
-#endif
 
 namespace WebCore {
 
+    class ExceptionContext;
     class Node;
     class NodeFilter;
 
@@ -49,9 +44,7 @@ namespace WebCore {
 
     protected:
         Traversal(PassRefPtr<Node>, unsigned whatToShow, PassRefPtr<NodeFilter>, bool expandEntityReferences);
-#if USE(JSC)
-        short acceptNode(KJS::ExecState*, Node*) const;
-#endif
+        short acceptNode(ExceptionContext*, Node*) const;
 
     private:
         RefPtr<Node> m_root;

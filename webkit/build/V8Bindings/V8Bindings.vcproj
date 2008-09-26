@@ -1128,6 +1128,14 @@
 				>
 			</File>
 			<File
+				RelativePath="$(IntDir)\DerivedSources\V8NSResolver.h"
+				>
+			</File>
+			<File
+				RelativePath="$(IntDir)\DerivedSources\V8NSResolver.cpp"
+				>
+			</File>
+			<File
 				RelativePath="$(IntDir)\DerivedSources\V8OverflowEvent.cpp"
 				>
 			</File>
@@ -2305,6 +2313,14 @@
 			>
 		</File>
 		<File
+			RelativePath="..\..\port\bindings\v8\JSNSResolver.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\port\bindings\v8\JSNSResolver.h"
+			>
+		</File>
+		<File
 			RelativePath="..\..\port\bindings\v8\JSXPathNSResolver.cpp"
 			>
 		</File>
@@ -2338,6 +2354,10 @@
 		</File>
 		<File
 			RelativePath="..\..\port\bridge\ScriptControllerV8.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\..\port\bridge\ExceptionContextV8.cpp"
 			>
 		</File>
 		<File

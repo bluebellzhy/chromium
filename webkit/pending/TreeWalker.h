@@ -25,9 +25,7 @@
 #ifndef TreeWalker_h
 #define TreeWalker_h
 
-#if USE(JSC)
-#include "JSDOMBinding.h"
-#endif
+#include "ExceptionContext.h"
 #include "NodeFilter.h"
 #include "Traversal.h"
 #include <wtf/PassRefPtr.h>
@@ -47,24 +45,22 @@ namespace WebCore {
         Node* currentNode() const { return m_current.get(); }
         void setCurrentNode(PassRefPtr<Node>, ExceptionCode&);
 
-#if USE(JSC)
-        Node* parentNode(KJS::ExecState*);
-        Node* firstChild(KJS::ExecState*);
-        Node* lastChild(KJS::ExecState*);
-        Node* previousSibling(KJS::ExecState*);
-        Node* nextSibling(KJS::ExecState*);
-        Node* previousNode(KJS::ExecState*);
-        Node* nextNode(KJS::ExecState*);
+        Node* parentNode(ExceptionContext*);
+        Node* firstChild(ExceptionContext*);
+        Node* lastChild(ExceptionContext*);
+        Node* previousSibling(ExceptionContext*);
+        Node* nextSibling(ExceptionContext*);
+        Node* previousNode(ExceptionContext*);
+        Node* nextNode(ExceptionContext*);
 
         // For non-JS bindings. Silently ignores the JavaScript exception if any.
-        Node* parentNode() { return parentNode(execStateFromNode(m_current.get())); }
-        Node* firstChild() { return firstChild(execStateFromNode(m_current.get())); }
-        Node* lastChild() { return lastChild(execStateFromNode(m_current.get())); }
-        Node* previousSibling() { return previousSibling(execStateFromNode(m_current.get())); }
-        Node* nextSibling() { return nextSibling(execStateFromNode(m_current.get())); }
-        Node* previousNode() { return previousNode(execStateFromNode(m_current.get())); }
-        Node* nextNode() { return nextNode(execStateFromNode(m_current.get())); }
-#endif
+        Node* parentNode() { return parentNode(ExceptionContext::createFromNode(m_current.get())); }
+        Node* firstChild() { return firstChild(ExceptionContext::createFromNode(m_current.get())); }
+        Node* lastChild() { return lastChild(ExceptionContext::createFromNode(m_current.get())); }
+        Node* previousSibling() { return previousSibling(ExceptionContext::createFromNode(m_current.get())); }
+        Node* nextSibling() { return nextSibling(ExceptionContext::createFromNode(m_current.get())); }
+        Node* previousNode() { return previousNode(ExceptionContext::createFromNode(m_current.get())); }
+        Node* nextNode() { return nextNode(ExceptionContext::createFromNode(m_current.get())); }
 
     private:
         TreeWalker(PassRefPtr<Node>, unsigned whatToShow, PassRefPtr<NodeFilter>, bool expandEntityReferences);

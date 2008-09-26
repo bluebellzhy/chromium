@@ -28,58 +28,81 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
-
-#include "v8_nodefilter.h"
-#include "v8_proxy.h"
 #include "ExceptionContext.h"
-#include "NodeFilter.h"
+
 #include "Node.h"
 
 namespace WebCore {
 
-V8NodeFilterCondition::V8NodeFilterCondition(v8::Handle<v8::Value> filter) {
-  m_filter = v8::Persistent<v8::Value>::New(filter);
-#ifndef NDEBUG
-  V8Proxy::RegisterGlobalHandle(NODE_FILTER, this, m_filter);
-#endif
+ExceptionContext::ExceptionContext()
+    : m_exceptionCatcher(0)
+    , m_exception()
+{
 }
 
-V8NodeFilterCondition::~V8NodeFilterCondition() {
-#ifndef NDEBUG
-  V8Proxy::UnregisterGlobalHandle(this, m_filter);
-#endif
-  m_filter.Dispose();
-  m_filter.Clear();
+ExceptionContext::~ExceptionContext()
+{
 }
 
-short V8NodeFilterCondition::acceptNode(ExceptionContext* exception_context,
-                                        Node* node) const {
-  ASSERT(v8::Context::InContext());
+void ExceptionContext::setExceptionCatcher(ExceptionCatcher* exceptionCatcher)
+{
+    if (m_exceptionCatcher && exceptionCatcher)
+        m_exceptionCatcher->detachContext();
 
-  if (!m_filter->IsFunction()) return NodeFilter::FILTER_ACCEPT;
+    m_exceptionCatcher = exceptionCatcher;
+}
 
-  ExceptionCatcher exception_catcher(exception_context);
+bool ExceptionContext::hadException()
+{
+    if (m_exceptionCatcher)
+        m_exceptionCatcher->updateContext();
 
-  v8::Handle<v8::Object> this_obj = v8::Context::GetCurrent()->Global();
-  v8::Handle<v8::Function> callback =
-      v8::Handle<v8::Function>::Cast(m_filter);
-  v8::Handle<v8::Value>* args = new v8::Handle<v8::Value>[1];
-  args[0] = V8Proxy::ToV8Object(V8ClassIndex::NODE, node);
+    return !m_exception.IsEmpty();
+}
 
-  V8Proxy* proxy = V8Proxy::retrieve();
-  ASSERT(proxy);
+ExceptionContext* ExceptionContext::createFromNode(Node*)
+{
+    // Unlike JSC, which stores exceptions in ExecState that is accessible from
+    // ScriptController that is retrievable from Node*, V8 uses static chain of
+    // handlers (encapsulated as v8::TryCatch and here as ExceptionCatcher)
+    // to track exceptions, so it has no need for Node*.
+    return new ExceptionContext();
+}
 
-  v8::Handle<v8::Value> result =
-      proxy->CallFunction(callback, this_obj, 1, args);
-  delete[] args;
+JSException ExceptionContext::NoException()
+{
+    return v8::Local<v8::Value>();
+}
 
-  if (exception_context->hadException()) {
-    return NodeFilter::FILTER_REJECT;
-  }
+ExceptionCatcher::ExceptionCatcher(ExceptionContext* exceptionContext)
+    : m_catcher()
+    , m_context(exceptionContext)
+{
+    exceptionContext->setExceptionCatcher(this);
+}
 
-  ASSERT(!result.IsEmpty());
+void ExceptionCatcher::detachContext()
+{
+    m_context = 0;
+}
 
-  return result->Int32Value();
+void ExceptionCatcher::updateContext()
+{
+    ASSERT(m_context);
+
+    if (m_catcher.HasCaught())
+        m_context->setException(m_catcher.Exception());
+    else
+        m_context->setException(ExceptionContext::NoException());
+}
+
+ExceptionCatcher::~ExceptionCatcher()
+{
+    if (!m_context)
+        return;
+
+    updateContext();
+    m_context->setExceptionCatcher(0);
 }
 
 }  // namespace WebCore

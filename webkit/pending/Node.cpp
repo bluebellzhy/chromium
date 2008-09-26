@@ -39,6 +39,7 @@
 #include "DynamicNodeList.h"
 #include "Element.h"
 #include "ExceptionCode.h"
+#include "ExceptionContext.h"
 #include "Frame.h"
 #include "HTMLNames.h"
 #include "Logging.h"
@@ -57,8 +58,6 @@
 #include <wtf/RefCountedLeakCounter.h>
 
 #if USE(JSC)
-#include "JSDOMBinding.h"
-#include <kjs/ExecState.h>
 #include <kjs/JSLock.h>
 #endif
 
@@ -1271,10 +1270,9 @@ public:
     }
 };
 
-#if USE(JSC)
 class ResolveNamespaceFunctor {
 public:
-    ResolveNamespaceFunctor(NSResolver* resolver, ExceptionCode& ec, KJS::ExecState* exec)
+    ResolveNamespaceFunctor(NSResolver* resolver, ExceptionCode& ec, ExceptionContext* exec)
         : m_resolver(resolver)
         , m_exceptionCode(ec)
         , m_exec(exec)
@@ -1312,7 +1310,7 @@ public:
 private:
     NSResolver* m_resolver;
     ExceptionCode& m_exceptionCode;
-    KJS::ExecState* m_exec;
+    ExceptionContext* m_exec;
 };
 
 static bool selectorNeedsNamespaceResolution(CSSSelector* currentSelector)
@@ -1321,7 +1319,7 @@ static bool selectorNeedsNamespaceResolution(CSSSelector* currentSelector)
     return forEachSelector(functor, currentSelector);
 }
 
-static bool resolveNamespacesForSelector(CSSSelector* currentSelector, NSResolver* resolver, ExceptionCode& ec, KJS::ExecState* exec)
+static bool resolveNamespacesForSelector(CSSSelector* currentSelector, NSResolver* resolver, ExceptionCode& ec, ExceptionContext* exec)
 {
     ResolveNamespaceFunctor functor(resolver, ec, exec);
     return forEachSelector(functor, currentSelector);
@@ -1329,15 +1327,15 @@ static bool resolveNamespacesForSelector(CSSSelector* currentSelector, NSResolve
 
 PassRefPtr<Element> Node::querySelector(const String& selectors, ExceptionCode& ec)
 {
-    return querySelector(selectors, 0, ec, execStateFromNode(this));
+    return querySelector(selectors, 0, ec, ExceptionContext::createFromNode(this));
 }
 
 PassRefPtr<NodeList> Node::querySelectorAll(const String& selectors, ExceptionCode& ec)
 {
-    return querySelectorAll(selectors, 0, ec, execStateFromNode(this));
+    return querySelectorAll(selectors, 0, ec, ExceptionContext::createFromNode(this));
 }
 
-PassRefPtr<Element> Node::querySelector(const String& selectors, NSResolver* resolver, ExceptionCode& ec, KJS::ExecState* exec)
+PassRefPtr<Element> Node::querySelector(const String& selectors, NSResolver* resolver, ExceptionCode& ec, ExceptionContext* exec)
 {
     if (selectors.isEmpty()) {
         ec = SYNTAX_ERR;
@@ -1397,7 +1395,7 @@ PassRefPtr<Element> Node::querySelector(const String& selectors, NSResolver* res
     return 0;
 }
 
-PassRefPtr<NodeList> Node::querySelectorAll(const String& selectors, NSResolver* resolver, ExceptionCode& ec, KJS::ExecState* exec)
+PassRefPtr<NodeList> Node::querySelectorAll(const String& selectors, NSResolver* resolver, ExceptionCode& ec, ExceptionContext* exec)
 {
     if (selectors.isEmpty()) {
         ec = SYNTAX_ERR;
@@ -1434,7 +1432,6 @@ PassRefPtr<NodeList> Node::querySelectorAll(const String& selectors, NSResolver*
 
     return createSelectorNodeList(this, querySelector.get());
 }
-#endif // USE(JSC)
 
 Document *Node::ownerDocument() const
 {
