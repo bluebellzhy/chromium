@@ -76,45 +76,29 @@ HTMLPlugInElement::~HTMLPlugInElement()
 #endif
 }
 
-#if USE(JSC)
-void HTMLPlugInElement::detach()
-{
-    m_instance.clear();
-    HTMLFrameOwnerElement::detach();
-}
-
-KJS::Bindings::Instance* HTMLPlugInElement::getInstance() const
+JSInstance HTMLPlugInElement::getInstance() const
 {
     Frame* frame = document()->frame();
     if (!frame)
-        return 0;
+        return JSInstanceHolder::EmptyInstance();
 
     // If the host dynamically turns off JavaScript (or Java) we will still return
     // the cached allocated Bindings::Instance.  Not supporting this edge-case is OK.
-    if (m_instance)
-        return m_instance.get();
+    if (!m_instance.IsEmpty())
+        return m_instance.Get();
 
     RenderWidget* renderWidget = renderWidgetForJSBindings();
     if (renderWidget && renderWidget->widget())
         m_instance = frame->script()->createScriptInstanceForWidget(renderWidget->widget());
 
-    return m_instance.get();
-}
-#elif USE(V8)
-JSInstance HTMLPlugInElement::getInstance() const
-{
-    // FIXME: what do we need to do here?
-    notImplemented();
     return m_instance.Get();
 }
 
 void HTMLPlugInElement::detach()
 {
-    // FIXME: what do we need to do here?
-    notImplemented();
+    m_instance.Clear();
     HTMLFrameOwnerElement::detach();
 }
-#endif
 
 String HTMLPlugInElement::align() const
 {
