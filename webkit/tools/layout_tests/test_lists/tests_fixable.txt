@@ -789,6 +789,13 @@ V8 # LayoutTests/fast/js/sort-stability.html = FAIL
 # http://code.google.com/p/v8/issues/detail?id=91
 V8 # LayoutTests/fast/js/date-set-to-nan.html = FAIL
 
+# These require application cache to be enabled.  Skip the tests because
+# they're all timing out.  TODO(tc): Upstream changes to the test so they
+# fail quickly if window.applicationCache is undefined (then we don't have to
+# skip them).
+# http://crbug.com/2844
+V8 | KJS # SKIP : LayoutTests/http/tests/appcache = TIMEOUT | FAIL
+
 # V8 failures as a result of the WebKit merge.
 # http://code.google.com/p/v8/issues/detail?id=92
 V8 # LayoutTests/fast/js/constructor-attributes.html = FAIL
@@ -1122,7 +1129,6 @@ V8 | KJS # LayoutTests/fast/transforms/transform-positioned-ancestor.html = FAIL
 V8 | KJS # LayoutTests/fast/xsl/nbsp-in-stylesheet.html = FAIL
 V8 | KJS # LayoutTests/fast/xsl/sort-locale.xml = FAIL
 V8 | KJS # LayoutTests/fast/xsl/subframe-location.html = FAIL
-V8 | KJS # LayoutTests/http/tests/appcache = FAIL
 V8 | KJS # LayoutTests/http/tests/incremental/slow-utf8-css.html = FAIL
 V8 | KJS # LayoutTests/http/tests/loading/location-hash-reload-cycle.html = FAIL
 V8 | KJS # LayoutTests/http/tests/local/stylesheet-and-script-load-order-http.html = FAIL
