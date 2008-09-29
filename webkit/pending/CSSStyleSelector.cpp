@@ -3840,8 +3840,8 @@ void CSSStyleSelector::applyProperty(int id, CSSValue *value)
         // if all the characters are covered by fonts specified for this element.
         // TODO(jungshik): Currently, it's document-wide constant inferred from
         // the document charset, but we should infer it from the value of 
-        // xml:lang or lang for |m_element|. 
-        UScriptCode script = m_element->document()->dominantScript();
+        // xml:lang or lang for |m_element|.
+        UScriptCode script = m_checker.m_document->dominantScript();
         // serif, sans-serif, cursive, fantasy, monospace
         ScriptFamilyState scriptFamilyStates[5]; 
         Settings* settings = m_checker.m_document->settings();
