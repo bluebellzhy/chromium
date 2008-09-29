@@ -164,6 +164,9 @@ V8 | KJS # LayoutTests/fast/repaint/bugzilla-6473.html = PASS | FAIL
 // Bug 982608: test had a wrong result for one condition
 V8 | KJS # LayoutTests/plugins/destroy-stream-twice.html = FAIL
 
+// http://crbug.com/2858 : no support for postURL with file data.
+V8 | KJS # LayoutTests/http/tests/plugins/post-url-file.html = FAIL
+
 // This test has been modified and placed in pending, so we ignore the original
 // until we get our modification into WebKit.
 V8 | KJS # LayoutTests/security/block-test.html = PASS | FAIL
@@ -1136,7 +1139,6 @@ V8 | KJS # LayoutTests/http/tests/navigation/redirect-cycle.html = FAIL
 V8 | KJS # LayoutTests/http/tests/navigation/reload-subframe-frame.html = FAIL
 V8 | KJS # LayoutTests/http/tests/navigation/reload-subframe-iframe.html = FAIL
 V8 | KJS # LayoutTests/http/tests/navigation/reload-subframe-object.html = FAIL
-V8 | KJS # LayoutTests/http/tests/plugins/post-url-file.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-grandchildren-alias.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-grandchildren.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context.html = FAIL
@@ -1172,7 +1174,6 @@ V8 | KJS # LayoutTests/media/progress-event-total.html = FAIL
 V8 | KJS # LayoutTests/media/video-click-dlbclick-standalone.html = FAIL
 V8 | KJS # LayoutTests/media/video-layer-crash.html = FAIL
 V8 | KJS # LayoutTests/media/video-source-type-params.html = FAIL
-V8 | KJS # LayoutTests/plugins/netscape-identifier-conversion.html = FAIL
 V8 | KJS # LayoutTests/plugins/return-error-from-new-stream-doesnt-invoke-destroy-stream.html = FAIL
 V8 | KJS # LayoutTests/printing = FAIL
 V8 | KJS # LayoutTests/security/autocomplete-cleared-on-back.html = FAIL

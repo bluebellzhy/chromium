@@ -9,10 +9,11 @@
 #include "webkit/tools/test_shell/layout_test_controller.h"
 
 #include "base/basictypes.h"
+#include "base/file_util.h"
 #include "base/logging.h"
 #include "base/message_loop.h"
-#include "base/string_util.h"
 #include "base/path_service.h"
+#include "base/string_util.h"
 #include "webkit/glue/webframe.h"
 #include "webkit/glue/webpreferences.h"
 #include "webkit/glue/webview.h"
@@ -475,6 +476,15 @@ void LayoutTestController::pathToLocalResource(
     return;
 
   std::string url = args[0].ToString();
+  if (StartsWithASCII(url, "/tmp/", true)) {
+    // We want a temp file.
+    std::wstring path;
+    PathService::Get(base::DIR_TEMP, &path);
+    file_util::AppendToPath(&path, UTF8ToWide(url.substr(5)));
+    result->Set(WideToUTF8(path));
+    return;
+  }
+
   // Some layout tests use file://// which we resolve as a UNC path.  Normalize
   // them to just file:///.
   while (StartsWithASCII(url, "file:////", false)) {
