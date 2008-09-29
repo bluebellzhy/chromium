@@ -360,10 +360,11 @@ V8 # LayoutTests/plugins/bindings-test.html = FAIL
 // Bug 1124435: deal with the deletion UI in a later release.
 V8 | KJS # LayoutTests/editing/deleting/deletionUI-single-instance.html = FAIL
 
-// Bug 871718: This test loads data: URLs into frames and sets queries on then.
+// Bug 871718: These tests load data: URLs into frames and sets queries on then.
 // This is totally broken. This layout test should be rewitten so that the
 // subframes are not data URLs (probably we want files in the resources dir.).
 V8 | KJS # LayoutTests/fast/encoding/char-encoding.html = TIMEOUT
+V8 | KJS # LayoutTests/fast/encoding/char-decoding.html = TIMEOUT
 
 // Bug 1130795: since we don't have Aqua-themed controls, don't ignore the
 // box-shadow properties of controls that request Aqua theming.  But since Aqua
@@ -798,6 +799,11 @@ V8 # LayoutTests/fast/js/date-set-to-nan.html = FAIL
 # skip them).
 # http://crbug.com/2844
 V8 | KJS # SKIP : LayoutTests/http/tests/appcache = TIMEOUT | FAIL
+
+# Depends on postMessage in a way we don't support:
+# http://code.google.com/p/chromium/issues/detail?id=2857
+V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame-uppercase.html = FAIL
+V8 # LayoutTests/http/tests/security/dataURL/xss-DENIED-to-data-url-sub-frame.html = FAIL
 
 # V8 failures as a result of the WebKit merge.
 # http://code.google.com/p/v8/issues/detail?id=92

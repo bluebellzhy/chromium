@@ -143,6 +143,9 @@ V8 # LayoutTests/fast/js/function-names.html = FAIL | PASS
 // We will pass the new one after we merge
 KJS | V8 # LayoutTests/http/tests/incremental/slow-utf8-css.pl = FAIL
 
+// This test relies on the x-mac-cyrillic encoding which we don't ship.
+V8 # LayoutTests/fast/encoding/frame-default-enc.html = FAIL
+
 // -----------------------------------------------------------------
 // CHROME REWRITTEN TESTS
 // -----------------------------------------------------------------
