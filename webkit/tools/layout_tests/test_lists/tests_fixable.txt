@@ -811,6 +811,44 @@ V8 # LayoutTests/fast/js/function-toString-object-literals.html = FAIL
 # information. <http://crbug.com/2960>
 V8 # LayoutTests/fast/dom/Window/console-functions.html = FAIL
 
+# Shadows don't render correctly for these tests.
+# http://code.google.com/p/chromium/issues/detail?id=2969
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-1.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-2.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-3.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-4.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-5.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-6.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/shadow-offset-7.html = FAIL
+
+# There appears to be some parsing error. These tests give "successfullyParsed
+# should be true (of type boolean). Was undefined (of type undefined)."
+# http://code.google.com/p/chromium/issues/detail?id=2976
+V8 | KJS # LayoutTests/fast/canvas/canvas-invalid-fillstyle.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-invalid-strokestyle.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-ImageData-behaviour.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-alphaImageData-behavior.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-putImageData.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/drawImage-with-negative-source-destination.html = FAIL
+
+# getImageData isn't supported on canvas.
+# http://code.google.com/p/chromium/issues/detail?id=2974
+V8 | KJS # LayoutTests/fast/canvas/canvas-pattern-behaviour.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-getImageData.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-longlived-context.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-path-with-inf-nan-dimensions.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/canvas-save-restore-with-path.html = FAIL
+
+# Incorrect rendering - the pattern does not appear (unknown why).
+# http://code.google.com/p/chromium/issues/detail?id=2973
+V8 | KJS # LayoutTests/fast/canvas/canvas-bg.html = FAIL
+
+# We don't implement toDataURL.
+# http://code.google.com/p/chromium/issues/detail?id=2972
+V8 | KJS # LayoutTests/fast/canvas/toDataURL-noData.html = FAIL
+V8 | KJS # LayoutTests/fast/canvas/toDataURL-supportedTypes.html = FAIL
+
+
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
 //
@@ -859,31 +897,8 @@ V8 | KJS # LayoutTests/fast/borders/border-color-inherit.html = FAIL
 V8 | KJS # LayoutTests/fast/borders/border-image-omit-right-slice.html = FAIL
 V8 | KJS # LayoutTests/fast/borders/fieldsetBorderRadius.html = FAIL
 V8 | KJS # LayoutTests/fast/borders/inline-mask-overlay-image.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-alphaImageData-behavior.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-bg.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvasDrawingIntoSelf.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-getImageData.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-ImageData-behaviour.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-invalid-fillstyle.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-invalid-strokestyle.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-longlived-context.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-path-with-inf-nan-dimensions.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-pattern-behaviour.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-putImageData.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/canvas-save-restore-with-path.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/canvas-text-alignment.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/canvas-text-baseline.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/drawImage.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/drawImage-with-negative-source-destination.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-1.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-2.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-3.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-4.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-5.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-6.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/shadow-offset-7.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/toDataURL-noData.html = FAIL
-V8 | KJS # LayoutTests/fast/canvas/toDataURL-supportedTypes.html = FAIL
 V8 | KJS # LayoutTests/fast/css/attribute-selector-empty-value.html = FAIL
 V8 | KJS # LayoutTests/fast/css/begin-end-contain-selector-empty-value.html = FAIL
 V8 | KJS # LayoutTests/fast/css/counters/invalidate-cached-counter-node.html = FAIL
