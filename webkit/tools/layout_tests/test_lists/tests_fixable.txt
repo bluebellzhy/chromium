@@ -821,6 +821,10 @@ V8 # LayoutTests/fast/js/kde/string-1-n.html = FAIL
 V8 # LayoutTests/fast/js/kde/string-2-n.html = FAIL
 V8 # LayoutTests/fast/js/toString-prefix-postfix-preserve-parens.html = FAIL
 
+# Console output won't have line numbers until V8 gives us a way to get that
+# information. <http://crbug.com/2960>
+V8 # LayoutTests/fast/dom/Window/console-functions.html = FAIL
+
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
 //

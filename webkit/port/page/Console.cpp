@@ -31,6 +31,7 @@
 
 #include "ChromeClient.h"
 #include "Frame.h"
+#include "FrameLoader.h"
 #include "InspectorController.h"
 #include "NotImplemented.h"
 #include "Page.h"
@@ -45,6 +46,87 @@ Console::Console(Frame* frame)
 void Console::disconnectFrame()
 {
     m_frame = 0;
+}
+
+void Console::debug(const String& message)
+{
+    // In Firebug, console.debug has the same behavior as console.log. So we'll
+    // do the same.
+    log(message);
+}
+
+void Console::error(const String& message)
+{
+    // TODO(erg): For all of these methods which call addMessageToConsole(), we
+    // always assume the line number of the console.error(...) was called on
+    // line 0.  To fix this, we need to modify the V8 version of the Console
+    // interface to also pass in the current line number, which will be hard
+    // since it looks like that information isn't publicly accessible with the
+    // current v8 interface. <http://crbug.com/2960>
+    //
+    // This will fix this currently broken test:
+    //    LayoutTests/fast/dom/Window/console-functions.html
+
+    if (!m_frame)
+        return;
+
+    Page* page = m_frame->page();
+    if (!page)
+        return;
+
+    const KURL& url = m_frame->loader()->url();
+    String prettyURL = url.prettyURL();
+
+    page->chrome()->client()->addMessageToConsole(message, 0, prettyURL);
+    page->inspectorController()->addMessageToConsole(JSMessageSource, ErrorMessageLevel, message, 0, url.string());
+}
+
+void Console::info(const String& message)
+{
+    if (!m_frame)
+        return;
+
+    Page* page = m_frame->page();
+    if (!page)
+        return;
+
+    const KURL& url = m_frame->loader()->url();
+    String prettyURL = url.prettyURL();
+
+    page->chrome()->client()->addMessageToConsole(message, 0, prettyURL);
+    page->inspectorController()->addMessageToConsole(JSMessageSource, LogMessageLevel, message, 0, url.string());
+}
+
+void Console::log(const String& message)
+{
+    if (!m_frame)
+        return;
+
+    Page* page = m_frame->page();
+    if (!page)
+        return;
+
+    const KURL& url = m_frame->loader()->url();
+    String prettyURL = url.prettyURL();
+
+    page->chrome()->client()->addMessageToConsole(message, 0, prettyURL);
+    page->inspectorController()->addMessageToConsole(JSMessageSource, LogMessageLevel, message, 0, url.string());
+}
+
+void Console::warn(const String& message)
+{
+    if (!m_frame)
+        return;
+
+    Page* page = m_frame->page();
+    if (!page)
+        return;
+
+    const KURL& url = m_frame->loader()->url();
+    String prettyURL = url.prettyURL();
+
+    page->chrome()->client()->addMessageToConsole(message, 0, prettyURL);
+    page->inspectorController()->addMessageToConsole(JSMessageSource, WarningMessageLevel, message, 0, url.string());
 }
 
 void Console::addMessage(MessageSource source, MessageLevel level, const String& message, unsigned lineNumber, const String& sourceURL)

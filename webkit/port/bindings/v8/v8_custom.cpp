@@ -51,11 +51,11 @@
 #include "CanvasPattern.h"
 #include "CanvasStyle.h"
 #include "CanvasRenderingContext2D.h"
-
 #include "Clipboard.h"
 #include "ClipboardEvent.h"
 
 #include "Base64.h"
+#include "Console.h"
 #include "FloatRect.h"
 #include "Frame.h"
 #include "FrameTree.h"
@@ -2209,7 +2209,10 @@ CALLBACK_FUNC_DECL(ConsoleDir) {
 
 CALLBACK_FUNC_DECL(ConsoleError) {
   INC_STATS(L"DOM.Console.error()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  v8::Handle<v8::Value> holder = args.Holder();
+  Console* imp = V8Proxy::ToNativeObject<Console>(V8ClassIndex::CONSOLE, holder);
+  String message = ToWebCoreString(args[0]);
+  imp->error(message);
   return v8::Undefined();
 }
 
@@ -2221,13 +2224,19 @@ CALLBACK_FUNC_DECL(ConsoleGroup) {
 
 CALLBACK_FUNC_DECL(ConsoleInfo) {
   INC_STATS(L"DOM.Console.info()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  v8::Handle<v8::Value> holder = args.Holder();
+  Console* imp = V8Proxy::ToNativeObject<Console>(V8ClassIndex::CONSOLE, holder);
+  String message = ToWebCoreString(args[0]);
+  imp->info(message);
   return v8::Undefined();
 }
 
 CALLBACK_FUNC_DECL(ConsoleLog) {
   INC_STATS(L"DOM.Console.log()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  v8::Handle<v8::Value> holder = args.Holder();
+  Console* imp = V8Proxy::ToNativeObject<Console>(V8ClassIndex::CONSOLE, holder);
+  String message = ToWebCoreString(args[0]);
+  imp->log(message);
   return v8::Undefined();
 }
 
@@ -2251,7 +2260,10 @@ CALLBACK_FUNC_DECL(ConsoleTimeEnd) {
 
 CALLBACK_FUNC_DECL(ConsoleWarn) {
   INC_STATS(L"DOM.Console.warn()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
+  v8::Handle<v8::Value> holder = args.Holder();
+  Console* imp = V8Proxy::ToNativeObject<Console>(V8ClassIndex::CONSOLE, holder);
+  String message = ToWebCoreString(args[0]);
+  imp->warn(message);
   return v8::Undefined();
 }
 

@@ -91,6 +91,11 @@ namespace WebCore {
         void reportException(KJS::ExecState*, KJS::JSValue*);
         void reportCurrentException(KJS::ExecState*);
 #elif USE(V8)
+        void debug(const String& message);
+        void error(const String& message);
+        void info(const String& message);
+        void log(const String& message);
+        void warn(const String& message);
         void time(const String& title);
         void groupEnd();
 #endif
