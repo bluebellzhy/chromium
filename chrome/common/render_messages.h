@@ -101,6 +101,10 @@ struct ViewHostMsg_FrameNavigate_Params {
 
   // True if this was a post request.
   bool is_post;
+
+  // Whether the content of the frame was replaced with some alternate content
+  // (this can happen if the resource was insecure).
+  bool is_content_filtered;
 };
 
 // Parameters structure for ViewHostMsg_ContextMenu, which has too many data
@@ -150,6 +154,9 @@ struct ViewHostMsg_ContextMenu_Params {
   // These flags indicate to the browser whether the renderer believes it is
   // able to perform the corresponding action.
   int edit_flags;
+
+  // The security info for the resource we are showing the menu on.
+  std::string security_info;
 };
 
 // Values that may be OR'd together to form the 'flags' parameter of a
@@ -766,6 +773,7 @@ struct ParamTraits<ViewHostMsg_ContextMenu_Params> {
     WriteParam(m, p.misspelled_word);
     WriteParam(m, p.dictionary_suggestions);
     WriteParam(m, p.edit_flags);
+    WriteParam(m, p.security_info);
   }
   static bool Read(const Message* m, void** iter, param_type* p) {
     return
@@ -779,7 +787,8 @@ struct ParamTraits<ViewHostMsg_ContextMenu_Params> {
       ReadParam(m, iter, &p->selection_text) &&
       ReadParam(m, iter, &p->misspelled_word) &&
       ReadParam(m, iter, &p->dictionary_suggestions) &&
-      ReadParam(m, iter, &p->edit_flags);
+      ReadParam(m, iter, &p->edit_flags) &&
+      ReadParam(m, iter, &p->security_info);
   }
   static void Log(const param_type& p, std::wstring* l) {
     l->append(L"<ViewHostMsg_ContextMenu_Params>");
@@ -1434,35 +1443,33 @@ struct ParamTraits<WebPreferences> {
     WriteParam(m, p.java_enabled);
     WriteParam(m, p.user_style_sheet_enabled);
     WriteParam(m, p.user_style_sheet_location);
-    WriteParam(m, p.user_agent);
   }
   static bool Read(const Message* m, void** iter, param_type* p) {
     return
-      ReadParam(m, iter, &p->standard_font_family) &&
-      ReadParam(m, iter, &p->fixed_font_family) &&
-      ReadParam(m, iter, &p->serif_font_family) &&
-      ReadParam(m, iter, &p->sans_serif_font_family) &&
-      ReadParam(m, iter, &p->cursive_font_family) &&
-      ReadParam(m, iter, &p->fantasy_font_family) &&
-      ReadParam(m, iter, &p->default_font_size) &&
-      ReadParam(m, iter, &p->default_fixed_font_size) &&
-      ReadParam(m, iter, &p->minimum_font_size) &&
-      ReadParam(m, iter, &p->minimum_logical_font_size) &&
-      ReadParam(m, iter, &p->default_encoding) &&
-      ReadParam(m, iter, &p->javascript_enabled) &&
-      ReadParam(m, iter, &p->javascript_can_open_windows_automatically) &&
-      ReadParam(m, iter, &p->loads_images_automatically) &&
-      ReadParam(m, iter, &p->plugins_enabled) &&
-      ReadParam(m, iter, &p->dom_paste_enabled) &&
-      ReadParam(m, iter, &p->developer_extras_enabled) &&
-      ReadParam(m, iter, &p->shrinks_standalone_images_to_fit) &&
-      ReadParam(m, iter, &p->uses_universal_detector) &&
-      ReadParam(m, iter, &p->text_areas_are_resizable) &&
-      ReadParam(m, iter, &p->dashboard_compatibility_mode) &&
-      ReadParam(m, iter, &p->java_enabled) &&
-      ReadParam(m, iter, &p->user_style_sheet_enabled) &&
-      ReadParam(m, iter, &p->user_style_sheet_location) &&
-      ReadParam(m, iter, &p->user_agent);
+        ReadParam(m, iter, &p->standard_font_family) &&
+        ReadParam(m, iter, &p->fixed_font_family) &&
+        ReadParam(m, iter, &p->serif_font_family) &&
+        ReadParam(m, iter, &p->sans_serif_font_family) &&
+        ReadParam(m, iter, &p->cursive_font_family) &&
+        ReadParam(m, iter, &p->fantasy_font_family) &&
+        ReadParam(m, iter, &p->default_font_size) &&
+        ReadParam(m, iter, &p->default_fixed_font_size) &&
+        ReadParam(m, iter, &p->minimum_font_size) &&
+        ReadParam(m, iter, &p->minimum_logical_font_size) &&
+        ReadParam(m, iter, &p->default_encoding) &&
+        ReadParam(m, iter, &p->javascript_enabled) &&
+        ReadParam(m, iter, &p->javascript_can_open_windows_automatically) &&
+        ReadParam(m, iter, &p->loads_images_automatically) &&
+        ReadParam(m, iter, &p->plugins_enabled) &&
+        ReadParam(m, iter, &p->dom_paste_enabled) &&
+        ReadParam(m, iter, &p->developer_extras_enabled) &&
+        ReadParam(m, iter, &p->shrinks_standalone_images_to_fit) &&
+        ReadParam(m, iter, &p->uses_universal_detector) &&
+        ReadParam(m, iter, &p->text_areas_are_resizable) &&
+        ReadParam(m, iter, &p->dashboard_compatibility_mode) &&
+        ReadParam(m, iter, &p->java_enabled) &&
+        ReadParam(m, iter, &p->user_style_sheet_enabled) &&
+        ReadParam(m, iter, &p->user_style_sheet_location);
   }
   static void Log(const param_type& p, std::wstring* l) {
     l->append(L"<WebPreferences>");

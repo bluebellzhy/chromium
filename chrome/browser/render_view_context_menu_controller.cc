@@ -18,6 +18,7 @@
 #include "chrome/browser/navigation_entry.h"
 #include "chrome/browser/profile.h"
 #include "chrome/browser/template_url_model.h"
+#include "chrome/browser/views/page_info_window.h"
 #include "chrome/browser/web_contents.h"
 #include "chrome/common/chrome_switches.h"
 #include "chrome/common/clipboard_service.h"
@@ -50,11 +51,11 @@ void RenderViewContextMenuController::OpenURL(
 }
 
 void RenderViewContextMenuController::CopyImageAt(int x, int y) {
-  source_web_contents_->CopyImageAt(x, y);
+  source_web_contents_->render_view_host()->CopyImageAt(x, y);
 }
 
 void RenderViewContextMenuController::Inspect(int x, int y) {
-  source_web_contents_->InspectElementAt(x, y);
+  source_web_contents_->render_view_host()->InspectElementAt(x, y);
 }
 
 void RenderViewContextMenuController::WriteTextToClipboard(
@@ -172,7 +173,9 @@ bool RenderViewContextMenuController::IsCommandEnabled(int id) const {
     case IDS_CONTENT_CONTEXT_ADD_TO_DICTIONARY:
       return !params_.misspelled_word.empty();
     case IDS_CONTENT_CONTEXT_VIEWPAGEINFO:
+      return (source_web_contents_->controller()->GetActiveEntry() != NULL);
     case IDS_CONTENT_CONTEXT_VIEWFRAMEINFO:
+      return true;
     case IDS_CONTENT_CONTEXT_SAVEFRAMEAS:
     case IDS_CONTENT_CONTEXT_PRINTFRAME:
     case IDS_CONTENT_CONTEXT_ADDSEARCHENGINE:  // Not implemented.
@@ -282,10 +285,15 @@ void RenderViewContextMenuController::ExecuteCommand(int id) {
       Inspect(params_.x, params_.y);
       break;
 
-    case IDS_CONTENT_CONTEXT_VIEWPAGEINFO:
-      win_util::MessageBox(NULL, L"Context Menu Action", L"View Page Info",
-                           MB_OK);
+    case IDS_CONTENT_CONTEXT_VIEWPAGEINFO: {
+      NavigationEntry* nav_entry =
+          source_web_contents_->controller()->GetActiveEntry();
+      PageInfoWindow::CreatePageInfo(source_web_contents_->profile(),
+                                     nav_entry,
+                                     source_web_contents_->GetContentHWND(),
+                                     PageInfoWindow::SECURITY);      
       break;
+    }
 
     case IDS_CONTENT_CONTEXT_OPENFRAMENEWTAB:
       OpenURL(params_.frame_url, NEW_BACKGROUND_TAB, PageTransition::LINK);
@@ -314,37 +322,53 @@ void RenderViewContextMenuController::ExecuteCommand(int id) {
               NEW_FOREGROUND_TAB, PageTransition::GENERATED);
       break;
 
-    case IDS_CONTENT_CONTEXT_VIEWFRAMEINFO:
-      win_util::MessageBox(NULL, L"Context Menu Action", L"View Frame Info",
-                           MB_OK);
+    case IDS_CONTENT_CONTEXT_VIEWFRAMEINFO: {
+      // Deserialize the SSL info.
+      NavigationEntry::SSLStatus ssl;
+      if (!params_.security_info.empty()) {
+        int cert_id, cert_status, security_bits;
+        SSLManager::DeserializeSecurityInfo(params_.security_info,
+                                            &cert_id,
+                                            &cert_status,
+                                            &security_bits);
+        ssl.set_cert_id(cert_id);
+        ssl.set_cert_status(cert_status);
+        ssl.set_security_bits(security_bits);
+      }
+      PageInfoWindow::CreateFrameInfo(source_web_contents_->profile(),
+                                      params_.frame_url,
+                                      ssl,
+                                      source_web_contents_->GetContentHWND(),
+                                      PageInfoWindow::SECURITY);
       break;
+    }
 
     case IDS_CONTENT_CONTEXT_UNDO:
-      source_web_contents_->Undo();
+      source_web_contents_->render_view_host()->Undo();
       break;
 
     case IDS_CONTENT_CONTEXT_REDO:
-      source_web_contents_->Redo();
+      source_web_contents_->render_view_host()->Redo();
       break;
 
     case IDS_CONTENT_CONTEXT_CUT:
-      source_web_contents_->Cut();
+      source_web_contents_->render_view_host()->Cut();
       break;
 
     case IDS_CONTENT_CONTEXT_COPY:
-      source_web_contents_->Copy();
+      source_web_contents_->render_view_host()->Copy();
       break;
 
     case IDS_CONTENT_CONTEXT_PASTE:
-      source_web_contents_->Paste();
+      source_web_contents_->render_view_host()->Paste();
       break;
 
     case IDS_CONTENT_CONTEXT_DELETE:
-      source_web_contents_->Delete();
+      source_web_contents_->render_view_host()->Delete();
       break;
 
     case IDS_CONTENT_CONTEXT_SELECTALL:
-      source_web_contents_->SelectAll();
+      source_web_contents_->render_view_host()->SelectAll();
       break;
 
     case IDS_CONTENT_CONTEXT_SEARCHWEBFOR: {
@@ -365,12 +389,13 @@ void RenderViewContextMenuController::ExecuteCommand(int id) {
     case IDC_USESPELLCHECKSUGGESTION_2:
     case IDC_USESPELLCHECKSUGGESTION_3:
     case IDC_USESPELLCHECKSUGGESTION_4:
-      source_web_contents_->Replace(params_.dictionary_suggestions[
-          id - IDC_USESPELLCHECKSUGGESTION_0]);
+      source_web_contents_->render_view_host()->Replace(
+          params_.dictionary_suggestions[id - IDC_USESPELLCHECKSUGGESTION_0]);
       break;
 
     case IDS_CONTENT_CONTEXT_ADD_TO_DICTIONARY:
-      source_web_contents_->AddToDictionary(params_.misspelled_word);
+      source_web_contents_->render_view_host()->AddToDictionary(
+          params_.misspelled_word);
       break;
 
     case IDS_CONTENT_CONTEXT_ADDSEARCHENGINE:  // Not implemented.

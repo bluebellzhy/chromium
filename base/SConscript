@@ -59,6 +59,7 @@ input_files = [
     'string_piece.cc',
     'string_util.cc',
     'string_util_icu.cc',
+    'system_monitor.cc',
     'thread.cc',
     'time.cc',
     'time_format.cc',
@@ -100,6 +101,7 @@ if env['PLATFORM'] == 'win32':
       'base_paths_win.cc',
       'clipboard_win.cc',
       'condition_variable_win.cc',
+      'cpu.cc',
       'debug_on_start.cc',
       'debug_util_win.cc',
       'file_util_win.cc',
@@ -115,6 +117,7 @@ if env['PLATFORM'] == 'win32':
       'shared_memory_win.cc',
       'sys_info_win.cc',
       'sys_string_conversions_win.cc',
+      'system_monitor_win.cc',
       'thread_local_storage_win.cc',
       'thread_local_win.cc',
       'time_win.cc',
@@ -130,6 +133,7 @@ if env['PLATFORM'] in ('darwin', 'posix'):
       'debug_util_posix.cc',
       'file_util_posix.cc',
       'lock_impl_posix.cc',
+      'message_pump_libevent.cc',
       'platform_thread_posix.cc',
       'process_util_posix.cc',
       'shared_memory_posix.cc',
@@ -148,7 +152,9 @@ if env['PLATFORM'] == 'darwin':
       'file_util_mac.mm',
       'file_version_info_mac.mm',
       'hmac_mac.cc',
+      'message_pump_mac.mm',
       'platform_thread_mac.mm',
+      'scoped_nsautorelease_pool.mm',
       'sys_string_conversions_mac.cc',
       'worker_pool_mac.mm',
   ])
@@ -159,7 +165,6 @@ if env['PLATFORM'] == 'posix':
       'base_paths_linux.cc',
       'file_util_linux.cc',
       'hmac_nss.cc',
-      'message_pump_libevent.cc',
       'nss_init.cc',
       'sys_string_conversions_linux.cc',
       'worker_pool.cc',
@@ -192,7 +197,7 @@ env_tests.Prepend(
         'base',
         'base_gfx',
         'gtest',
-        'icuuc',
+        env_tests['ICU_LIBS'],  # TODO(sgk):  '$ICU_LIBS' when scons is fixed
         'libpng',
         'skia',
         'zlib',
@@ -230,7 +235,7 @@ if env['PLATFORM'] == 'win32':
       ],
   )
 
-if env['PLATFORM'] == 'posix':
+if env['PLATFORM'] in ('posix', 'darwin'):
   env_tests.Append(
       LIBS = [
           'event',

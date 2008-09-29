@@ -15,7 +15,7 @@ deps = {
     "/trunk/deps/third_party/cygwin@1788",
 
   "src/third_party/icu38":
-    "/trunk/deps/third_party/icu38@2280",
+    "/trunk/deps/third_party/icu38@2668",
 
   "src/third_party/python_24":
     "/trunk/deps/third_party/python_24@1790",
@@ -24,7 +24,7 @@ deps = {
     "/trunk/deps/third_party/svn@1791",
 
   "src/v8":
-    "http://v8.googlecode.com/svn/trunk@329",
+    "http://v8.googlecode.com/svn/trunk@373",
 
   "src/webkit/data/layout_tests/LayoutTests":
     "http://svn.webkit.org/repository/webkit/trunk/LayoutTests@36102",

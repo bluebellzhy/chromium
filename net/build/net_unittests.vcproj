@@ -227,6 +227,18 @@
 				Name="http"
 				>
 				<File
+					RelativePath="..\http\http_auth_unittest.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\http\http_auth_handler_basic_unittest.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\http\http_auth_handler_digest_unittest.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\http\http_cache_unittest.cc"
 					>
 				</File>
@@ -340,6 +352,10 @@
 				</File>
 				<File
 					RelativePath="..\base\registry_controlled_domain_unittest.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\base\sdch_filter_unitest.cc"
 					>
 				</File>
 				<File

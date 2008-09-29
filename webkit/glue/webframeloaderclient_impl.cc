@@ -1135,8 +1135,11 @@ bool WebFrameLoaderClient::canShowMIMEType(const String& mime_type) const {
   // "internally" (i.e. inside the browser) regardless of whether or not the
   // browser or a plugin is doing the rendering.
 
+  // mime_type strings are supposed to be ASCII, but if they are not for some
+  // reason, then it just means that the mime type will fail all of these "is
+  // supported" checks and go down the path of an unhandled mime type.
   if (net::IsSupportedMimeType(
-          WideToASCII(webkit_glue::StringToStdWString(mime_type))))
+          webkit_glue::CStringToStdString(mime_type.latin1())))
     return true;
 
   // See if the type is handled by an installed plugin, if so, we can show it.
@@ -1224,8 +1227,7 @@ void WebFrameLoaderClient::setTitle(const String& title, const KURL& url) {
 }
 
 String WebFrameLoaderClient::userAgent(const KURL& url) {
-  return webkit_glue::StdStringToString(
-      webframe_->webview_impl()->GetPreferences().user_agent);
+  return webkit_glue::StdStringToString(webkit_glue::GetUserAgent());
 }
 
 void WebFrameLoaderClient::savePlatformDataToCachedPage(WebCore::CachedPage*) {

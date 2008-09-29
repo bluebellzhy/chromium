@@ -134,7 +134,7 @@ class RenderViewExtraRequestData : public WebRequest::ExtraData {
 ///////////////////////////////////////////////////////////////////////////////
 
 RenderView::RenderView()
-  : RenderWidget(),
+  : RenderWidget(RenderThread::current()),
     is_loading_(false),
     page_id_(-1),
     last_page_id_sent_to_browser_(-1),
@@ -835,7 +835,7 @@ void RenderView::OnStopFinding(bool clear_selection) {
 
   WebFrame* frame = view->GetMainFrame();
   while (frame) {
-    frame->StopFinding();
+    frame->StopFinding(clear_selection);
     frame = view->GetNextFrameAfter(frame, false);
   }
 }
@@ -940,6 +940,7 @@ void RenderView::UpdateURL(WebFrame* frame) {
   ViewHostMsg_FrameNavigate_Params params;
   params.is_post = false;
   params.page_id = page_id_;
+  params.is_content_filtered = response.IsContentFiltered();
   if (!request.GetSecurityInfo().empty()) {
     // SSL state specified in the request takes precedence over the one in the
     // response.
@@ -1657,7 +1658,8 @@ WebView* RenderView::CreateWebView(WebView* webview, bool user_gesture) {
 }
 
 WebWidget* RenderView::CreatePopupWidget(WebView* webview) {
-  RenderWidget* widget = RenderWidget::Create(routing_id_);
+  RenderWidget* widget = RenderWidget::Create(routing_id_,
+                                              RenderThread::current());
   return widget->webwidget();
 }
 
@@ -1790,7 +1792,8 @@ void RenderView::ShowContextMenu(WebView* webview,
                                  const GURL& frame_url,
                                  const std::wstring& selection_text,
                                  const std::wstring& misspelled_word,
-                                 int edit_flags) {
+                                 int edit_flags,
+                                 const std::string& security_info) {
   ViewHostMsg_ContextMenu_Params params;
   params.type = type;
   params.x = x;
@@ -1802,6 +1805,7 @@ void RenderView::ShowContextMenu(WebView* webview,
   params.selection_text = selection_text;
   params.misspelled_word = misspelled_word;
   params.edit_flags = edit_flags;
+  params.security_info = security_info;
   Send(new ViewHostMsg_ContextMenu(routing_id_, params));
 }
 

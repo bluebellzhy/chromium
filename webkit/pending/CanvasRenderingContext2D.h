@@ -53,9 +53,11 @@ namespace WebCore {
 
     typedef int ExceptionCode;
 
-    class CanvasRenderingContext2D : Noncopyable
+    class CanvasRenderingContext2D :
 #if USE(V8)
-        , Peerable
+          Peerable  // Already has Noncopyable as a superclass.
+#else
+          Noncopyable
 #endif
     {
     public:

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/compiler_specific.h"
+#include "base/platform_test.h"
 #include "net/base/client_socket_factory.h"
 #include "net/base/test_completion_callback.h"
 #include "net/base/upload_data.h"
@@ -12,7 +14,6 @@
 
 //-----------------------------------------------------------------------------
 
-namespace {
 
 struct MockConnect {
   bool async;
@@ -45,9 +46,8 @@ int mock_sockets_index;
 class MockTCPClientSocket : public net::ClientSocket {
  public:
   MockTCPClientSocket(const net::AddressList& addresses)
-#pragma warning(suppress:4355)
       : data_(mock_sockets[mock_sockets_index++]),
-        method_factory_(this),
+        ALLOW_THIS_IN_INITIALIZER_LIST(method_factory_(this)),
         callback_(NULL),
         read_index_(0),
         read_offset_(0),
@@ -162,12 +162,16 @@ net::HttpNetworkSession* CreateSession() {
   return new net::HttpNetworkSession(new NullProxyResolver());
 }
 
-class HttpNetworkTransactionTest : public testing::Test {
+class HttpNetworkTransactionTest : public PlatformTest {
  public:
   virtual void SetUp() {
+    PlatformTest::SetUp();
     mock_sockets[0] = NULL;
     mock_sockets_index = 0;
   }
+
+ protected:
+  void KeepAliveConnectionResendRequestTest(const MockRead& read_failure);
 };
 
 struct SimpleGetHelperResult {
@@ -218,8 +222,6 @@ SimpleGetHelperResult SimpleGetHelper(MockRead data_reads[]) {
   return out;
 }
 
-}  // namespace
-
 //-----------------------------------------------------------------------------
 
 TEST_F(HttpNetworkTransactionTest, Basic) {
@@ -234,7 +236,6 @@ TEST_F(HttpNetworkTransactionTest, SimpleGET) {
     { true, 0, "hello world", -1 },
     { false, net::OK, NULL, 0 },
   };
-
   SimpleGetHelperResult out = SimpleGetHelper(data_reads);
   EXPECT_EQ("HTTP/1.0 200 OK", out.status_line);
   EXPECT_EQ("hello world", out.response_data);
@@ -246,7 +247,6 @@ TEST_F(HttpNetworkTransactionTest, SimpleGETNoHeaders) {
     { true, 0, "hello world", -1 },
     { false, net::OK, NULL, 0 },
   };
-
   SimpleGetHelperResult out = SimpleGetHelper(data_reads);
   EXPECT_EQ("HTTP/0.9 200 OK", out.status_line);
   EXPECT_EQ("hello world", out.response_data);
@@ -281,8 +281,8 @@ TEST_F(HttpNetworkTransactionTest, StatusLineJunk5Bytes) {
     { false, net::OK, NULL, 0 },
   };
   SimpleGetHelperResult out = SimpleGetHelper(data_reads);
-  EXPECT_TRUE(out.status_line == "HTTP/0.9 200 OK");
-  EXPECT_TRUE(out.response_data == "xxxxxHTTP/1.1 404 Not Found\nServer: blah");
+  EXPECT_EQ("HTTP/0.9 200 OK", out.status_line);
+  EXPECT_EQ("xxxxxHTTP/1.1 404 Not Found\nServer: blah", out.response_data);
 }
 
 // Same as StatusLineJunk4Bytes, except the read chunks are smaller.
@@ -309,6 +309,20 @@ TEST_F(HttpNetworkTransactionTest, StatusLinePartial) {
   SimpleGetHelperResult out = SimpleGetHelper(data_reads);
   EXPECT_EQ("HTTP/0.9 200 OK", out.status_line);
   EXPECT_EQ("HTT", out.response_data);
+}
+
+// Simulate a 204 response, lacking a Content-Length header, sent over a
+// persistent connection.  The response should still terminate since a 204
+// cannot have a response body.
+TEST_F(HttpNetworkTransactionTest, StopsReading204) {
+  MockRead data_reads[] = {
+    { true, 0, "HTTP/1.1 204 No Content\r\n\r\n", -1 },
+    { true, 0, "junk", -1 },  // Should not be read!!
+    { false, net::OK, NULL, 0 },
+  };
+  SimpleGetHelperResult out = SimpleGetHelper(data_reads);
+  EXPECT_EQ("HTTP/1.1 204 No Content", out.status_line);
+  EXPECT_EQ("", out.response_data);
 }
 
 TEST_F(HttpNetworkTransactionTest, ReuseConnection) {
@@ -353,12 +367,12 @@ TEST_F(HttpNetworkTransactionTest, ReuseConnection) {
     EXPECT_TRUE(response != NULL);
 
     EXPECT_TRUE(response->headers != NULL);
-    EXPECT_TRUE(response->headers->GetStatusLine() == "HTTP/1.1 200 OK");
+    EXPECT_EQ("HTTP/1.1 200 OK", response->headers->GetStatusLine());
 
     std::string response_data;
     rv = ReadTransaction(trans, &response_data);
     EXPECT_EQ(net::OK, rv);
-    EXPECT_TRUE(response_data == kExpectedResponseData[i]);
+    EXPECT_EQ(kExpectedResponseData[i], response_data);
 
     trans->Destroy();
 
@@ -403,12 +417,12 @@ TEST_F(HttpNetworkTransactionTest, Ignores100) {
   EXPECT_TRUE(response != NULL);
 
   EXPECT_TRUE(response->headers != NULL);
-  EXPECT_TRUE(response->headers->GetStatusLine() == "HTTP/1.0 200 OK");
+  EXPECT_EQ("HTTP/1.0 200 OK", response->headers->GetStatusLine());
 
   std::string response_data;
   rv = ReadTransaction(trans, &response_data);
   EXPECT_EQ(net::OK, rv);
-  EXPECT_TRUE(response_data == "hello world");
+  EXPECT_EQ("hello world", response_data);
 
   trans->Destroy();
 
@@ -416,7 +430,10 @@ TEST_F(HttpNetworkTransactionTest, Ignores100) {
   MessageLoop::current()->RunAllPending();
 }
 
-TEST_F(HttpNetworkTransactionTest, KeepAliveConnectionReset) {
+// read_failure specifies a read failure that should cause the network
+// transaction to resend the request.
+void HttpNetworkTransactionTest::KeepAliveConnectionResendRequestTest(
+    const MockRead& read_failure) {
   scoped_refptr<net::HttpNetworkSession> session = CreateSession();
 
   net::HttpRequestInfo request;
@@ -427,7 +444,7 @@ TEST_F(HttpNetworkTransactionTest, KeepAliveConnectionReset) {
   MockRead data1_reads[] = {
     { true, 0, "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n", -1 },
     { true, 0, "hello", -1 },
-    { true, net::ERR_CONNECTION_RESET, NULL, 0 },
+    read_failure,  // Now, we reuse the connection and fail the first read.
   };
   MockSocket data1;
   data1.connect.async = true;
@@ -466,16 +483,86 @@ TEST_F(HttpNetworkTransactionTest, KeepAliveConnectionReset) {
     EXPECT_TRUE(response != NULL);
 
     EXPECT_TRUE(response->headers != NULL);
-    EXPECT_TRUE(response->headers->GetStatusLine() == "HTTP/1.1 200 OK");
+    EXPECT_EQ("HTTP/1.1 200 OK", response->headers->GetStatusLine());
 
     std::string response_data;
     rv = ReadTransaction(trans, &response_data);
     EXPECT_EQ(net::OK, rv);
-    EXPECT_TRUE(response_data == kExpectedResponseData[i]);
+    EXPECT_EQ(kExpectedResponseData[i], response_data);
 
     trans->Destroy();
 
     // Empty the current queue.
     MessageLoop::current()->RunAllPending();
   }
+}
+
+TEST_F(HttpNetworkTransactionTest, KeepAliveConnectionReset) {
+  MockRead read_failure = { true, net::ERR_CONNECTION_RESET, NULL, 0 };
+  KeepAliveConnectionResendRequestTest(read_failure);
+}
+
+TEST_F(HttpNetworkTransactionTest, KeepAliveConnectionEOF) {
+  MockRead read_failure = { false, net::OK, NULL, 0 };  // EOF
+  KeepAliveConnectionResendRequestTest(read_failure);
+}
+
+TEST_F(HttpNetworkTransactionTest, NonKeepAliveConnectionReset) {
+  net::HttpTransaction* trans = new net::HttpNetworkTransaction(
+      CreateSession(), &mock_socket_factory);
+
+  net::HttpRequestInfo request;
+  request.method = "GET";
+  request.url = GURL("http://www.google.com/");
+  request.load_flags = 0;
+
+  MockRead data_reads[] = {
+    { true, net::ERR_CONNECTION_RESET, NULL, 0 },
+    { true, 0, "HTTP/1.0 200 OK\r\n\r\n", -1 },  // Should not be used
+    { true, 0, "hello world", -1 },
+    { false, net::OK, NULL, 0 },
+  };
+  MockSocket data;
+  data.connect.async = true;
+  data.connect.result = net::OK;
+  data.reads = data_reads;
+  mock_sockets[0] = &data;
+  mock_sockets[1] = NULL;
+
+  TestCompletionCallback callback;
+
+  int rv = trans->Start(&request, &callback);
+  EXPECT_EQ(net::ERR_IO_PENDING, rv);
+
+  rv = callback.WaitForResult();
+  EXPECT_EQ(net::ERR_CONNECTION_RESET, rv);
+
+  const net::HttpResponseInfo* response = trans->GetResponseInfo();
+  EXPECT_TRUE(response == NULL);
+
+  trans->Destroy();
+
+  // Empty the current queue.
+  MessageLoop::current()->RunAllPending();
+}
+
+// What do various browsers do when the server closes a non-keepalive
+// connection without sending any response header or body?
+//
+// IE7: error page
+// Safari 3.1.2 (Windows): error page
+// Firefox 3.0.1: blank page
+// Opera 9.52: after five attempts, blank page
+// Us with WinHTTP: error page (net::ERR_INVALID_RESPONSE)
+// Us: blank page
+TEST_F(HttpNetworkTransactionTest, NonKeepAliveConnectionEOF) {
+  MockRead data_reads[] = {
+    { false, net::OK, NULL, 0 },  // EOF
+    { true, 0, "HTTP/1.0 200 OK\r\n\r\n", -1 },  // Should not be used
+    { true, 0, "hello world", -1 },
+    { false, net::OK, NULL, 0 },
+  };
+  SimpleGetHelperResult out = SimpleGetHelper(data_reads);
+  EXPECT_EQ("HTTP/0.9 200 OK", out.status_line);
+  EXPECT_EQ("", out.response_data);
 }
