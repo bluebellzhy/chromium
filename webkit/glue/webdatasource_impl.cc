@@ -128,6 +128,10 @@ bool WebDataSourceImpl::IsFormSubmit() const {
   return loader_->is_form_submit();
 }
 
+std::wstring WebDataSourceImpl::GetPageTitle() const {
+  return webkit_glue::StringToStdWString(loader_->title());
+}
+
 /*
 See comment in webdatasource.h
 
@@ -150,11 +154,6 @@ std::wstring WebDataSourceImpl::GetTextEncodingName() {
 
 bool WebDataSourceImpl::IsLoading() {
   DebugBreak();
-}
-
-std::wstring WebDataSourceImpl::GetPageTitle() {
-  DebugBreak();
-  return L"";
 }
 
 void WebDataSourceImpl::GetWebArchive(IWebArchive** archive) {
