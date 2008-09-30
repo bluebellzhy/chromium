@@ -860,6 +860,21 @@ V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-horizontal.html = FAI
 V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-vertical.html = FAIL
 V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-vertical.html = FAIL
 
+# Transition tests fail.
+# http://code.google.com/p/chromium/issues/detail?id=2996
+V8 | KJS # LayoutTests/transitions = FAIL
+
+# These form tests look correct, but aren't detected as such and spit out FAIL.
+# http://code.google.com/p/chromium/issues/detail?id=2998
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-001.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-002.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-003.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-004.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-005.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-006.html = FAIL
+V8 | KJS # LayoutTests/fast/forms/autofocus-opera-008.html = FAIL
+
+
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
 //
@@ -967,13 +982,6 @@ V8 | KJS # LayoutTests/fast/events/mouseup-from-button2.html = FAIL
 V8 | KJS # LayoutTests/fast/events/onunload-clears-onbeforeunload.html = FAIL
 V8 | KJS # LayoutTests/fast/events/onunload-not-on-body.html = FAIL
 V8 | KJS # LayoutTests/fast/events/tabindex-focus-blur-all.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-001.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-002.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-003.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-004.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-005.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-006.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/autofocus-opera-008.html = FAIL
 V8 | KJS # LayoutTests/fast/forms/button-submit.html = FAIL
 V8 | KJS # LayoutTests/fast/forms/control-clip-overflow.html = FAIL
 V8 | KJS # LayoutTests/fast/forms/form-and-frame-interaction-retains-values.html = FAIL
@@ -1014,17 +1022,6 @@ V8 | KJS # LayoutTests/fast/table/border-collapsing/equal-precedence-resolution.
 V8 | KJS # LayoutTests/fast/table/fixed-with-auto-with-colspan.html = FAIL
 V8 | KJS # LayoutTests/fast/table/prepend-in-anonymous-table.html = FAIL
 V8 | KJS # LayoutTests/fast/table/vertical-align-baseline.html = FAIL
-V8 | KJS # LayoutTests/fast/text/align-center-rtl-spill.html = FAIL
-V8 | KJS # LayoutTests/fast/text/apply-start-width-after-skipped-text.html = FAIL
-V8 | KJS # LayoutTests/fast/text/fixed-pitch-control-characters.html = FAIL
-V8 | KJS # LayoutTests/fast/text/international/bidi-AN-after-empty-run.html = FAIL
-V8 | KJS # LayoutTests/fast/text/selection-painted-separately.html = FAIL
-V8 | KJS # LayoutTests/fast/text/shadow-no-blur.html = FAIL
-V8 | KJS # LayoutTests/fast/text/soft-hyphen-2.html = FAIL
-V8 | KJS # LayoutTests/fast/text/soft-hyphen-3.html = FAIL
-V8 | KJS # LayoutTests/fast/text/wbr-in-pre-crash.html = FAIL
-V8 | KJS # LayoutTests/fast/text/wbr-styled.html = FAIL
-V8 | KJS # LayoutTests/fast/text/whitespace/nowrap-clear-float.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/overflow-with-transform.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/shadows.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/transform-overflow.html = FAIL
@@ -1085,8 +1082,4 @@ V8 | KJS # LayoutTests/svg/dom/altGlyph-dom.xhtml = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGLinearGradientElement-svgdom-gradientTransform-prop.html = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGPatternElement-svgdom-patternTransform-prop.html = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGRadialGradientElement-svgdom-gradientTransform-prop.html = FAIL
-V8 | KJS # LayoutTests/tables/mozilla/bugs/bug2479-2.html = FAIL
-V8 | KJS # LayoutTests/tables/mozilla/bugs/bug278266.html = FAIL
-V8 | KJS # LayoutTests/tables/mozilla/bugs/bug8411.xml = FAIL
-V8 | KJS # LayoutTests/transitions = FAIL
 
