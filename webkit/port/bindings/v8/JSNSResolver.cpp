@@ -55,8 +55,13 @@ String JSNSResolver::lookupNamespaceURI(ExceptionContext* exceptionContext,
 
     // Check if the resolver has a function property named lookupNamespaceURI.
     if (m_resolver->Has(lookupNamespaceURIName)) {
+        // In case the property is a getter that throws an error,
+        // see LayoutTests/fast/dom/SelectorAPI/NSResolver-exceptions.xhtml
+        ExceptionCatcher exceptionCatcher(exceptionContext);
         v8::Handle<v8::Value> lookupNamespaceURI = m_resolver->Get(
             lookupNamespaceURIName);
+        if (exceptionContext->hadException())
+            return String();
         if (lookupNamespaceURI->IsFunction()) {
             lookupNamespaceURIFunc = v8::Handle<v8::Function>::Cast(
                 lookupNamespaceURI);
@@ -84,11 +89,11 @@ String JSNSResolver::lookupNamespaceURI(ExceptionContext* exceptionContext,
                                                        argc, argv);
 
     // Eat exceptions from namespace resolver and return an empty string. This
-    // will most likely cause NAMESPACE_ERR.
+    // will cause NAMESPACE_ERR.
     if (exceptionContext->hadException())
         return String();
 
-    return ToWebCoreString(retval);
+    return valueToStringWithNullOrUndefinedCheck(retval);
 }
 
 }
