@@ -58,6 +58,7 @@
 #include <wtf/RefPtr.h>
 #pragma warning(pop)
 
+#undef LOG
 #include "base/clipboard_util.h"
 #include "base/string_util.h"
 #include "googleurl/src/gurl.h"

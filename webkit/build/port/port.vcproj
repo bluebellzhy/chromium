@@ -1188,7 +1188,7 @@
 			Name="plugins"
 			>
 			<File
-				RelativePath="..\..\port\plugins\PluginPackageWin.cpp"
+				RelativePath="..\..\port\plugins\PluginDataChromium.cpp"
 				>
 			</File>
 		</Filter>
@@ -1208,6 +1208,10 @@
 			Name="bridge"
 			>
 			<File
+				RelativePath="..\..\pending\ExceptionContext.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\port\bridge\FrameWin.cpp"
 				>
 			</File>
@@ -1221,10 +1225,6 @@
 			</File>
 			<File
 				RelativePath="..\..\pending\ScriptController.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pending\ExceptionContext.h"
 				>
 			</File>
 		</Filter>

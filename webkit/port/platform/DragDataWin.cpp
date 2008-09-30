@@ -37,6 +37,7 @@
 #include "Markup.h"
 #include "WCDataObject.h"
 
+#undef LOG
 #include "base/file_util.h"
 #include "base/string_util.h"
 #include "net/base/base64.h"
