@@ -211,9 +211,6 @@ V8 | KJS # pending/css/border-height.html = FAIL
 // Also skipped by Apple on Windows (rdar://5723191).
 V8 # LayoutTests/http/tests/navigation/javascriptlink-frames.html = FAIL
 
-// Bug 1235433, javascript can execute before stylesheets are completely loaded.
-V8 | KJS # LayoutTests/http/tests/local/stylesheet-and-script-load-order.html = FAIL
-
 // Bug: 1143492
 // Window status should always return a string object
 // WebKit does this to match IE, FF also fails this test.
@@ -863,7 +860,17 @@ V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-vertical.html = FAIL
 
 # Transition tests fail.
 # http://code.google.com/p/chromium/issues/detail?id=2996
-V8 | KJS # LayoutTests/transitions = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-all-properties.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-attributes.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-container.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-left.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-multiple-01.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-multiple-02.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-multiple-03.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-multiple-04.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-nested.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-transform.html = FAIL
+V8 | KJS # LayoutTests/transitions/transition-end-event-window.html = FAIL
 
 # These form tests look correct, but aren't detected as such and spit out FAIL.
 # http://code.google.com/p/chromium/issues/detail?id=2998
@@ -900,7 +907,6 @@ V8 | KJS # LayoutTests/fast/images/object-image.html = FAIL
 V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/color-hex-test.html = FAIL
 V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/remove-variable-test.html = FAIL
 V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/set-variable-test.html = FAIL
-V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/variable-iteration-test.html = FAIL
 V8 | KJS # LayoutTests/fast/css/variables/color-hex-test.html = FAIL
 
 // ----------------------------------------------------------------------------
@@ -956,20 +962,25 @@ V8 | KJS # LayoutTests/fast/canvas/canvas-text-baseline.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Document/createAttributeNS-namespace-err.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Document/createElementNS-namespace-err.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/documenturi-assigned-junk-implies-relative-urls-do-not-resolve.html = FAIL
-V8 | KJS # LayoutTests/fast/dom/documenturi-not-affected-by-base-tag.html = FAIL
-V8 | KJS # LayoutTests/fast/dom/EntityReference = FAIL
 V8 | KJS # LayoutTests/fast/dom/gc-acid3.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/HTMLDocument/activeElement.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/HTMLDocument/hasFocus.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/SelectorAPI/NSResolver-exceptions.xhtml = FAIL
 V8 | KJS # LayoutTests/fast/dom/SelectorAPI/resig-SelectorsAPI-test.xhtml = FAIL
-V8 | KJS # LayoutTests/fast/dom/StyleSheet = FAIL
-V8 | KJS # LayoutTests/fast/dom/Text = FAIL
+V8 | KJS # LayoutTests/fast/text/align-center-rtl-spill.html = FAIL
+V8 | KJS # LayoutTests/fast/text/apply-start-width-after-skipped-text.html = FAIL
+V8 | KJS # LayoutTests/fast/text/fixed-pitch-control-characters.html = FAIL
+V8 | KJS # LayoutTests/fast/text/selection-painted-separately.html = FAIL
+V8 | KJS # LayoutTests/fast/text/soft-hyphen-2.html = FAIL
+V8 | KJS # LayoutTests/fast/text/soft-hyphen-3.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Window/closure-access-after-navigation-iframe.html = FAIL
-V8 | KJS # LayoutTests/fast/dom/Window/window-open-self-from-other-frame.html = FAIL
 V8 | KJS # LayoutTests/fast/frames/frameset-style-recalc.html = FAIL
 V8 | KJS # LayoutTests/fast/frames/iframe-text-contents.html = FAIL
-V8 | KJS # LayoutTests/fast/gradients = FAIL
+V8 | KJS # LayoutTests/fast/gradients/border-image-gradient-sides-and-corners.html = FAIL
+V8 | KJS # LayoutTests/fast/gradients/border-image-gradient.html = FAIL
+V8 | KJS # LayoutTests/fast/gradients/generated-gradients.html = FAIL
+V8 | KJS # LayoutTests/fast/gradients/list-item-gradient.html = FAIL
+V8 | KJS # LayoutTests/fast/gradients/simple-gradients.html = FAIL
 V8 | KJS # LayoutTests/fast/history/subframe-is-visited.html = FAIL
 V8 | KJS # LayoutTests/fast/html/link-rel-stylesheet.html = FAIL
 V8 | KJS # LayoutTests/fast/html/marquee-scroll.html = FAIL
@@ -977,7 +988,6 @@ V8 | KJS # LayoutTests/fast/media/implicit-media-all.html = FAIL
 V8 | KJS # LayoutTests/fast/media/monochrome.html = FAIL
 V8 | KJS # LayoutTests/fast/media/viewport-media-query.html = FAIL
 V8 | KJS # LayoutTests/fast/overflow/float-in-relpositioned.html = FAIL
-V8 | KJS # LayoutTests/fast/reflections = FAIL
 V8 | KJS # LayoutTests/fast/reflections/inline-crash.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/reflection-direction.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/reflection-masks.html = FAIL
@@ -993,10 +1003,8 @@ V8 | KJS # LayoutTests/fast/transforms/overflow-with-transform.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/shadows.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/transform-overflow.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/transform-positioned-ancestor.html = FAIL
-V8 | KJS # LayoutTests/fast/xsl/nbsp-in-stylesheet.html = FAIL
 V8 | KJS # LayoutTests/http/tests/loading/location-hash-reload-cycle.html = FAIL
 V8 | KJS # LayoutTests/http/tests/misc/acid3.html = FAIL
-V8 | KJS # LayoutTests/http/tests/misc/canvas-pattern-from-incremental-image.html = FAIL
 V8 | KJS # LayoutTests/http/tests/misc/frame-default-enc-same-domain.html = FAIL
 V8 | KJS # LayoutTests/http/tests/navigation/reload-subframe-frame.html = FAIL
 V8 | KJS # LayoutTests/http/tests/navigation/reload-subframe-iframe.html = FAIL
@@ -1005,8 +1013,6 @@ V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-grandchil
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-window-open.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-with-base-tag.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-write.html = FAIL
-V8 | KJS # LayoutTests/http/tests/security/aboutBlank/security-context-writeln.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/canvas-remote-read-remote-image.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/canvas-remote-read-svg-image.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/cookies/document-open.html = FAIL
