@@ -820,6 +820,7 @@ V8 | KJS # LayoutTests/fast/canvas/shadow-offset-4.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/shadow-offset-5.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/shadow-offset-6.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/shadow-offset-7.html = FAIL
+V8 | KJS # LayoutTests/fast/css/shadow-multiple.html = FAIL
 
 # There appears to be some parsing error. These tests give "successfullyParsed
 # should be true (of type boolean). Was undefined (of type undefined)."
@@ -874,6 +875,33 @@ V8 | KJS # LayoutTests/fast/forms/autofocus-opera-005.html = FAIL
 V8 | KJS # LayoutTests/fast/forms/autofocus-opera-006.html = FAIL
 V8 | KJS # LayoutTests/fast/forms/autofocus-opera-008.html = FAIL
 
+# This test times out for an unknown reason
+# http://code.google.com/p/chromium/issues/detail?id=3005
+V8 | KJS # LayoutTests/fast/events/tabindex-focus-blur-all.html = TIMEOUT
+
+# These tests have different mouse click messages that expected. This could
+# be a bug or an expected platform difference.
+# http://code.google.com/p/chromium/issues/detail?id=3007
+V8 | KJS # LayoutTests/fast/events/mouse-click-events.html = FAIL
+V8 | KJS # LayoutTests/fast/events/mouseup-from-button2.html = FAIL
+
+# Regression from the webkit merge submitting forms to reference fragments.
+# http://code.google.com/p/chromium/issues/detail?id=3008
+V8 | KJS # LayoutTests/fast/forms/submit-to-url-fragment.html = FAIL
+
+# These tests display "RenderPartObject" instead of "RenderImage".
+# http://code.google.com/p/chromium/issues/detail?id=3009
+V8 | KJS # LayoutTests/fast/images/embed-image.html = FAIL
+V8 | KJS # LayoutTests/fast/images/object-image.html = FAIL
+
+# Displays messages of the form
+# "CONSOLE MESSAGE: line 27: Uncaught TypeError: Cannot ... of undefined".
+# http://code.google.com/p/chromium/issues/detail?id=3010
+V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/color-hex-test.html = FAIL
+V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/remove-variable-test.html = FAIL
+V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/set-variable-test.html = FAIL
+V8 | KJS # LayoutTests/fast/css/variables/alternate-syntax/variable-iteration-test.html = FAIL
+V8 | KJS # LayoutTests/fast/css/variables/color-hex-test.html = FAIL
 
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
@@ -925,39 +953,6 @@ V8 | KJS # LayoutTests/fast/borders/fieldsetBorderRadius.html = FAIL
 V8 | KJS # LayoutTests/fast/borders/inline-mask-overlay-image.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/canvas-text-alignment.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/canvas-text-baseline.html = FAIL
-V8 | KJS # LayoutTests/fast/css/attribute-selector-empty-value.html = FAIL
-V8 | KJS # LayoutTests/fast/css/begin-end-contain-selector-empty-value.html = FAIL
-V8 | KJS # LayoutTests/fast/css/counters/invalidate-cached-counter-node.html = FAIL
-V8 | KJS # LayoutTests/fast/css/dynamic-sibling-selector.html = FAIL
-V8 | KJS # LayoutTests/fast/css/first-letter-float-after-float.html = FAIL
-V8 | KJS # LayoutTests/fast/css/first-letter-float.html = FAIL
-V8 | KJS # LayoutTests/fast/css/first-letter-skip-out-of-flow.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-face-descriptor-multiple-values.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-face-descriptor-multiple-values-parsing.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-face-in-media-rule.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-face-locally-installed.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-face-multiple-faces.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-size-negative.html = FAIL
-V8 | KJS # LayoutTests/fast/css/font-weight-1.html = FAIL
-V8 | KJS # LayoutTests/fast/css-generated-content/table-row-group-to-inline.html = FAIL
-V8 | KJS # LayoutTests/fast/css-generated-content/table-row-group-with-before.html = FAIL
-V8 | KJS # LayoutTests/fast/css-generated-content/table-row-with-before.html = FAIL
-V8 | KJS # LayoutTests/fast/css-generated-content/table-with-before.html = FAIL
-V8 | KJS # LayoutTests/fast/css/line-height-negative.html = FAIL
-V8 | KJS # LayoutTests/fast/css/line-height-overflow.html = FAIL
-V8 | KJS # LayoutTests/fast/css/link-outside-head.html = FAIL
-V8 | KJS # LayoutTests/fast/css/live-cssrules.html = FAIL
-V8 | KJS # LayoutTests/fast/css/margin-bottom-form-element-quirk.html = FAIL
-V8 | KJS # LayoutTests/fast/css/margin-bottom-form-element-strict.html = FAIL
-V8 | KJS # LayoutTests/fast/css/shadow-multiple.html = FAIL
-V8 | KJS # LayoutTests/fast/css/simple-selector-chain-parsing.html = FAIL
-V8 | KJS # LayoutTests/fast/css/style-outside-head.html = FAIL
-V8 | KJS # LayoutTests/fast/css/style-parsed-outside-head.html = FAIL
-V8 | KJS # LayoutTests/fast/css/transform-default-parameter.html = FAIL
-V8 | KJS # LayoutTests/fast/css/value-list-out-of-bounds-crash.html = FAIL
-V8 | KJS # LayoutTests/fast/css/variables = FAIL
-V8 | KJS # LayoutTests/fast/css/zoom-font-size.html = FAIL
-V8 | KJS # LayoutTests/fast/css/zoom-property-parsing.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Document/createAttributeNS-namespace-err.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Document/createElementNS-namespace-err.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/documenturi-assigned-junk-implies-relative-urls-do-not-resolve.html = FAIL
@@ -972,44 +967,16 @@ V8 | KJS # LayoutTests/fast/dom/StyleSheet = FAIL
 V8 | KJS # LayoutTests/fast/dom/Text = FAIL
 V8 | KJS # LayoutTests/fast/dom/Window/closure-access-after-navigation-iframe.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/Window/window-open-self-from-other-frame.html = FAIL
-V8 | KJS # LayoutTests/fast/dynamic/floating-to-positioned-2.html = FAIL
-V8 | KJS # LayoutTests/fast/dynamic/floating-to-positioned.html = FAIL
-V8 | KJS # LayoutTests/fast/dynamic/float-in-trailing-whitespace-after-last-line-break.html = FAIL
-V8 | KJS # LayoutTests/fast/dynamic/positioned-movement-with-positioned-children.html = FAIL
-V8 | KJS # LayoutTests/fast/dynamic/subtree-table-cell-height.html = FAIL
-V8 | KJS # LayoutTests/fast/events/mouse-click-events.html = FAIL
-V8 | KJS # LayoutTests/fast/events/mouseup-from-button2.html = FAIL
-V8 | KJS # LayoutTests/fast/events/onunload-clears-onbeforeunload.html = FAIL
-V8 | KJS # LayoutTests/fast/events/onunload-not-on-body.html = FAIL
-V8 | KJS # LayoutTests/fast/events/tabindex-focus-blur-all.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/button-submit.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/control-clip-overflow.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/form-and-frame-interaction-retains-values.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/input-first-letter.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/search-display-none-cancel-button.html = FAIL
-V8 | KJS # LayoutTests/fast/forms/submit-to-url-fragment.html = FAIL
 V8 | KJS # LayoutTests/fast/frames/frameset-style-recalc.html = FAIL
 V8 | KJS # LayoutTests/fast/frames/iframe-text-contents.html = FAIL
 V8 | KJS # LayoutTests/fast/gradients = FAIL
 V8 | KJS # LayoutTests/fast/history/subframe-is-visited.html = FAIL
 V8 | KJS # LayoutTests/fast/html/link-rel-stylesheet.html = FAIL
 V8 | KJS # LayoutTests/fast/html/marquee-scroll.html = FAIL
-V8 | KJS # LayoutTests/fast/images/embed-image.html = FAIL
-V8 | KJS # LayoutTests/fast/images/object-image.html = FAIL
-V8 | KJS # LayoutTests/fast/inline/inline-padding-disables-text-quirk.html = FAIL
-V8 | KJS # LayoutTests/fast/inline/inline-text-quirk-bpm.html = FAIL
-V8 | KJS # LayoutTests/fast/inline/percentage-margins.html = FAIL
 V8 | KJS # LayoutTests/fast/media/implicit-media-all.html = FAIL
 V8 | KJS # LayoutTests/fast/media/monochrome.html = FAIL
 V8 | KJS # LayoutTests/fast/media/viewport-media-query.html = FAIL
 V8 | KJS # LayoutTests/fast/overflow/float-in-relpositioned.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/comment-in-style.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/comment-in-textarea.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/entity-comment-in-style.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/entity-comment-in-textarea.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/entity-end-script-tag.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/open-comment-in-style.html = FAIL
-V8 | KJS # LayoutTests/fast/parser/open-comment-in-textarea.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections = FAIL
 V8 | KJS # LayoutTests/fast/reflections/inline-crash.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/reflection-direction.html = FAIL
