@@ -125,7 +125,11 @@ std::wstring DumpDocumentText(WebFrame* web_frame) {
 
   // We use the document element's text instead of the body text here because
   // not all documents have a body, such as XML documents.
-  return StringToStdWString(frame->document()->documentElement()->innerText());
+  WebCore::Element* documentElement = frame->document()->documentElement();
+  if (!documentElement) {
+    return std::wstring();
+  }
+  return StringToStdWString(documentElement->innerText());
 }
 
 std::wstring DumpFramesAsText(WebFrame* web_frame, bool recursive) {
