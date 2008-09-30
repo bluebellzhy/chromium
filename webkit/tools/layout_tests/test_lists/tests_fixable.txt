@@ -848,6 +848,17 @@ V8 | KJS # LayoutTests/fast/canvas/canvas-bg.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/toDataURL-noData.html = FAIL
 V8 | KJS # LayoutTests/fast/canvas/toDataURL-supportedTypes.html = FAIL
 
+# layoutTestController.setStopProvisionalFrameLoads needs implementing
+# http://code.google.com/p/chromium/issues/detail?id=2980
+V8 | KJS # LayoutTests/fast/loader/stop-provisional-loads.html = FAIL
+
+# Our shadows looks wrong. The text not having shadows is to be expected, but
+# it looks like we're missing a red shadow that Safari has.
+# http://code.google.com/p/chromium/issues/detail?id=2982
+V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-horizontal.html = FAIL
+V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-horizontal.html = FAIL
+V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-vertical.html = FAIL
+V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-vertical.html = FAIL
 
 // ----------------------------------------------------------------------------
 // NEW FOR THE MERGE
@@ -980,9 +991,6 @@ V8 | KJS # LayoutTests/fast/images/object-image.html = FAIL
 V8 | KJS # LayoutTests/fast/inline/inline-padding-disables-text-quirk.html = FAIL
 V8 | KJS # LayoutTests/fast/inline/inline-text-quirk-bpm.html = FAIL
 V8 | KJS # LayoutTests/fast/inline/percentage-margins.html = FAIL
-V8 | KJS # LayoutTests/fast/layers/opacity-stacking.html = FAIL
-V8 | KJS # LayoutTests/fast/loader/stop-provisional-loads.html = FAIL
-V8 | KJS # LayoutTests/fast/loader/url-parse-1.html = FAIL
 V8 | KJS # LayoutTests/fast/media/implicit-media-all.html = FAIL
 V8 | KJS # LayoutTests/fast/media/monochrome.html = FAIL
 V8 | KJS # LayoutTests/fast/media/viewport-media-query.html = FAIL
@@ -1000,28 +1008,6 @@ V8 | KJS # LayoutTests/fast/reflections/reflection-direction.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/reflection-masks.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/reflection-nesting.html = FAIL
 V8 | KJS # LayoutTests/fast/reflections/table-cell.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/caret-outside-block.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/layout-state-relative.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-10.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-1.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-2.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-3.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-4.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-5.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-6.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-7.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-8.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/line-flow-with-floats-9.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/lines-with-layout-delta.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/renderer-destruction-by-invalidateSelection-crash.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-horizontal.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-horizontal.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-strict-vertical.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/shadow-multiple-vertical.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/subtree-root-clip-2.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/subtree-root-clip-3.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/subtree-root-clip.html = FAIL
-V8 | KJS # LayoutTests/fast/repaint/table-two-pass-layout-overpaint.html = FAIL
 V8 | KJS # LayoutTests/fast/replaced/absolute-position-percentage-width.html = FAIL
 V8 | KJS # LayoutTests/fast/replaced/max-width-percent.html = FAIL
 V8 | KJS # LayoutTests/fast/table/border-collapsing/equal-precedence-resolution.html = FAIL
