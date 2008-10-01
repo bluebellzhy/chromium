@@ -76,7 +76,8 @@ V8 | KJS # LayoutTests/fast/events/option-tab.html = FAIL
 
 // Chrome does not support WebArchives (just like Safari for Windows).
 // See bug 761653.
-V8 | KJS # LayoutTests/webarchive = FAIL | TIMEOUT
+V8 | KJS # SKIP : LayoutTests/webarchive/loading = FAIL | TIMEOUT
+V8 | KJS # LayoutTests/webarchive = PASS
 V8 | KJS # LayoutTests/svg/webarchive = FAIL
 V8 | KJS # LayoutTests/svg/custom/image-with-prefix-in-webarchive.svg = FAIL
 
