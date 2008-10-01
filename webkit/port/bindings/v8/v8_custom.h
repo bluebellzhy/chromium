@@ -9,6 +9,18 @@
 
 struct NPObject;
 
+#define CALLBACK_FUNC_DECL(NAME)                \
+v8::Handle<v8::Value> V8Custom::v8##NAME##Callback(const v8::Arguments& args)
+
+#define ACCESSOR_GETTER(NAME) \
+v8::Handle<v8::Value> V8Custom::v8##NAME##AccessorGetter(\
+    v8::Local<v8::String> name, const v8::AccessorInfo& info)
+
+#define ACCESSOR_SETTER(NAME) \
+void V8Custom::v8##NAME##AccessorSetter(v8::Local<v8::String> name, \
+                                        v8::Local<v8::Value> value, \
+                                        const v8::AccessorInfo& info)
+
 namespace WebCore {
 
 class Frame;
@@ -266,8 +278,12 @@ DECLARE_CALLBACK(EventTargetNodeAddEventListener)
 DECLARE_CALLBACK(EventTargetNodeRemoveEventListener)
 
 // Custom implementation of XMLHttpRequest properties
-DECLARE_PROPERTY_ACCESSOR_SETTER(XMLHttpRequestOnload)
-DECLARE_PROPERTY_ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnabort)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnerror)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnload)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnloadstart)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnprogress)
+DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestOnreadystatechange)
 DECLARE_CALLBACK(XMLHttpRequestAddEventListener)
 DECLARE_CALLBACK(XMLHttpRequestRemoveEventListener)
 DECLARE_CALLBACK(XMLHttpRequestOpen)
@@ -275,6 +291,7 @@ DECLARE_CALLBACK(XMLHttpRequestSend)
 DECLARE_CALLBACK(XMLHttpRequestSetRequestHeader)
 DECLARE_CALLBACK(XMLHttpRequestGetResponseHeader)
 DECLARE_CALLBACK(XMLHttpRequestOverrideMimeType)
+DECLARE_CALLBACK(XMLHttpRequestDispatchEvent)
 
 // Custom implementation of XMLHttpRequestUpload properties
 DECLARE_PROPERTY_ACCESSOR(XMLHttpRequestUploadOnabort)

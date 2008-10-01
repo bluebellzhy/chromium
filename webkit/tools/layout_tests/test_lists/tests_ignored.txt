@@ -64,6 +64,10 @@ V8 | KJS # LayoutTests/fast/dom/Window/window-properties.html = FAIL | TIMEOUT
 // private browsing mode.
 V8 | KJS # LayoutTests/http/tests/security/cross-frame-access-private-browsing.html = FAIL
 
+// We don't care about dashboard compatibility mode.
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/default-content-type-dashboard.html = FAIL
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/svg-created-by-xhr-disallowed-in-dashboard.html = FAIL
+
 // Chrome uses different keyboard accelerators from those used by Safari, so
 // these tests will always fail.
 // TODO(ericroman): can the following 2 tests be removed from this list, since they pass?

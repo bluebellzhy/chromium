@@ -66,6 +66,13 @@ V8 | KJS # LayoutTests/http/tests/xmlhttprequest/methods-async.html = TIMEOUT
 // LightTPD doesn't accept unknown HTTP methods and passes CGIs a Content-Type
 // even when a request didn't send the header.
 V8 | KJS # LayoutTests/http/tests/xmlhttprequest/methods.html = FAIL
+// http://crbug.com/2975 : Need to support upload progress notifications in
+// the resource bridge.
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-onload-event.html = FAIL
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-onprogress-event.html = FAIL
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-progress-events.html = FAIL
+// http://crbug.com/2978 : Need to implement XMLHttpRequest.dispatchEvent.
+V8 | KJS # LayoutTests/http/tests/xmlhttprequest/event-target.html = FAIL
 
 # Bug 1341582
 V8 | KJS # LayoutTests/svg/dom/animated-tearoff-equality.xhtml = FAIL | PASS
@@ -1021,18 +1028,8 @@ V8 | KJS # LayoutTests/http/tests/security/cross-origin-xsl-BLOCKED.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/xss-DENIED-synchronous-form.html = FAIL
 V8 | KJS # LayoutTests/http/tests/security/xss-eval.html = FAIL
 V8 | KJS # LayoutTests/http/tests/xmlhttprequest/access-control-basic-allow-preflight-cache-invalidation-by-method.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/infoOnProgressEvent.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/onabort-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/onerror-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/onloadstart-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-onload-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-onloadstart-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-onprogress-event.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/upload-progress-events.html = FAIL
 V8 | KJS # LayoutTests/http/tests/xmlhttprequest/xmlhttprequest-LSProgressEvent-ProgressEvent-should-match.html = FAIL
 V8 | KJS # LayoutTests/http/tests/xmlhttprequest/xmlhttprequest-no-content-length-onProgress.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/xmlhttprequest-onProgress-open-should-zero-length.html = FAIL
-V8 | KJS # LayoutTests/http/tests/xmlhttprequest/xmlhttprequest-unsafe-redirect.html = FAIL
 V8 | KJS # LayoutTests/media/progress-event-total.html = FAIL
 V8 | KJS # LayoutTests/media/video-click-dlbclick-standalone.html = FAIL
 V8 | KJS # LayoutTests/media/video-layer-crash.html = FAIL

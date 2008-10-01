@@ -54,6 +54,7 @@
 #include "Clipboard.h"
 #include "ClipboardEvent.h"
 
+// TODO(tc): Sort these after the merge lands on trunk.
 #include "Base64.h"
 #include "Console.h"
 #include "FloatRect.h"
@@ -73,7 +74,6 @@
 #include "EventTargetNode.h"
 #include "EventTarget.h"
 #include "ExceptionCode.h"
-#include "XMLHttpRequest.h"
 #include "XMLSerializer.h"
 #include "KURL.h"
 #include "HTMLDocument.h"
@@ -123,18 +123,6 @@
 static const int kPopupTilePixels = 10;
 
 namespace WebCore {
-
-#define CALLBACK_FUNC_DECL(NAME)                \
-v8::Handle<v8::Value> V8Custom::v8##NAME##Callback(const v8::Arguments& args)
-
-#define ACCESSOR_GETTER(NAME) \
-v8::Handle<v8::Value> V8Custom::v8##NAME##AccessorGetter(\
-    v8::Local<v8::String> name, const v8::AccessorInfo& info)
-
-#define ACCESSOR_SETTER(NAME) \
-void V8Custom::v8##NAME##AccessorSetter(v8::Local<v8::String> name, \
-                                        v8::Local<v8::Value> value, \
-                                        const v8::AccessorInfo& info)
 
 #define NAMED_PROPERTY_GETTER(NAME)  \
 v8::Handle<v8::Value> V8Custom::v8##NAME##NamedPropertyGetter(\
@@ -261,27 +249,6 @@ void V8ScheduledAction::execute(DOMWindow* window) {
     doc->updateRendering();
 
   proxy->setTimerCallback(false);
-}
-
-
-CALLBACK_FUNC_DECL(XMLHttpRequestConstructor) {
-  INC_STATS(L"DOM.XMLHttpRequest.Constructor");
-
-  if (!args.IsConstructCall()) {
-    V8Proxy::ThrowError(V8Proxy::TYPE_ERROR,
-        "DOM object constructor cannot be called as a function.");
-    return v8::Undefined();
-  }
-  // Expect no parameters.
-  // Allocate a XMLHttpRequest object as its internal field.
-  Document* doc = V8Proxy::retrieveFrame()->document();
-  RefPtr<XMLHttpRequest> xhr = XMLHttpRequest::create(doc);
-  V8Proxy::SetDOMWrapper(args.Holder(),
-      V8ClassIndex::ToInt(V8ClassIndex::XMLHTTPREQUEST), xhr.get());
-  // Set object as the peer.
-  V8Proxy::SetJSWrapperForDOMObject(xhr.get(),
-      v8::Persistent<v8::Object>::New(args.Holder()));
-  return args.Holder();
 }
 
 
@@ -3003,354 +2970,6 @@ CALLBACK_FUNC_DECL(EventTargetNodeRemoveEventListener) {
 }
 
 
-// XMLHttpRequest --------------------------------------------------------------
-
-// Use an array to hold dependents. It works like a ref-counted scheme.
-// A value can be added more than once to the xhr object.
-static void CreateHiddenXHRDependency(v8::Local<v8::Object> xhr,
-                                      v8::Local<v8::Value> value) {
-  ASSERT(V8Proxy::GetDOMWrapperType(xhr) == V8ClassIndex::XMLHTTPREQUEST);
-  v8::Local<v8::Value> cache =
-      xhr->GetInternalField(V8Custom::kXMLHttpRequestCacheIndex);
-  if (cache->IsNull() || cache->IsUndefined()) {
-    cache = v8::Array::New();
-    xhr->SetInternalField(V8Custom::kXMLHttpRequestCacheIndex, cache);
-  }
-
-  v8::Local<v8::Array> cache_array = v8::Local<v8::Array>::Cast(cache);
-  cache_array->Set(v8::Integer::New(cache_array->Length()), value);
-}
-
-static void RemoveHiddenXHRDependency(v8::Local<v8::Object> xhr,
-                                      v8::Local<v8::Value> value) {
-  ASSERT(V8Proxy::GetDOMWrapperType(xhr) == V8ClassIndex::XMLHTTPREQUEST);
-  v8::Local<v8::Value> cache =
-      xhr->GetInternalField(V8Custom::kXMLHttpRequestCacheIndex);
-  ASSERT(cache->IsArray());
-  v8::Local<v8::Array> cache_array = v8::Local<v8::Array>::Cast(cache);
-  for (int i = cache_array->Length() - 1; i >= 0; i--) {
-    v8::Local<v8::Value> cached = cache_array->Get(v8::Integer::New(i));
-    if (cached->StrictEquals(value)) {
-      cache_array->Delete(i);
-      return;
-    }
-  }
-
-  // Should not reach here.
-  ASSERT(false);
-}
-
-ACCESSOR_SETTER(XMLHttpRequestOnreadystatechange)
-{
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, info.Holder());
-  if (value->IsNull()) {
-    if (imp->onreadystatechange()) {
-      V8XHREventListener* listener =
-          static_cast<V8XHREventListener*>(imp->onreadystatechange());
-      v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
-      RemoveHiddenXHRDependency(info.Holder(), v8_listener);
-    }
-
-    // Clear the listener
-    imp->setOnreadystatechange(0);
-
-  } else {
-    V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
-    if (!proxy)
-      return;
-
-    EventListener* listener = proxy->FindOrCreateXHREventListener(value, false);
-    if (listener) {
-      imp->setOnreadystatechange(listener);
-      CreateHiddenXHRDependency(info.Holder(), value);
-    }
-  }
-}
-
-ACCESSOR_SETTER(XMLHttpRequestOnload)
-{
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, info.Holder());
-  if (value->IsNull()) {
-    if (imp->onload()) {
-      V8XHREventListener* listener = static_cast<V8XHREventListener*>(imp->onload());
-      v8::Local<v8::Object> v8_listener = listener->GetListenerObject();
-      RemoveHiddenXHRDependency(info.Holder(), v8_listener);
-    }
-
-    imp->setOnload(0);
-
-  } else {
-    V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
-    if (!proxy)
-      return;
-
-    EventListener* listener = proxy->FindOrCreateXHREventListener(value, false);
-    if (listener) {
-      imp->setOnload(listener);
-      CreateHiddenXHRDependency(info.Holder(), value);
-    }
-  }
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestAddEventListener)
-{
-  INC_STATS(L"DOM.XMLHttpRequest.addEventListener()");
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-
-  V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
-  if (!proxy)
-    return v8::Undefined();
-
-  EventListener* listener = proxy->FindOrCreateXHREventListener(args[1], false);
-  if (listener) {
-    String type = ToWebCoreString(args[0]);
-    bool useCapture = args[2]->BooleanValue();
-    imp->addEventListener(type, listener, useCapture);
-
-    CreateHiddenXHRDependency(args.Holder(), args[1]);
-  }
-  return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestRemoveEventListener) {
-  INC_STATS(L"DOM.XMLHttpRequest.removeEventListener()");
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-
-  V8Proxy* proxy = V8Proxy::retrieve(imp->document()->frame());
-  if (!proxy)
-    return v8::Undefined();  // probably leaked
-
-  EventListener* listener =
-    proxy->FindXHREventListener(args[1], false);
-
-  if (listener) {
-    String type = ToWebCoreString(args[0]);
-    bool useCapture = args[2]->BooleanValue();
-    imp->removeEventListener(type, listener, useCapture);
-
-    RemoveHiddenXHRDependency(args.Holder(), args[1]);
-  }
-
-  return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestOpen)
-{
-  INC_STATS(L"DOM.XMLHttpRequest.open()");
-  // Four cases:
-  // open(method, url)
-  // open(method, url, async)
-  // open(method, url, async, user)
-  // open(method, url, async, user, passwd)
-
-  if (args.Length() < 2) {
-    V8Proxy::ThrowError(V8Proxy::SYNTAX_ERROR, "Not enough arguments");
-    return v8::Undefined();
-  }
-
-  // get the implementation
-  XMLHttpRequest* xhr = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-
-  // retrieve parameters
-  String method = ToWebCoreString(args[0]);
-  String urlstring = ToWebCoreString(args[1]);
-  V8Proxy* proxy = V8Proxy::retrieve();
-  KURL url = proxy->frame()->document()->completeURL(urlstring);
-
-  bool async = (args.Length() < 3) ? true : args[2]->BooleanValue();
-
-  ExceptionCode ec = 0;
-  String user, passwd;
-  if (args.Length() >= 4 && !args[3]->IsUndefined()) {
-    user = valueToStringWithNullCheck(args[3]);
-
-    if (args.Length() >= 5 && !args[4]->IsUndefined()) {
-      passwd = valueToStringWithNullCheck(args[4]);
-      xhr->open(method, url, async, user, passwd, ec);
-    } else
-      xhr->open(method, url, async, user, ec);
-  } else
-    xhr->open(method, url, async, ec);
-
-  if (ec != 0) {
-    V8Proxy::SetDOMException(ec);
-    return v8::Handle<v8::Value>();
-  }
-
-  return v8::Undefined();
-}
-
-static bool IsDocumentType(v8::Handle<v8::Value> value)
-{
-    // TODO(fqian): add other document types.
-    return V8Document::HasInstance(value) || V8HTMLDocument::HasInstance(value);
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestSend)
-{
-    INC_STATS(L"DOM.XMLHttpRequest.send()");
-  XMLHttpRequest* xhr = V8Proxy::ToNativeObject<XMLHttpRequest>(
-        V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-
-    ExceptionCode ec = 0;
-    if (args.Length() < 1)
-        xhr->send(ec);
-    else {
-        v8::Handle<v8::Value> arg = args[0];
-        // TODO(eseidel): upstream handles "File" objects too
-        if (IsDocumentType(arg)) {
-            v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(arg);
-            Document* doc = V8Proxy::DOMWrapperToNode<Document>(obj);
-            ASSERT(doc);
-            xhr->send(doc, ec);
-        } else
-            xhr->send(valueToStringWithNullCheck(arg), ec);
-    }
-
-    if (ec) {
-        V8Proxy::SetDOMException(ec);
-        return v8::Handle<v8::Value>();
-    }
-
-    return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestSetRequestHeader) {
-  INC_STATS(L"DOM.XMLHttpRequest.setRequestHeader()");
-  if (args.Length() < 2) {
-    V8Proxy::ThrowError(V8Proxy::SYNTAX_ERROR, "Not enough arguments");
-    return v8::Undefined();
-  }
-
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-  ExceptionCode ec = 0;
-  String header = ToWebCoreString(args[0]);
-  String value = ToWebCoreString(args[1]);
-  imp->setRequestHeader(header, value, ec);
-  if (ec != 0) {
-    V8Proxy::SetDOMException(ec);
-    return v8::Handle<v8::Value>();
-  }
-  return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestGetResponseHeader) {
-  INC_STATS(L"DOM.XMLHttpRequest.getResponseHeader()");
-  if (args.Length() < 1) {
-    V8Proxy::ThrowError(V8Proxy::SYNTAX_ERROR, "Not enough arguments");
-    return v8::Undefined();
-  }
-
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-  ExceptionCode ec = 0;
-  String header = ToWebCoreString(args[0]);
-  String result = imp->getResponseHeader(header, ec);
-  if (ec != 0) {
-    V8Proxy::SetDOMException(ec);
-    return v8::Handle<v8::Value>();
-  }
-  return v8StringOrNull(result);
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestOverrideMimeType)
-{
-  INC_STATS(L"DOM.XMLHttpRequest.overrideMimeType()");
-  if (args.Length() < 1) {
-    V8Proxy::ThrowError(V8Proxy::SYNTAX_ERROR, "Not enough arguments");
-    return v8::Undefined();
-  }
-
-  XMLHttpRequest* imp = V8Proxy::ToNativeObject<XMLHttpRequest>(
-      V8ClassIndex::XMLHTTPREQUEST, args.Holder());
-  String value = ToWebCoreString(args[0]);
-  imp->overrideMimeType(value);
-  return v8::Undefined();
-}
-
-
-// XMLHttpRequestUpload --------------------------------------------------------
-
-ACCESSOR_GETTER(XMLHttpRequestUploadOnabort) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onabort");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-ACCESSOR_SETTER(XMLHttpRequestUploadOnabort) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onabort");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-}
-
-ACCESSOR_GETTER(XMLHttpRequestUploadOnerror) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onerror");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-ACCESSOR_SETTER(XMLHttpRequestUploadOnerror) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onerror");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-}
-
-ACCESSOR_GETTER(XMLHttpRequestUploadOnload) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onload");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-ACCESSOR_SETTER(XMLHttpRequestUploadOnload) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onload");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-}
-
-ACCESSOR_GETTER(XMLHttpRequestUploadOnloadstart) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onloadstart");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-ACCESSOR_SETTER(XMLHttpRequestUploadOnloadstart) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onloadstart");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-}
-
-ACCESSOR_GETTER(XMLHttpRequestUploadOnprogress) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onprogress");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-ACCESSOR_SETTER(XMLHttpRequestUploadOnprogress) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.onprogress");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestUploadAddEventListener) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.addEventListener()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestUploadRemoveEventListener) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.removeEventListener()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-CALLBACK_FUNC_DECL(XMLHttpRequestUploadDispatchEvent) {
-  INC_STATS(L"DOM.XMLHttpRequestUpload.dispatchEvent()");
-  V8Proxy::SetDOMException(NOT_SUPPORTED_ERR);
-  return v8::Undefined();
-}
-
-
 // TreeWalker ------------------------------------------------------------------
 
 CALLBACK_FUNC_DECL(TreeWalkerParentNode) {
@@ -3786,9 +3405,6 @@ NAMED_ACCESS_CHECK(Location) {
 
 #undef INDEXED_ACCESS_CHECK
 #undef NAMED_ACCESS_CHECK
-#undef ACCESSOR_GETTER
-#undef ACCESSOR_SETTER
-#undef CALLBACK_FUNC_DECL
 #undef NAMED_PROPERTY_GETTER
 #undef NAMED_PROPERTY_SETTER
 #undef INDEXED_PROPERTY_GETTER

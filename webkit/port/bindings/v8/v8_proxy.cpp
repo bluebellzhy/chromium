@@ -1305,6 +1305,14 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
       desc->SetCallHandler(USE_CALLBACK(XMLHttpRequestConstructor));
       break;
     }
+    case V8ClassIndex::XMLHTTPREQUESTUPLOAD: {
+      // Reserve one more internal field for keeping event listeners.
+      v8::Local<v8::ObjectTemplate> instance_template =
+          desc->InstanceTemplate();
+      instance_template->SetInternalFieldCount(
+          V8Custom::kXMLHttpRequestInternalFieldCount);
+      break;
+    }
     case V8ClassIndex::XPATHEVALUATOR:
       desc->SetCallHandler(USE_CALLBACK(XPathEvaluatorConstructor));
       break;
