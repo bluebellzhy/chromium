@@ -942,19 +942,19 @@ static Frame* createWindow(Frame* opener_frame,
 
   if (!parseURL(url).startsWith("javascript:", false) ||
       ScriptController::isSafeScript(new_frame)) {
-    String completed_url =
-        url.isEmpty() ? url : active_frame->document()->completeURL(url);
+    KURL completed_url =
+        url.isEmpty() ? KURL("") : active_frame->document()->completeURL(url);
     bool user_gesture = active_frame->script()->processingUserGesture();
 
     if (created) {
       new_frame->loader()->changeLocation(
-          KURL(completed_url),
+          completed_url,
           active_frame->loader()->outgoingReferrer(),
           false,
           user_gesture);
     } else if (!url.isEmpty()) {
       new_frame->loader()->scheduleLocationChange(
-          completed_url,
+          completed_url.string(),
           active_frame->loader()->outgoingReferrer(),
           false,
           user_gesture);
