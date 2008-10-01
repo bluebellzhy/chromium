@@ -941,7 +941,6 @@ V8 | KJS # LayoutTests/dom/xhtml/level2/html/HTMLFrameSetElement02.xhtml = FAIL
 V8 | KJS # LayoutTests/editing/execCommand/16049.html = FAIL
 V8 | KJS # LayoutTests/editing/pasteboard/5780697-2.html = FAIL
 V8 | KJS # LayoutTests/editing/selection/5714333.html = FAIL
-V8 | KJS # LayoutTests/editing/selection/drag-text-delay.html = FAIL
 V8 | KJS # LayoutTests/editing/selection/move-left-right.html = FAIL
 V8 | KJS # LayoutTests/editing/selection/move-past-trailing-space.html = FAIL
 V8 | KJS # LayoutTests/fast/backgrounds/background-origin-root-element.html = FAIL
@@ -989,7 +988,6 @@ V8 | KJS # LayoutTests/fast/gradients/generated-gradients.html = FAIL
 V8 | KJS # LayoutTests/fast/gradients/list-item-gradient.html = FAIL
 V8 | KJS # LayoutTests/fast/gradients/simple-gradients.html = FAIL
 V8 | KJS # LayoutTests/fast/history/subframe-is-visited.html = FAIL
-V8 | KJS # LayoutTests/fast/html/link-rel-stylesheet.html = FAIL
 V8 | KJS # LayoutTests/fast/html/marquee-scroll.html = FAIL
 V8 | KJS # LayoutTests/fast/media/implicit-media-all.html = FAIL
 V8 | KJS # LayoutTests/fast/media/monochrome.html = FAIL
@@ -1008,8 +1006,6 @@ V8 | KJS # LayoutTests/fast/table/prepend-in-anonymous-table.html = FAIL
 V8 | KJS # LayoutTests/fast/table/vertical-align-baseline.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/overflow-with-transform.html = FAIL
 V8 | KJS # LayoutTests/fast/transforms/shadows.html = FAIL
-V8 | KJS # LayoutTests/fast/transforms/transform-overflow.html = FAIL
-V8 | KJS # LayoutTests/fast/transforms/transform-positioned-ancestor.html = FAIL
 V8 | KJS # LayoutTests/http/tests/loading/location-hash-reload-cycle.html = FAIL
 V8 | KJS # LayoutTests/http/tests/misc/acid3.html = FAIL
 V8 | KJS # LayoutTests/http/tests/misc/frame-default-enc-same-domain.html = FAIL
@@ -1052,6 +1048,16 @@ V8 | KJS # LayoutTests/svg/dom/altGlyph-dom.xhtml = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGLinearGradientElement-svgdom-gradientTransform-prop.html = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGPatternElement-svgdom-patternTransform-prop.html = FAIL
 V8 | KJS # LayoutTests/svg/dynamic-updates/SVGRadialGradientElement-svgdom-gradientTransform-prop.html = FAIL
+
+// These new tests are missing expected results, so we skip them (there's no
+// way to flag them as missing expected results).
+V8 | KJS # SKIP : LayoutTests/fast/html/link-rel-stylesheet.html = FAIL
+V8 | KJS # SKIP : LayoutTests/fast/layers/opacity-stacking.html = PASS
+V8 | KJS # SKIP : LayoutTests/fast/transforms/transform-overflow.html = FAIL
+V8 | KJS # SKIP : LayoutTests/fast/transforms/transform-positioned-ancestor.html = FAIL
+V8 | KJS # SKIP : LayoutTests/platform/win/fast/text/uniscribe-missing-glyph.html = PASS
+V8 | KJS # SKIP : LayoutTests/printing/media-queries-print.html = PASS
+V8 | KJS # SKIP : LayoutTests/transitions/opacity-transition-zindex.html = PASS
 
 // Post-MERGE failures: these will all need to be fixed one day
 V8 | KJS # LayoutTests/css2.1/t1002-c5523-width-01-b-g.html = FAIL
