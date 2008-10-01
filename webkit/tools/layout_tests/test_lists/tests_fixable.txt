@@ -20,7 +20,7 @@ V8 | KJS # LayoutTests/editing/execCommand/copy-without-selection.html = FAIL | 
 // Works fine when run stand-alone.  Not needed for Beta.
 // Also skipped by Apple on Windows, due to intermittent failure 
 // (rdar://5313536)
-V8 | KJS # LayoutTests/fast/dom/frame-loading-via-document-write.html = FAIL
+V8 | KJS # LayoutTests/fast/dom/frame-loading-via-document-write.html = FAIL | TIMEOUT
 
 // -----------------------------------------------------------------
 // FLAKY TESTS
@@ -926,7 +926,7 @@ V8 | KJS # LayoutTests/fast/css/variables/color-hex-test.html = FAIL
 V8 | KJS # LayoutTests/accessibility = FAIL
 V8 | KJS # LayoutTests/css3/keyframes-rule.html = FAIL
 V8 | KJS # LayoutTests/css3/transform-value-types.html = FAIL
-V8 | KJS # LayoutTests/dom/html/level2/html/HTMLFormElement10.html = FAIL
+V8 | KJS # LayoutTests/dom/html/level2/html/HTMLFormElement10.html = FAIL | TIMEOUT
 V8 | KJS # LayoutTests/dom/xhtml/level2/html/HTMLFormElement10.xhtml = FAIL
 V8 | KJS # LayoutTests/dom/xhtml/level2/html/HTMLFrameElement01.xhtml = FAIL
 V8 | KJS # LayoutTests/dom/xhtml/level2/html/HTMLFrameElement02.xhtml = FAIL
@@ -971,7 +971,7 @@ V8 | KJS # LayoutTests/fast/dom/Document/createElementNS-namespace-err.html = FA
 V8 | KJS # LayoutTests/fast/dom/documenturi-assigned-junk-implies-relative-urls-do-not-resolve.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/gc-acid3.html = FAIL
 V8 | KJS # LayoutTests/fast/dom/HTMLDocument/activeElement.html = FAIL
-V8 | KJS # LayoutTests/fast/dom/HTMLDocument/hasFocus.html = FAIL
+V8 | KJS # LayoutTests/fast/dom/HTMLDocument/hasFocus.html = FAIL | TIMEOUT
 V8 | KJS # LayoutTests/fast/dom/SelectorAPI/NSResolver-exceptions.xhtml = FAIL
 V8 | KJS # LayoutTests/fast/dom/SelectorAPI/resig-SelectorsAPI-test.xhtml = FAIL
 V8 | KJS # LayoutTests/fast/text/align-center-rtl-spill.html = FAIL
@@ -1034,9 +1034,9 @@ V8 | KJS # LayoutTests/media/progress-event-total.html = FAIL
 V8 | KJS # LayoutTests/media/video-click-dlbclick-standalone.html = FAIL
 V8 | KJS # LayoutTests/media/video-layer-crash.html = FAIL
 V8 | KJS # LayoutTests/media/video-source-type-params.html = FAIL
-V8 | KJS # LayoutTests/plugins/return-error-from-new-stream-doesnt-invoke-destroy-stream.html = FAIL
+V8 | KJS # LayoutTests/plugins/return-error-from-new-stream-doesnt-invoke-destroy-stream.html = FAIL | TIMEOUT
 V8 | KJS # LayoutTests/printing = FAIL
-V8 | KJS # LayoutTests/security/autocomplete-cleared-on-back.html = FAIL
+V8 | KJS # LayoutTests/security/autocomplete-cleared-on-back.html = FAIL | TIMEOUT
 V8 | KJS # LayoutTests/security/set-form-autocomplete-attribute.html = FAIL
 V8 | KJS # LayoutTests/storage/domstorage = FAIL
 V8 | KJS # LayoutTests/storage/multiple-databases-garbage-collection.html = FAIL
@@ -1086,7 +1086,6 @@ V8 | KJS # LayoutTests/fast/dom/resource-locations-in-created-html-document.html
 V8 | KJS # LayoutTests/fast/dynamic/floating-to-positioned-2.html = FAIL
 V8 | KJS # LayoutTests/fast/dynamic/floating-to-positioned.html = FAIL
 V8 | KJS # LayoutTests/fast/dynamic/subtree-table-cell-height.html = FAIL
-V8 | KJS # LayoutTests/fast/encoding/char-decoding.html = FAIL
 V8 | KJS # LayoutTests/fast/events/autoscroll.html = FAIL
 V8 | KJS # LayoutTests/fast/events/event-instanceof.html = FAIL
 V8 | KJS # LayoutTests/fast/events/onload-after-document-close-with-subresource.html = FAIL
@@ -1328,12 +1327,6 @@ V8 | KJS # pending/http/tests/security/cross-frame-access-parent-explicit-domain
 V8 | KJS # pending/svg/carto.net/window.svg = FAIL
 
 // Post-merge Timeouts: Definitely need to be fixed one day
-V8 | KJS # LayoutTests/dom/html/level2/html/HTMLFormElement10.html = TIMEOUT
-V8 | KJS # LayoutTests/fast/dom/HTMLDocument/hasFocus.html = TIMEOUT
-V8 | KJS # LayoutTests/fast/dom/frame-loading-via-document-write.html = TIMEOUT
 V8 | KJS # LayoutTests/fast/js/exceptions-thrown-in-callbacks.html = TIMEOUT
 V8 | KJS # LayoutTests/http/tests/security/cross-frame-access-call.html = TIMEOUT
 V8 | KJS # LayoutTests/http/tests/security/frame-loading-via-document-write.html = TIMEOUT
-V8 | KJS # LayoutTests/plugins/return-error-from-new-stream-doesnt-invoke-destroy-stream.html = TIMEOUT
-V8 | KJS # LayoutTests/security/autocomplete-cleared-on-back.html = TIMEOUT
-V8 | KJS # LayoutTests/webarchive/loading/cache-expired-subresource.html = TIMEOUT
