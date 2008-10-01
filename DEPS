@@ -5,6 +5,9 @@ deps = {
   "src/googleurl":
     "http://google-url.googlecode.com/svn/trunk@93",
 
+  "src/sdch/open-vcdiff":
+    "http://open-vcdiff.googlecode.com/svn/trunk@18",
+
   "src/testing/gtest":
     "http://googletest.googlecode.com/svn/trunk@63",
 
@@ -15,7 +18,7 @@ deps = {
     "/trunk/deps/third_party/cygwin@1788",
 
   "src/third_party/icu38":
-    "/trunk/deps/third_party/icu38@2668",
+    "/trunk/deps/third_party/icu38@2676",
 
   "src/third_party/python_24":
     "/trunk/deps/third_party/python_24@1790",
