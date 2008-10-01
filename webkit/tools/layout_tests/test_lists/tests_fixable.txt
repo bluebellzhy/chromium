@@ -1229,7 +1229,7 @@ V8 | KJS # LayoutTests/svg/W3C-SVG-1.1/text-text-06-t.svg = FAIL
 V8 | KJS # LayoutTests/svg/batik/masking/maskRegions.svg = FAIL
 V8 | KJS # LayoutTests/svg/batik/paints/gradientLimit.svg = FAIL
 V8 | KJS # LayoutTests/svg/batik/paints/patternPreserveAspectRatioA.svg = FAIL
-V8 | KJS # LayoutTests/svg/batik/paints/patternRegionA.svg = FAIL
+V8 | KJS # LayoutTests/svg/batik/paints/patternRegionA.svg = FAIL | CRASH
 V8 | KJS # LayoutTests/svg/batik/paints/patternRegions.svg = FAIL
 V8 | KJS # LayoutTests/svg/batik/text/textAnchor2.svg = FAIL
 V8 | KJS # LayoutTests/svg/batik/text/textAnchor3.svg = FAIL
@@ -1325,6 +1325,8 @@ V8 | KJS # pending/fast/history/history_reload.html = FAIL
 V8 | KJS # pending/http/tests/security/cross-frame-access-child-explicit-domain.html = FAIL
 V8 | KJS # pending/http/tests/security/cross-frame-access-parent-explicit-domain.html = FAIL
 V8 | KJS # pending/svg/carto.net/window.svg = FAIL
+V8 | KJS # pending/dom/html/level2/html/HTMLFrameElement09.html = PASS | CRASH
+V8 | KJS # pending/dom/html/level2/html/HTMLIFrameElement11.html = PASS | CRASH
 
 // Post-merge Timeouts: Definitely need to be fixed one day
 V8 | KJS # LayoutTests/fast/js/exceptions-thrown-in-callbacks.html = TIMEOUT
