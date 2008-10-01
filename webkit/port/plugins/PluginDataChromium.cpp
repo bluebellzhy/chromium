@@ -40,7 +40,9 @@ void PluginData::initPlugins()
                     mime->suffixes += ",";
                 mime->suffixes += webkit_glue::StdStringToString(mimeType.file_extensions[k]);
             }
+            info->mimes.append(mime);
         }
+        m_plugins.append(info);
     }
 }
 
