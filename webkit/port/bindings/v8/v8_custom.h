@@ -6,6 +6,7 @@
 #define V8_CUSTOM_H__
 
 #include <v8.h>
+#include "v8_index.h"
 
 struct NPObject;
 
