@@ -30,4 +30,8 @@ delay_loaded = [
   'dwmapi.dll',
   'COMDLG32.dll',
   'urlmon.dll',
+# IPHLPAPI.dll was added as part of the Sept 2008 WebKit merge
+# We probably don't need it, but we're adding it for now.
+  'iphlpapi.dll',
 ]
+
