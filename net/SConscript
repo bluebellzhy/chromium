@@ -13,7 +13,7 @@ env.Prepend(
         '$ZLIB_DIR',
         '$ICU38_DIR/public/common',
         '$ICU38_DIR/public/i18n',
-        '$SDCH_DIR/open_vcdiff/depot/opensource/open-vcdiff/src',
+        '$SDCH_DIR/open-vcdiff/src',
         '..',
     ],
 )
@@ -78,6 +78,7 @@ input_files = [
     'url_request/url_request.cc',
     'url_request/url_request_about_job.cc',
     'url_request/url_request_error_job.cc',
+    'url_request/url_request_file_job.cc',
     'url_request/url_request_http_job.cc',
     'url_request/url_request_job.cc',
     'url_request/url_request_job_metrics.cc',
@@ -93,7 +94,7 @@ if env['PLATFORM'] == 'win32':
       'base/directory_lister.cc',
       'base/dns_resolution_observer.cc',
       'base/listen_socket.cc',
-      'base/ssl_client_socket.cc',
+      'base/ssl_client_socket_win.cc',
       'base/ssl_config_service.cc',
       'base/tcp_client_socket.cc',
       'base/telnet_server.cc',
@@ -108,7 +109,6 @@ if env['PLATFORM'] == 'win32':
       'proxy/proxy_resolver_winhttp.cc',
       'proxy/proxy_service.cc',
       'url_request/url_request_file_dir_job.cc',
-      'url_request/url_request_file_job.cc',
       'url_request/url_request_filter.cc',
       'url_request/url_request_ftp_job.cc',
       'url_request/url_request_inet_job.cc',
@@ -230,6 +230,7 @@ unittest_files = [
     'base/cookie_policy_unittest.cc',
     'base/data_url_unittest.cc',
     'base/escape_unittest.cc',
+    'base/file_input_stream_unittest.cc',
     'base/gzip_filter_unittest.cc',
     'base/host_resolver_unittest.cc',
     'base/mime_sniffer_unittest.cc',
@@ -258,8 +259,7 @@ unittest_files = [
 if env['PLATFORM'] == 'win32':
   unittest_files.extend([
       'base/directory_lister_unittest.cc',
-      'base/file_input_stream_unittest.cc',
-      'base/sdch_filter_unitest.cc',
+      'base/sdch_filter_unittest.cc',
       'base/ssl_config_service_unittest.cc',
       'base/ssl_client_socket_unittest.cc',
       'base/wininet_util_unittest.cc',
@@ -282,6 +282,22 @@ net_unittests = env_tests.ChromeTestProgram('net_unittests', unittest_files)
 
 install_targets = net_unittests[:]
 
+if env['PLATFORM'] in ('posix', 'win32'):
+
+  net_perftests = env_tests.ChromeTestProgram(
+      'net_perftests',
+      ['disk_cache/disk_cache_test_util.cc',
+       'disk_cache/disk_cache_perftest.cc',
+       'base/cookie_monster_perftest.cc',
+       # TODO(sgk): avoid using .cc from base directly
+       '$BASE_DIR/run_all_perftests$OBJSUFFIX',
+       '$BASE_DIR/perftimer$OBJSUFFIX']
+  )
+
+  install_targets.extend([
+      net_perftests
+  ])
+
 if env['PLATFORM'] == 'win32':
   stress_cache = env_tests.ChromeTestProgram(
       'stress_cache',
@@ -295,20 +311,9 @@ if env['PLATFORM'] == 'win32':
        'disk_cache/disk_cache_test_util.cc']
   )
 
-  net_perftests = env_tests.ChromeTestProgram(
-      'net_perftests',
-      ['disk_cache/disk_cache_test_util.cc',
-       'disk_cache/disk_cache_perftest.cc',
-       'base/cookie_monster_perftest.cc',
-       # TODO(sgk): avoid using .cc from base directly
-       '$BASE_DIR/run_all_perftests$OBJSUFFIX',
-       '$BASE_DIR/perftimer$OBJSUFFIX']
-  )
-
   install_targets.extend([
       stress_cache,
       crash_cache,
-      net_perftests,
   ])
 
 

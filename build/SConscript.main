@@ -323,12 +323,29 @@ elif env['PLATFORM'] == 'posix':
     # TODO: Clean up uses of ext/hash_map and remove this.
     # (see unordered_map and base/hash_tables.h)
     '-Wno-deprecated',  # Needed for using ext/hash_map on GCC 4.3
-    '-Wno-unknown-pragmas' # In wtf's ref counting system
+    '-Wno-unknown-pragmas',  # In wtf's ref counting system
   ]
   env.Replace(
       CCFLAGS = ['-m32', '-g', '-pthread'],
       CXXFLAGS = ['-Wall', '-Werror'] + excluded_warnings,
       LINKFLAGS = ['-m32', '-pthread'],
+
+    # We have several cases where archives depend on each other in a cyclic
+    # fashion. (V8Bindings, libport and WebCore being the most significant
+    # example.) Since the GNU linker does only a single pass over the archives
+    # we need some extra trickery to deal with these unavoidable cycles. That
+    # trickery is --start-group and --end-group (aka -( and -) ). That causes ld
+    # to loop over the group until no more undefined symbols are found. In an
+    # ideal world we would only make groups from those libraries which we knew
+    # to be in cycles. However, that's tough with SCons, so we bodge it by
+    # making all the archives a group by redefining the linking command here.
+    SHLINKCOM = ('$SHLINK -shared -o $TARGET $SHLINKFLAGS $SOURCES '
+                 '$_LIBDIRFLAGS '
+                 '-Wl,--start-group $_LIBFLAGS -Wl,--end-group'),
+    LINKCOM = ('$LINK -o $TARGET $LINKFLAGS $SOURCES '
+               '$_LIBDIRFLAGS '
+               '-Wl,--start-group $_LIBFLAGS -Wl,--end-group'),
+
       # We need rt for clock_gettime.
       LIBS = ['rt'],
 
@@ -347,8 +364,9 @@ elif env['PLATFORM'] == 'posix':
     env.Append(CCFLAGS=['-fprofile-arcs', '-ftest-coverage'])
     env.Append(LINKFLAGS=['-fprofile-arcs'])
 
-  # Build with system-provided NSS
+  # Build with system-provided NSS and GTK.
   env.ParseConfig('pkg-config --cflags --libs nss')
+  env.ParseConfig('pkg-config --cflags --libs gtk+-2.0')
 
 elif env['PLATFORM'] == 'darwin':
 
@@ -480,11 +498,9 @@ if LoadComponent('google_update'):
   sconscripts.append('$GOOGLE_UPDATE_DIR/SConscript')
 
 if LoadComponent('googleurl'):
-  env.SConscript('SConscript.googleurl',
-                 duplicate=0,
-                 variant_dir='$GOOGLEURL_DIR',
-                 src_dir='../googleurl',
-                 exports=['env'])
+  # googleurl comes from a different repository so we provide the SConscript
+  # file.
+  sconscripts.append('SConscript.googleurl')
 
 if LoadComponent('net'):
   sconscripts.append('$NET_DIR/SConscript')

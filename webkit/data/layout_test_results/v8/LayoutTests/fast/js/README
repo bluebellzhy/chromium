@@ -101,3 +101,11 @@ Our behavior is consistent with Firefox (and is what the test
 expects).  In addition, KJS has an inconsistent error message
 for out of range arguments to toExponential.
 
+function-toString-object-literals
+--------------------------
+Only difference is the parse error message.
+
+regexp-overflow
+--------------------------
+This tests artificial limits on the size of regexps.  We allow
+simple regexps to be larger than what jsc allows

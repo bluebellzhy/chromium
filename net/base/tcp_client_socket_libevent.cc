@@ -269,6 +269,7 @@ void TCPClientSocket::DidCompleteIO() {
       break;
     default:
       NOTREACHED();
+      return;
   }
 
   int result;

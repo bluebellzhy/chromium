@@ -27,35 +27,20 @@ fi
 
 rmdir "${GENERATED_DIR}/include/v8/new"
 
-# TODO(mmentovai): fix this to not be so hokey - the Apple build expects
-# JavaScriptCore to be in a framework  This belongs in the JSConfig target,
-# which already does something similar
-mkdir -p "${GENERATED_DIR}/include/v8/JavaScriptCore"
-cp -p "${SRCROOT}/../third_party/WebKit/JavaScriptCore/bindings/npruntime.h" \
-      "${GENERATED_DIR}/include/v8/JavaScriptCore"
+# WebCore/bindings/js/PausedTimeouts.cpp depends on PausedTimeouts.h, which
+# depends on ScheduledAction.h, all in the same directory.  PausedTimeouts is
+# not JSC-specific and should be built here, but ScheduledAction.h is
+# JSC-specific.  Our own V8-compatible ScheduledAction.h is in webkit/port/dom
+# and would normally not be the one chosen by the preprocessor, which finds
+# the JSC one first instead.  Copy PausedTimeouts.cpp out to another location
+# so that the proper ScheduledAction.h can be included.
+mkdir -p "${GENERATED_DIR}/bindings/v8/WebCore/bindings/js"
+cp -p "../third_party/WebKit/WebCore/bindings/js/PausedTimeouts.cpp" \
+      "../third_party/WebKit/WebCore/bindings/js/PausedTimeouts.h" \
+      "${GENERATED_DIR}/bindings/v8/WebCore/bindings/js"
 
-export DerivedSourcesDir="${GENERATED_DIR}/DerivedSources/v8/WebCore"
-mkdir -p "${GENERATED_DIR}/DerivedSources/v8/WebCore"
-cd "${GENERATED_DIR}/DerivedSources/v8/WebCore"
-
-# export CREATE_HASH_TABLE="${SRCROOT}/../third_party/WebKit/JavaScriptCore/kjs/create_hash_table"
-# TODO(mmentovai): The above is normally correct, but create_hash_table wound
-# up without the svn:executable property set in our repository.  See the TODO
-# in jsbindings_prebuild.sh.
-export CREATE_HASH_TABLE="${GENERATED_DIR}/create_hash_table"
-
-ln -sfh "${SRCROOT}/../third_party/WebKit/WebCore" WebCore
-export WebCore="WebCore"
-export SOURCE_ROOT="${WebCore}"
-export PORTROOT="${SRCROOT}/port"
-
-export PUBLICDOMINTERFACES="${PORTROOT}/../pending/PublicDOMInterfaces.h"
-make -f "${SRCROOT}/pending/DerivedSources.make" \
-     -j $(/usr/sbin/sysctl -n hw.ncpu)
-
-# Allow framework-style #imports of <WebCore/whatever.h> to find the right
-# headers.
-cd ..
+# TODO(mmentovai): If I'm still needed, can I move to jsbindings_prebuild.sh?
+cd "${GENERATED_DIR}/DerivedSources/v8"
 mkdir -p ForwardingHeaders/loader
 ln -sfh "${SRCROOT}/../third_party/WebKit/WebCore/loader" \
         ForwardingHeaders/loader/WebCore

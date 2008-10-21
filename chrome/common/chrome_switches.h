@@ -13,7 +13,7 @@ namespace switches {
 
 extern const wchar_t kDisableHangMonitor[];
 extern const wchar_t kDisableMetrics[];
-extern const wchar_t kDisableMetricsReporting[];
+extern const wchar_t kMetricsRecordingOnly[];
 extern const wchar_t kBrowserAssertTest[];
 extern const wchar_t kRendererAssertTest[];
 extern const wchar_t kBrowserCrashTest[];
@@ -127,6 +127,11 @@ extern const wchar_t kJavaScriptDebuggerPath[];
 extern const wchar_t kEnableP13n[];
 
 extern const wchar_t kSdchFilter[];
+
+extern const wchar_t kEnableGreasemonkey[];
+
+extern const wchar_t kIncognito[];
+extern const wchar_t kUseNewSafeBrowsing[];
 
 }  // namespace switches
 

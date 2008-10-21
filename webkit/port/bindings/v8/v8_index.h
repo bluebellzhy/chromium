@@ -169,6 +169,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   SVG_FOREIGN_OBJECT_ELEMENT_TYPES(V)                                   \
   SVG_USE_ELEMENT_TYPES(V)                                              \
   V(SVGAELEMENT, SVGAElement)                                           \
+  V(SVGALTGLYPHELEMENT, SVGAltGlyphElement)                             \
   V(SVGCIRCLEELEMENT, SVGCircleElement)                                 \
   V(SVGCLIPPATHELEMENT, SVGClipPathElement)                             \
   V(SVGCURSORELEMENT, SVGCursorElement)                                 \
@@ -176,6 +177,7 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(SVGDESCELEMENT, SVGDescElement)                                     \
   V(SVGELLIPSEELEMENT, SVGEllipseElement)                               \
   V(SVGGELEMENT, SVGGElement)                                           \
+  V(SVGGLYPHELEMENT, SVGGlyphElement)                                           \
   V(SVGGRADIENTELEMENT, SVGGradientElement)                             \
   V(SVGIMAGEELEMENT, SVGImageElement)                                   \
   V(SVGLINEARGRADIENTELEMENT, SVGLinearGradientElement)                 \
@@ -229,6 +231,8 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(CSSSTYLESHEET, CSSStyleSheet)                                       \
   V(CSSVALUE, CSSValue)                                                 \
   V(CSSVALUELIST, CSSValueList)                                         \
+  V(CSSVARIABLESDECLARATION, CSSVariablesDeclaration)                   \
+  V(CSSVARIABLESRULE, CSSVariablesRule)                                 \
   V(DOMCOREEXCEPTION, DOMCoreException)                                 \
   V(DOMIMPLEMENTATION, DOMImplementation)                               \
   V(DOMPARSER, DOMParser)                                               \
@@ -273,10 +277,16 @@ typedef v8::Persistent<v8::FunctionTemplate> (*FunctionTemplateFactory)();
   V(TEXTMETRICS, TextMetrics)                                           \
   V(TREEWALKER, TreeWalker)                                             \
   V(UIEVENT, UIEvent)                                                   \
+  V(WEBKITANIMATIONEVENT, WebKitAnimationEvent)                         \
+  V(WEBKITCSSKEYFRAMERULE, WebKitCSSKeyframeRule)                       \
+  V(WEBKITCSSKEYFRAMESRULE, WebKitCSSKeyframesRule)                     \
+  V(WEBKITCSSTRANSFORMVALUE, WebKitCSSTransformValue)                   \
+  V(WEBKITTRANSITIONEVENT, WebKitTransitionEvent)                       \
   V(WHEELEVENT, WheelEvent)                                             \
   V(XMLHTTPREQUEST, XMLHttpRequest)                                     \
   V(XMLHTTPREQUESTUPLOAD, XMLHttpRequestUpload)                         \
   V(XMLHTTPREQUESTEXCEPTION, XMLHttpRequestException)                   \
+  V(XMLHTTPREQUESTPROGRESSEVENT, XMLHttpRequestProgressEvent)           \
   V(XMLSERIALIZER, XMLSerializer)                                       \
   V(XPATHEVALUATOR, XPathEvaluator)                                     \
   V(XPATHEXCEPTION, XPathException)                                     \

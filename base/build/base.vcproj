@@ -270,11 +270,35 @@
 			>
 		</File>
 		<File
+			RelativePath="..\directory_watcher.h"
+			>
+		</File>
+		<File
+			RelativePath="..\directory_watcher_win.cc"
+			>
+		</File>
+		<File
 			RelativePath="..\event_recorder.cc"
 			>
 		</File>
 		<File
 			RelativePath="..\event_recorder.h"
+			>
+		</File>
+		<File
+			RelativePath="..\field_trial.cc"
+			>
+		</File>
+		<File
+			RelativePath="..\field_trial.h"
+			>
+		</File>
+		<File
+			RelativePath="..\file_path.cc"
+			>
+		</File>
+		<File
+			RelativePath="..\file_path.h"
 			>
 		</File>
 		<File
@@ -522,10 +546,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\process.cc"
-			>
-		</File>
-		<File
 			RelativePath="..\process.h"
 			>
 		</File>
@@ -535,6 +555,10 @@
 		</File>
 		<File
 			RelativePath="..\process_util_win.cc"
+			>
+		</File>
+		<File
+			RelativePath="..\process_win.cc"
 			>
 		</File>
 		<File
@@ -630,14 +654,6 @@
 			>
 		</File>
 		<File
-			RelativePath="..\shared_event.cc"
-			>
-		</File>
-		<File
-			RelativePath="..\shared_event.h"
-			>
-		</File>
-		<File
 			RelativePath="..\shared_memory.h"
 			>
 		</File>
@@ -646,11 +662,11 @@
 			>
 		</File>
 		<File
-			RelativePath="..\simple_thread.h"
+			RelativePath="..\simple_thread.cc"
 			>
 		</File>
 		<File
-			RelativePath="..\simple_thread.cc"
+			RelativePath="..\simple_thread.h"
 			>
 		</File>
 		<File
@@ -758,15 +774,15 @@
 			>
 		</File>
 		<File
+			RelativePath="..\thread_local.h"
+			>
+		</File>
+		<File
 			RelativePath="..\thread_local_storage.h"
 			>
 		</File>
 		<File
 			RelativePath="..\thread_local_storage_win.cc"
-			>
-		</File>
-		<File
-			RelativePath="..\thread_local.h"
 			>
 		</File>
 		<File

@@ -11,8 +11,8 @@
 #include "chrome/browser/tab_contents.h"
 #include "chrome/browser/view_ids.h"
 #include "chrome/browser/views/bookmark_bar_view.h"
+#include "chrome/views/container_win.h"
 #include "chrome/views/external_focus_tracker.h"
-#include "chrome/views/hwnd_view_container.h"
 #include "chrome/views/native_scroll_bar.h"
 #include "chrome/views/root_view.h"
 #include "chrome/views/view_storage.h"
@@ -41,26 +41,26 @@ FindInPageController::FindInPageController(TabContents* parent_tab,
   // own handler for Escape.
   SetFocusChangeListener(parent_hwnd);
 
-  // Don't let HWNDViewContainer manage our lifetime. We want our lifetime to
+  // Don't let ContainerWin manage our lifetime. We want our lifetime to
   // coincide with WebContents.
-  HWNDViewContainer::set_delete_on_destroy(false);
+  ContainerWin::set_delete_on_destroy(false);
 
   view_ = new FindInPageView(this);
 
-  ChromeViews::FocusManager* focus_manager;
-  focus_manager = ChromeViews::FocusManager::GetFocusManager(parent_hwnd_);
+  views::FocusManager* focus_manager;
+  focus_manager = views::FocusManager::GetFocusManager(parent_hwnd_);
   DCHECK(focus_manager);
 
   // Stores the currently focused view, and tracks focus changes so that we can
   // restore focus when the find box is closed.
-  focus_tracker_.reset(new ChromeViews::ExternalFocusTracker(view_,
+  focus_tracker_.reset(new views::ExternalFocusTracker(view_,
                                                              focus_manager));
 
   // Figure out where to place the dialog, initialize and set the position.
   gfx::Rect find_dlg_rect = GetDialogPosition(gfx::Rect());
   set_window_style(WS_CHILD | WS_CLIPCHILDREN);
   set_window_ex_style(WS_EX_TOPMOST);
-  HWNDViewContainer::Init(parent_hwnd, find_dlg_rect, false);
+  ContainerWin::Init(parent_hwnd, find_dlg_rect, false);
   SetContentsView(view_);
 
   // Start the process of animating the opening of the window.
@@ -152,7 +152,7 @@ void FindInPageController::UpdateWindowEdges(const gfx::Rect& new_pos) {
   static const int kAddedWidth = 14;
   int difference = (curr_pos_relative_.right() - kAddedWidth) -
                    dialog_bounds.width() -
-                   ChromeViews::NativeScrollBar::GetVerticalScrollBarWidth() +
+                   views::NativeScrollBar::GetVerticalScrollBarWidth() +
                    1;
   if (difference > 0) {
     POINT exclude[4];
@@ -320,13 +320,13 @@ void FindInPageController::SetParent(HWND new_parent) {
                   WM_CHANGEUISTATE, MAKEWPARAM(UIS_INITIALIZE, 0), 0);
 
     // We have a new focus manager now, so start tracking with that.
-    focus_tracker_.reset(new ChromeViews::ExternalFocusTracker(view_,
-                                                               focus_manager_));
+    focus_tracker_.reset(new views::ExternalFocusTracker(view_,
+                                                         focus_manager_));
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FindInPageController, ChromeViews::HWNDViewContainer implementation:
+// FindInPageController, views::ContainerWin implementation:
 
 void FindInPageController::OnFinalMessage(HWND window) {
   // We are exiting, so we no longer need to monitor focus changes.
@@ -340,10 +340,10 @@ void FindInPageController::OnFinalMessage(HWND window) {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// FindInPageController, ChromeViews::FocusChangeListener implementation:
+// FindInPageController, views::FocusChangeListener implementation:
 
-void FindInPageController::FocusWillChange(ChromeViews::View* focused_before,
-                                           ChromeViews::View* focused_now) {
+void FindInPageController::FocusWillChange(views::View* focused_before,
+                                           views::View* focused_now) {
   // First we need to determine if one or both of the views passed in are child
   // views of our view.
   bool our_view_before = focused_before && view_->IsParentOf(focused_before);
@@ -366,10 +366,10 @@ void FindInPageController::FocusWillChange(ChromeViews::View* focused_before,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FindInPageController, ChromeViews::AcceleratorTarget implementation:
+// FindInPageController, views::AcceleratorTarget implementation:
 
 bool FindInPageController::AcceleratorPressed(
-    const ChromeViews::Accelerator& accelerator) {
+    const views::Accelerator& accelerator) {
   DCHECK(accelerator.GetKeyCode() == VK_ESCAPE);  // We only expect Escape key.
   // This will end the Find session and hide the window, causing it to loose
   // focus and in the process unregister us as the handler for the Escape
@@ -451,8 +451,8 @@ void FindInPageController::GetDialogBounds(gfx::Rect* bounds) {
 
   // We need to find the View for the toolbar because we want to visually
   // extend it (draw our dialog slightly overlapping its border).
-  ChromeViews::View* root_view = ChromeViews::GetRootViewForHWND(parent_hwnd_);
-  ChromeViews::View* toolbar = NULL;
+  views::View* root_view = views::GetRootViewForHWND(parent_hwnd_);
+  views::View* toolbar = NULL;
   BookmarkBarView* bookmark_bar = NULL;
   if (root_view) {
     toolbar = root_view->GetViewByID(VIEW_ID_TOOLBAR);
@@ -478,19 +478,20 @@ void FindInPageController::GetDialogBounds(gfx::Rect* bounds) {
   *bounds = gfx::Rect(browser_client_rect);
 
   // Find the dimensions of the toolbar and the BookmarkBar.
-  CRect toolbar_bounds, bookmark_bar_bounds;
+  gfx::Rect toolbar_bounds, bookmark_bar_bounds;
   if (toolbar) {
-    if (!g_browser_process->IsUsingNewFrames())
-      toolbar->GetBounds(&toolbar_bounds);
-    else
-      toolbar->GetLocalBounds(&toolbar_bounds, false);
-    // Need to convert toolbar bounds into ViewContainer coords because the
-    // toolbar is the child of another view that isn't the top level view.
-    // This is required to ensure correct positioning relative to the top,left
-    // of the window.
-    CPoint topleft(0, 0);
-    ChromeViews::View::ConvertPointToViewContainer(toolbar, &topleft);
-    toolbar_bounds.OffsetRect(topleft);
+    if (!g_browser_process->IsUsingNewFrames()) {
+      toolbar_bounds = toolbar->bounds();
+    } else {
+      toolbar_bounds = toolbar->GetLocalBounds(false);
+    }
+    // Need to convert toolbar bounds into Container coords because the toolbar
+    // is the child of another view that isn't the top level view. This is
+    // required to ensure correct positioning relative to the top,left of the
+    // window.
+    gfx::Point topleft;
+    views::View::ConvertPointToContainer(toolbar, &topleft);
+    toolbar_bounds.Offset(topleft.x(), topleft.y());
   }
 
   // If the bookmarks bar is available, we need to update our
@@ -509,7 +510,7 @@ void FindInPageController::GetDialogBounds(gfx::Rect* bounds) {
     // the bookmarks bar (this works even if the bar is hidden).
     if (!bookmark_bar->IsNewTabPage() ||
         bookmark_bar->IsAlwaysShown()) {
-      bookmark_bar->GetBounds(&bookmark_bar_bounds);
+      bookmark_bar_bounds = bookmark_bar->bounds();
     }
   } else {
     view_->SetToolbarBlend(true);
@@ -522,13 +523,13 @@ void FindInPageController::GetDialogBounds(gfx::Rect* bounds) {
   // window or a Chrome application so we want to draw at the top of the page
   // content (right beneath the title bar).
   int y_pos_offset = 0;
-  if (!toolbar_bounds.IsRectEmpty()) {
+  if (!toolbar_bounds.IsEmpty()) {
     // We have a toolbar (chrome), so overlap it by one pixel.
-    y_pos_offset = toolbar_bounds.BottomRight().y - 1;
+    y_pos_offset = toolbar_bounds.bottom() - 1;
     // If there is a bookmark bar attached to the toolbar we should appear
     // attached to it instead of the toolbar.
-    if (!bookmark_bar_bounds.IsRectEmpty())
-      y_pos_offset += bookmark_bar_bounds.Height() - 1;
+    if (!bookmark_bar_bounds.IsEmpty())
+      y_pos_offset += bookmark_bar_bounds.height() - 1;
   } else {
     // There is no toolbar, so this is probably a constrained window or a Chrome
     // Application. This means we draw the Find window at the top of the page
@@ -544,7 +545,7 @@ void FindInPageController::GetDialogBounds(gfx::Rect* bounds) {
 
   // We also want to stay well within limits of the vertical scrollbar and not
   // draw on the window border (frame) itself either.
-  int width = ChromeViews::NativeScrollBar::GetVerticalScrollBarWidth();
+  int width = views::NativeScrollBar::GetVerticalScrollBarWidth();
   width += kWindowBorderWidth;
   bounds->set_x(bounds->x() + width);
   bounds->set_width(bounds->width() - (2 * width));
@@ -559,21 +560,20 @@ gfx::Rect FindInPageController::GetDialogPosition(
     return gfx::Rect();
 
   // Ask the view how large an area it needs to draw on.
-  CSize prefsize;
-  view_->GetPreferredSize(&prefsize);
+  gfx::Size prefsize = view_->GetPreferredSize();
 
   // Place the view in the top right corner of the dialog boundaries (top left
   // for RTL languages).
   gfx::Rect view_location;
   int x = view_->UILayoutIsRightToLeft() ?
-              dialog_bounds.x() : dialog_bounds.width() - prefsize.cx;
+              dialog_bounds.x() : dialog_bounds.width() - prefsize.width();
   int y = dialog_bounds.y();
-  view_location.SetRect(x, y, prefsize.cx, prefsize.cy);
+  view_location.SetRect(x, y, prefsize.width(), prefsize.height());
 
   // Make sure we don't go out of bounds to the left (right in RTL) if the
   // window is too small to fit our dialog.
   if (view_->UILayoutIsRightToLeft()) {
-    int boundary = dialog_bounds.width() - prefsize.cx;
+    int boundary = dialog_bounds.width() - prefsize.width();
     view_location.set_x(std::min(view_location.x(), boundary));
   } else {
     view_location.set_x(std::max(view_location.x(), dialog_bounds.x()));
@@ -652,8 +652,7 @@ void FindInPageController::SetFocusChangeListener(HWND parent_hwnd) {
   }
 
   // Register as a listener with the new focus manager.
-  focus_manager_ =
-      ChromeViews::FocusManager::GetFocusManager(parent_hwnd);
+  focus_manager_ = views::FocusManager::GetFocusManager(parent_hwnd);
   DCHECK(focus_manager_);
   focus_manager_->AddFocusChangeListener(this);
 }
@@ -666,11 +665,11 @@ void FindInPageController::RestoreSavedFocus() {
 }
 
 void FindInPageController::RegisterEscAccelerator() {
-  ChromeViews::Accelerator escape(VK_ESCAPE, false, false, false);
+  views::Accelerator escape(VK_ESCAPE, false, false, false);
 
   // TODO(finnur): Once we fix issue 1307173 we should not remember any old
   // accelerator targets and just Register and Unregister when needed.
-  ChromeViews::AcceleratorTarget* old_target =
+  views::AcceleratorTarget* old_target =
       focus_manager_->RegisterAccelerator(escape, this);
 
   if (!old_accel_target_for_esc_)
@@ -681,8 +680,8 @@ void FindInPageController::UnregisterEscAccelerator() {
   // TODO(finnur): Once we fix issue 1307173 we should not remember any old
   // accelerator targets and just Register and Unregister when needed.
   DCHECK(old_accel_target_for_esc_ != NULL);
-  ChromeViews::Accelerator escape(VK_ESCAPE, false, false, false);
-  ChromeViews::AcceleratorTarget* current_target =
+  views::Accelerator escape(VK_ESCAPE, false, false, false);
+  views::AcceleratorTarget* current_target =
       focus_manager_->GetTargetForAccelerator(escape);
   if (current_target == this)
     focus_manager_->RegisterAccelerator(escape, old_accel_target_for_esc_);

@@ -189,14 +189,14 @@ class V8Proxy {
   void clearDocumentWrapper();
 
   // Find/Create/Remove event listener wrappers.
-  V8EventListener* FindV8EventListener(v8::Local<v8::Value> listener,
+  PassRefPtr<V8EventListener> FindV8EventListener(v8::Local<v8::Value> listener,
                                        bool html);
-  V8EventListener* FindOrCreateV8EventListener(v8::Local<v8::Value> listener,
+  PassRefPtr<V8EventListener> FindOrCreateV8EventListener(v8::Local<v8::Value> listener,
                                                bool html);
 
-  V8EventListener* FindXHREventListener(v8::Local<v8::Value> listener,
+  PassRefPtr<V8EventListener> FindXHREventListener(v8::Local<v8::Value> listener,
                                         bool html);
-  V8EventListener* FindOrCreateXHREventListener(v8::Local<v8::Value> listener,
+  PassRefPtr<V8EventListener> FindOrCreateXHREventListener(v8::Local<v8::Value> listener,
                                                 bool html);
 
   void RemoveV8EventListener(V8EventListener* listener);
@@ -207,10 +207,10 @@ class V8Proxy {
   static void GCUnprotect(Peerable* dom_object);
 
   // Create a lazy event listener.
-  EventListener* createHTMLEventHandler(const String& functionName,
+  PassRefPtr<EventListener> createHTMLEventHandler(const String& functionName,
                                         const String& code, Node* node);
 #if ENABLE(SVG)
-  EventListener* createSVGEventHandler(const String& functionName,
+  PassRefPtr<EventListener> createSVGEventHandler(const String& functionName,
                                         const String& code, Node* node);
 
   static void SetSVGContext(void* object, SVGElement* context);
@@ -412,6 +412,10 @@ class V8Proxy {
   static void UnregisterGlobalHandle(void* host,
                                      v8::Persistent<v8::Value> handle);
 #endif
+
+  // Check whether a V8 value is a wrapper of type |classType|.
+  static bool IsWrapperOfType(v8::Handle<v8::Value> obj,
+                              V8ClassIndex::V8WrapperType classType);
 
  private:
   void initContextIfNeeded();

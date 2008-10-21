@@ -6,6 +6,7 @@
 
 #include "base/file_util.h"
 #include "base/message_loop.h"
+#include "base/gfx/gdi_util.h"
 #include "base/gfx/point.h"
 #include "base/stats_counters.h"
 #include "webkit/default_plugin/plugin_impl.h"
@@ -250,13 +251,15 @@ void WebPluginDelegateImpl::DestroyInstance() {
   }
 }
 
-void WebPluginDelegateImpl::UpdateGeometry(const gfx::Rect& window_rect,
-                                           const gfx::Rect& clip_rect,
-                                           bool visible) {
+void WebPluginDelegateImpl::UpdateGeometry(
+    const gfx::Rect& window_rect,
+    const gfx::Rect& clip_rect,
+    const std::vector<gfx::Rect>& cutout_rects,
+    bool visible) {
   if (windowless_) {
     WindowlessUpdateGeometry(window_rect, clip_rect);
   } else {
-    WindowedUpdateGeometry(window_rect, clip_rect, visible);
+    WindowedUpdateGeometry(window_rect, clip_rect, cutout_rects, visible);
   }
 
   // Initiate a download on the plugin url. This should be done for the
@@ -344,10 +347,12 @@ void WebPluginDelegateImpl::InstallMissingPlugin() {
   instance()->NPP_HandleEvent(&evt);
 }
 
-void WebPluginDelegateImpl::WindowedUpdateGeometry(const gfx::Rect& window_rect,
-                                                   const gfx::Rect& clip_rect,
-                                                   bool visible) {
-  if (WindowedReposition(window_rect, clip_rect, visible) ||
+void WebPluginDelegateImpl::WindowedUpdateGeometry(
+    const gfx::Rect& window_rect,
+    const gfx::Rect& clip_rect,
+    const std::vector<gfx::Rect>& cutout_rects,
+    bool visible) {
+  if (WindowedReposition(window_rect, clip_rect, cutout_rects, visible) ||
       !windowed_did_set_window_) {
     // Let the plugin know that it has been moved
     WindowedSetWindow();
@@ -364,7 +369,7 @@ bool WebPluginDelegateImpl::WindowedCreatePlugin() {
     WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR,
     kNativeWindowClassName,
     0,
-    WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
+    WS_POPUP | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
     0,
     0,
     0,
@@ -375,6 +380,21 @@ bool WebPluginDelegateImpl::WindowedCreatePlugin() {
     0);
   if (windowed_handle_ == 0)
     return false;
+
+  if (IsWindow(parent_)) {
+    // This is a tricky workaround for Issue 2673 in chromium "Flash: IME not
+    // available". To use IMEs in this window, we have to make Windows attach
+    // IMEs to this window (i.e. load IME DLLs, attach them to this process,
+    // and add their message hooks to this window). Windows attaches IMEs while
+    // this process creates a top-level window. On the other hand, to layout
+    // this window correctly in the given parent window (RenderWidgetHostHWND),
+    // this window should be a child window of the parent window.
+    // To satisfy both of the above conditions, this code once creates a
+    // top-level window and change it to a child window of the parent window.
+    SetWindowLongPtr(windowed_handle_, GWL_STYLE,
+                     WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
+    SetParent(windowed_handle_, parent_);
+  }
 
   BOOL result = SetProp(windowed_handle_, kWebPluginDelegateProperty, this);
   DCHECK(result == TRUE) << "SetProp failed, last error = " << GetLastError();
@@ -584,14 +604,17 @@ bool WebPluginDelegateImpl::CreateDummyWindowForActivation() {
   return true;
 }
 
-void WebPluginDelegateImpl::MoveWindow(HWND window,
-                                       const gfx::Rect& window_rect,
-                                       const gfx::Rect& clip_rect,
-                                       bool visible) {
+void WebPluginDelegateImpl::MoveWindow(
+    HWND window,
+    const gfx::Rect& window_rect,
+    const gfx::Rect& clip_rect,
+    const std::vector<gfx::Rect>& cutout_rects,
+    bool visible) {
   HRGN hrgn = ::CreateRectRgn(clip_rect.x(),
                               clip_rect.y(),
                               clip_rect.right(),
                               clip_rect.bottom());
+  gfx::SubtractRectanglesFromRegion(hrgn, cutout_rects);
 
   // Note: System will own the hrgn after we call SetWindowRgn,
   // so we don't need to call DeleteObject(hrgn)
@@ -612,20 +635,24 @@ void WebPluginDelegateImpl::MoveWindow(HWND window,
                  flags);
 }
 
-bool WebPluginDelegateImpl::WindowedReposition(const gfx::Rect& window_rect,
-                                               const gfx::Rect& clip_rect,
-                                               bool visible) {
+bool WebPluginDelegateImpl::WindowedReposition(
+    const gfx::Rect& window_rect,
+    const gfx::Rect& clip_rect,
+    const std::vector<gfx::Rect>& cutout_rects,
+    bool visible) {
   if (!windowed_handle_) {
     NOTREACHED();
     return false;
   }
 
   if (window_rect_ == window_rect && clip_rect_ == clip_rect &&
+      cutout_rects == cutout_rects_ &&
       initial_plugin_resize_done_)
     return false;
 
   window_rect_ = window_rect;
   clip_rect_ = clip_rect;
+  cutout_rects_ = cutout_rects;
 
   if (!initial_plugin_resize_done_) {
     // We need to ensure that the plugin process continues to reposition
@@ -636,7 +663,7 @@ bool WebPluginDelegateImpl::WindowedReposition(const gfx::Rect& window_rect,
     // We created the window with 0 width and height since we didn't know it
     // at the time.  Now that we know the geometry, we we can update its size
     // since the browser only calls SetWindowPos when scrolling occurs.
-    MoveWindow(windowed_handle_, window_rect, clip_rect, visible);
+    MoveWindow(windowed_handle_, window_rect, clip_rect, cutout_rects, visible);
     // Ensure that the entire window gets repainted.
     ::InvalidateRect(windowed_handle_, NULL, FALSE);
   }
@@ -694,7 +721,7 @@ ATOM WebPluginDelegateImpl::RegisterNativeWindowClass() {
   WNDCLASSEX wcex;
   wcex.cbSize         = sizeof(WNDCLASSEX);
   wcex.style          = CS_DBLCLKS;
-  wcex.lpfnWndProc    = DefWindowProc;
+  wcex.lpfnWndProc    = DummyWindowProc;
   wcex.cbClsExtra     = 0;
   wcex.cbWndExtra     = 0;
   wcex.hInstance      = GetModuleHandle(NULL);
@@ -711,6 +738,17 @@ ATOM WebPluginDelegateImpl::RegisterNativeWindowClass() {
   wcex.hIconSm        = 0;
 
   return RegisterClassEx(&wcex);
+}
+
+LRESULT CALLBACK WebPluginDelegateImpl::DummyWindowProc(
+    HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+  // This is another workaround for Issue 2673 in chromium "Flash: IME not
+  // available". Somehow, the CallWindowProc() function does not dispatch
+  // window messages when its first parameter is a handle representing the
+  // DefWindowProc() function. To avoid this problem, this code creates a
+  // wrapper function which just encapsulates the DefWindowProc() function
+  // and set it as the window procedure of a windowed plug-in.
+  return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 LRESULT CALLBACK WebPluginDelegateImpl::NativeWndProc(
@@ -791,6 +829,7 @@ void WebPluginDelegateImpl::WindowlessUpdateGeometry(
 
   // We will inform the instance of this change when we call NPP_SetWindow.
   clip_rect_ = clip_rect;
+  cutout_rects_.clear();
 
   if (window_rect_ != window_rect) {
     window_rect_ = window_rect;

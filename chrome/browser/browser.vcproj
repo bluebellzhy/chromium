@@ -530,15 +530,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\render_widget_host_hwnd.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\render_widget_host_hwnd.h"
-				>
-			</File>
-			<File
 				RelativePath=".\render_widget_host_view.h"
+				>
+			</File>
+			<File
+				RelativePath=".\render_widget_host_view_win.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\render_widget_host_view_win.h"
 				>
 			</File>
 			<File
@@ -891,6 +891,22 @@
 			</File>
 			<File
 				RelativePath=".\web_contents.h"
+				>
+			</File>
+			<File
+				RelativePath=".\web_contents_view.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\web_contents_view.h"
+				>
+			</File>
+			<File
+				RelativePath=".\web_contents_view_win.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\web_contents_view_win.h"
 				>
 			</File>
 		</Filter>
@@ -1934,6 +1950,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\safe_browsing\safe_browsing_database_bloom.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\safe_browsing\safe_browsing_database_bloom.h"
+				>
+			</File>
+			<File
 				RelativePath=".\safe_browsing\safe_browsing_database_impl.cc"
 				>
 			</File>
@@ -2014,6 +2038,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\download\download_request_manager.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\download\download_request_manager.h"
+				>
+			</File>
+			<File
 				RelativePath=".\download\download_util.cc"
 				>
 			</File>
@@ -2071,6 +2103,14 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\browser_trial.cc"
+			>
+		</File>
+		<File
+			RelativePath=".\browser_trial.h"
+			>
+		</File>
+		<File
 			RelativePath=".\cert_store.cc"
 			>
 		</File>
@@ -2123,7 +2163,19 @@
 			>
 		</File>
 		<File
-			RelativePath=".\interstitial_page_delegate.h"
+			RelativePath=".\greasemonkey_master.cc"
+			>
+		</File>
+		<File
+			RelativePath=".\greasemonkey_master.h"
+			>
+		</File>
+		<File
+			RelativePath=".\interstitial_page.cc"
+			>
+		</File>
+		<File
+			RelativePath=".\interstitial_page.h"
 			>
 		</File>
 		<File

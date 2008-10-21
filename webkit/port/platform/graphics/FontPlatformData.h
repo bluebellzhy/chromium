@@ -24,9 +24,17 @@
 #ifndef FontPlatformData_H
 #define FontPlatformData_H
 
+#include "config.h"
+
 #include "StringImpl.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefCounted.h>
+
+// TODO(tc): Once this file is only included by the ChromiumWin build, we can
+// remove the PLATFORM #ifs.
+#if PLATFORM(WIN_OS)
+#include <usp10.h>
+#endif
 
 typedef struct HFONT__ *HFONT;
 
@@ -42,21 +50,14 @@ public:
     // to this "Deleted" one. It expects the Deleted one to be differentiable
     // from the NULL one (created with the empty constructor), so we can't just
     // set everything to NULL.
-    FontPlatformData(WTF::HashTableDeletedValueType)
-    : m_font(hashTableDeletedFontValue())
-    , m_size(-1)
-    , m_isMLangFont(false)
-    {}
-
-    FontPlatformData()
-    : m_font(0)
-    , m_size(0)
-    , m_isMLangFont(false)
-    {}
-
+    FontPlatformData(WTF::HashTableDeletedValueType);
+    FontPlatformData();
     FontPlatformData(HFONT hfont, float size,
                      bool isMLangFont);
     FontPlatformData(float size, bool bold, bool oblique);
+    FontPlatformData(const FontPlatformData& data);
+
+    FontPlatformData& operator=(const FontPlatformData& data);
 
     bool isHashTableDeletedValue() const { return m_font == hashTableDeletedFontValue(); }
 
@@ -64,7 +65,6 @@ public:
 
     HFONT hfont() const { return m_font ? m_font->hfont() : 0; }
     float size() const { return m_size; }
-    bool isMLangFont() const { return m_isMLangFont; }
 
     unsigned hash() const
     { 
@@ -76,15 +76,20 @@ public:
         return m_font == other.m_font && m_size == other.m_size;
     }
 
+#if PLATFORM(WIN_OS)
+    SCRIPT_FONTPROPERTIES* scriptFontProperties() const;
+    SCRIPT_CACHE* scriptCache() const { return &m_scriptCache; }
+#endif
+
 private:
     // We refcount the internal HFONT so that FontPlatformData can be
     // efficiently copied. WebKit depends on being able to copy it, and we
     // don't really want to re-create the HFONT.
     class RefCountedHFONT : public RefCounted<RefCountedHFONT> {
     public:
-        static PassRefPtr<RefCountedHFONT> create(HFONT hfont)
+        static PassRefPtr<RefCountedHFONT> create(HFONT hfont, bool isMLangFont)
         {
-            return adoptRef(new RefCountedHFONT(hfont));
+            return adoptRef(new RefCountedHFONT(hfont, isMLangFont));
         }
 
         ~RefCountedHFONT();
@@ -95,15 +100,22 @@ private:
             return StringImpl::computeHash(reinterpret_cast<const UChar*>(&m_hfont), sizeof(HFONT) / sizeof(UChar));
         }
 
+        bool operator==(const RefCountedHFONT& other) const
+        {
+            return m_hfont == other.m_hfont;
+        }
+
     private:
         // The create() function assumes there is already a refcount of one 
         // so it can do adoptRef.
-        RefCountedHFONT(HFONT hfont)
+        RefCountedHFONT(HFONT hfont, bool isMLangFont)
             : m_hfont(hfont)
+            , m_isMLangFont(isMLangFont)
         {
         }
 
         HFONT m_hfont;
+        bool m_isMLangFont;
     };
 
     static RefCountedHFONT* hashTableDeletedFontValue();
@@ -111,7 +123,10 @@ private:
     RefPtr<RefCountedHFONT> m_font;
     float m_size;  // Point size of the font in pixels.
 
-    bool m_isMLangFont;
+#if PLATFORM(WIN_OS)
+    mutable SCRIPT_CACHE m_scriptCache;
+    mutable SCRIPT_FONTPROPERTIES* m_scriptFontProperties;
+#endif
 };
 
 }

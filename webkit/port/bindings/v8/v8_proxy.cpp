@@ -73,18 +73,24 @@
 #include "EventTarget.h"
 #include "Event.h"
 #include "HTMLInputElement.h"
-#include "XMLHttpRequest.h"
-#include "StyleSheet.h"
-#include "StyleSheetList.h"
 #include "CSSRule.h"
 #include "CSSRuleList.h"
 #include "CSSValueList.h"
+#include "CSSVariablesDeclaration.h"
 #include "FrameLoader.h"
 #include "FrameTree.h"
+#include "MimeTypeArray.h"
+#include "NodeFilter.h"
+#include "Plugin.h"
+#include "PluginArray.h"
 #include "RangeException.h"
 #include "ScriptController.h"
-#include "NodeFilter.h"
 #include "SecurityOrigin.h"
+#include "Settings.h"
+#include "StyleSheet.h"
+#include "StyleSheetList.h"
+#include "WebKitCSSTransformValue.h"
+#include "XMLHttpRequest.h"
 #include "XMLHttpRequestException.h"
 #include "XPathException.h"
 
@@ -92,6 +98,7 @@
 #include "SVGElement.h"
 #include "SVGElementInstance.h"
 #include "SVGException.h"
+#include "SVGZoomEvent.h"
 #endif
 
 #if ENABLE(XPATH)
@@ -164,16 +171,23 @@ static GlobalHandleMap& global_handle_map()
 }
 
 
+// The USE_VAR(x) template is used to silence C++ compiler warnings
+// issued for unused variables (typically parameters or values that
+// we want to watch in the debugger).
+template <typename T>
+static inline void USE_VAR(T) { }
+
 // The function is the place to set the break point to inspect
 // live global handles. Leaks are often come from leaked global handles.
 static void EnumerateGlobalHandles() {
   for (GlobalHandleMap::iterator it = global_handle_map().begin(),
     end = global_handle_map().end(); it != end; ++it) {
     GlobalHandleInfo* info = it->second;
+    USE_VAR(info);
     v8::Value* handle = it->first;
+    USE_VAR(handle);
   }
 }
-
 
 void V8Proxy::RegisterGlobalHandle(GlobalHandleType type, void* host,
                                    v8::Persistent<v8::Value> handle) {
@@ -432,6 +446,7 @@ static void GCPrologue()
     it != end; ++it) {
     Peerable* obj = it->first;
     ASSERT(v8::Persistent<v8::Object>(it->second).IsWeak());
+    USE_VAR(obj);
   }
 #endif
 
@@ -448,14 +463,23 @@ static void GCPrologue()
     // it is not in a document. However, if the load event has not
     // been fired (still onloading), it is treated as in the document.
     //
+    // Otherwise, the node is put in an object group identified by the root
+    // elment of the tree to which it belongs.
+    void* group_id;
     if (node->inDocument() ||
         (node->hasTagName(HTMLNames::imgTag) &&
          !static_cast<HTMLImageElement*>(node)->haveFiredLoadEvent()) ) {
-      Document* doc = node->document();
-      v8::Persistent<v8::Object> wrapper = dom_node_map().get(node);
-      if (!wrapper.IsEmpty())
-        v8::V8::AddObjectToGroup(doc, wrapper);
+      group_id = node->document();
+    } else {
+      Node* root = node;
+      while (root->parent()) {
+        root = root->parent();
+      }
+      group_id = root;
     }
+    v8::Persistent<v8::Object> wrapper = dom_node_map().get(node);
+    if (!wrapper.IsEmpty())
+      v8::V8::AddObjectToGroup(group_id, wrapper);
   }
 }
 
@@ -467,6 +491,7 @@ static void GCEpilogue() {
   for (PeerableMap::iterator it = peer_map.begin(), end = peer_map.end();
     it != end; ++it) {
     Peerable* obj = it->first;
+    USE_VAR(obj);
     ASSERT(v8::Persistent<v8::Object>(it->second).IsWeak());
   }
 
@@ -474,10 +499,13 @@ static void GCEpilogue() {
   for (NodeMap::iterator it = node_map.begin(), end = node_map.end();
     it != end; ++it) {
     Node* node = it->first;
+    USE_VAR(node);
     ASSERT(v8::Persistent<v8::Object>(it->second).IsWeak());
   }
 
   EnumerateGlobalHandles();
+
+#undef USE_VAR
 #endif
 }
 
@@ -779,17 +807,18 @@ void V8Proxy::SetJSWrapperForDOMNode(Node* node, v8::Persistent<v8::Object> wrap
     dom_node_map().set(node, wrapper);
 }
 
-EventListener* V8Proxy::createHTMLEventHandler(const String& functionName,
+PassRefPtr<EventListener> V8Proxy::createHTMLEventHandler(
+                                               const String& functionName,
                                                const String& code, Node* node)
 {
-    return new V8LazyEventListener(m_frame, code, functionName);
+    return V8LazyEventListener::create(m_frame, code, functionName);
 }
 
 #if ENABLE(SVG)
-EventListener* V8Proxy::createSVGEventHandler(const String& functionName,
+PassRefPtr<EventListener> V8Proxy::createSVGEventHandler(const String& functionName,
                                               const String& code, Node* node)
 {
-    return new V8LazyEventListener(m_frame, code, functionName);
+    return V8LazyEventListener::create(m_frame, code, functionName);
 }
 #endif
 
@@ -822,13 +851,13 @@ static V8EventListener* FindEventListenerInList(V8EventListenerList& list,
 }
 
 // Find an existing wrapper for a JS event listener in the map.
-V8EventListener* V8Proxy::FindV8EventListener(v8::Local<v8::Value> listener,
+PassRefPtr<V8EventListener> V8Proxy::FindV8EventListener(v8::Local<v8::Value> listener,
                                               bool html)
 {
     return FindEventListenerInList(m_event_listeners, listener, html);
 }
 
-V8EventListener* V8Proxy::FindOrCreateV8EventListener(v8::Local<v8::Value> obj, bool html)
+PassRefPtr<V8EventListener> V8Proxy::FindOrCreateV8EventListener(v8::Local<v8::Value> obj, bool html)
 {
   ASSERT(v8::Context::InContext());
 
@@ -841,9 +870,9 @@ V8EventListener* V8Proxy::FindOrCreateV8EventListener(v8::Local<v8::Value> obj, 
       return wrapper;
 
   // Create a new one, and add to cache.
-  V8EventListener* new_listener =
-    new V8EventListener(m_frame, v8::Local<v8::Object>::Cast(obj), html);
-  m_event_listeners.push_back(new_listener);
+  RefPtr<V8EventListener> new_listener =
+    V8EventListener::create(m_frame, v8::Local<v8::Object>::Cast(obj), html);
+  m_event_listeners.push_back(new_listener.get());
 
   return new_listener;
 }
@@ -866,13 +895,13 @@ V8EventListener* V8Proxy::FindOrCreateV8EventListener(v8::Local<v8::Value> obj, 
 // The persistent reference is made weak in the constructor
 // of V8XHREventListener.
 
-V8EventListener* V8Proxy::FindXHREventListener(v8::Local<v8::Value> listener,
+PassRefPtr<V8EventListener> V8Proxy::FindXHREventListener(v8::Local<v8::Value> listener,
                                                bool html) {
   return FindEventListenerInList(m_xhr_listeners, listener, html);
 }
 
 
-V8EventListener*
+PassRefPtr<V8EventListener>
 V8Proxy::FindOrCreateXHREventListener(v8::Local<v8::Value> obj,
                                       bool html) {
   ASSERT(v8::Context::InContext());
@@ -884,11 +913,11 @@ V8Proxy::FindOrCreateXHREventListener(v8::Local<v8::Value> obj,
   if (wrapper) return wrapper;
 
   // Create a new one, and add to cache.
-  V8EventListener* new_listener =
-    new V8XHREventListener(m_frame, v8::Local<v8::Object>::Cast(obj), html);
-  m_xhr_listeners.push_back(new_listener);
+  RefPtr<V8EventListener> new_listener =
+    V8XHREventListener::create(m_frame, v8::Local<v8::Object>::Cast(obj), html);
+  m_xhr_listeners.push_back(new_listener.get());
 
-  return new_listener;
+  return new_listener.release();
 }
 
 
@@ -1098,10 +1127,16 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
       SetCollectionStringOrNullIndexedGetter<CSSStyleDeclaration>(desc);
       break;
     case V8ClassIndex::CSSRULELIST:
-      SetCollectionIndexedGetter<CSSRuleList>(desc, V8ClassIndex::CSSRULE);
+      SetCollectionIndexedGetter<CSSRuleList, CSSRule>(desc, 
+                                                       V8ClassIndex::CSSRULE);
       break;
     case V8ClassIndex::CSSVALUELIST:
-      SetCollectionIndexedGetter<CSSValueList>(desc, V8ClassIndex::CSSVALUE);
+      SetCollectionIndexedGetter<CSSValueList, CSSValue>(
+          desc, 
+          V8ClassIndex::CSSVALUE);
+      break;
+    case V8ClassIndex::CSSVARIABLESDECLARATION:
+      SetCollectionStringOrNullIndexedGetter<CSSVariablesDeclaration>(desc);
       break;
     case V8ClassIndex::UNDETECTABLEHTMLCOLLECTION:
       desc->InstanceTemplate()->MarkAsUndetectable();  // fall through
@@ -1110,10 +1145,13 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
           USE_NAMED_PROPERTY_GETTER(HTMLCollection));
       desc->InstanceTemplate()->SetCallAsFunctionHandler(
           USE_CALLBACK(HTMLCollectionCallAsFunction));
-      SetCollectionIndexedGetter<HTMLCollection>(desc, V8ClassIndex::NODE);
+      SetCollectionIndexedGetter<HTMLCollection, Node>(desc, 
+                                                       V8ClassIndex::NODE);
       break;
     case V8ClassIndex::HTMLOPTIONSCOLLECTION:
-      SetCollectionNamedGetter<HTMLOptionsCollection>(desc, V8ClassIndex::NODE);
+      SetCollectionNamedGetter<HTMLOptionsCollection, Node>(
+          desc, 
+          V8ClassIndex::NODE);
       desc->InstanceTemplate()->SetIndexedPropertyHandler(
           USE_INDEXED_PROPERTY_GETTER(HTMLOptionsCollection),
           USE_INDEXED_PROPERTY_SETTER(HTMLOptionsCollection));
@@ -1202,6 +1240,11 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
           NodeCollectionIndexedPropertyEnumerator<HTMLFormElement>,
           v8::External::New(reinterpret_cast<void*>(V8ClassIndex::NODE)));
       break;
+    case V8ClassIndex::CANVASPIXELARRAY:
+      desc->InstanceTemplate()->SetIndexedPropertyHandler(
+          USE_INDEXED_PROPERTY_GETTER(CanvasPixelArray),
+          USE_INDEXED_PROPERTY_SETTER(CanvasPixelArray));
+      break;
     case V8ClassIndex::STYLESHEET:  // fall through
     case V8ClassIndex::CSSSTYLESHEET: {
       // We add an extra internal field to hold a reference to
@@ -1218,7 +1261,7 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
       SetCollectionStringOrNullIndexedGetter<MediaList>(desc);
       break;
     case V8ClassIndex::MIMETYPEARRAY:
-      SetCollectionIndexedAndNamedGetters<MimeTypeArray>(
+      SetCollectionIndexedAndNamedGetters<MimeTypeArray, MimeType>(
           desc,
           V8ClassIndex::MIMETYPE);
       break;
@@ -1234,22 +1277,26 @@ v8::Persistent<v8::FunctionTemplate> V8Proxy::GetTemplate(
           v8::External::New(reinterpret_cast<void*>(V8ClassIndex::NODE)));
       break;
     case V8ClassIndex::NODELIST:
-      SetCollectionIndexedGetter<NodeList>(desc, V8ClassIndex::NODE);
+      SetCollectionIndexedGetter<NodeList, Node>(desc, V8ClassIndex::NODE);
       desc->InstanceTemplate()->SetNamedPropertyHandler(
           USE_NAMED_PROPERTY_GETTER(NodeList));
       break;
     case V8ClassIndex::PLUGIN:
-      SetCollectionIndexedAndNamedGetters<Plugin>(desc, V8ClassIndex::MIMETYPE);
+      SetCollectionIndexedAndNamedGetters<Plugin, MimeType>(
+          desc,
+          V8ClassIndex::MIMETYPE);
       break;
     case V8ClassIndex::PLUGINARRAY:
-      SetCollectionIndexedAndNamedGetters<PluginArray>(desc,
-                                                       V8ClassIndex::PLUGIN);
+      SetCollectionIndexedAndNamedGetters<PluginArray, Plugin>(
+          desc,
+          V8ClassIndex::PLUGIN);
       break;
     case V8ClassIndex::STYLESHEETLIST:
       desc->InstanceTemplate()->SetNamedPropertyHandler(
           USE_NAMED_PROPERTY_GETTER(StyleSheetList));
-      SetCollectionIndexedGetter<StyleSheetList>(desc,
-                                                 V8ClassIndex::STYLESHEET);
+      SetCollectionIndexedGetter<StyleSheetList, StyleSheet>(
+          desc,
+          V8ClassIndex::STYLESHEET);
       break;
     case V8ClassIndex::DOMWINDOW: {
       v8::Local<v8::Signature> default_signature = v8::Signature::New(desc);
@@ -2038,6 +2085,13 @@ bool V8Proxy::MaybeDOMWrapper(v8::Handle<v8::Value> value) {
 
 
 bool V8Proxy::IsDOMEventWrapper(v8::Handle<v8::Value> value) {
+  // All kinds of events use EVENT as dom type in JS wrappers.
+  // See EventToV8Object
+  return IsWrapperOfType(value, V8ClassIndex::EVENT);
+}
+
+bool V8Proxy::IsWrapperOfType(v8::Handle<v8::Value> value,
+                              V8ClassIndex::V8WrapperType classType) {
   if (value.IsEmpty() || !value->IsObject()) return false;
 
   v8::Handle<v8::Object> obj = v8::Handle<v8::Object>::Cast(value);
@@ -2056,9 +2110,7 @@ bool V8Proxy::IsDOMEventWrapper(v8::Handle<v8::Value> value) {
   ASSERT(V8ClassIndex::INVALID_CLASS_INDEX < type->Int32Value() &&
     type->Int32Value() < V8ClassIndex::CLASSINDEX_END);
 
-  // All kinds of events use EVENT as dom type in JS wrappers.
-  // See EventToV8Object
-  return V8ClassIndex::FromInt(type->Int32Value()) == V8ClassIndex::EVENT;
+  return V8ClassIndex::FromInt(type->Int32Value()) == classType;
 }
 
 
@@ -2224,6 +2276,7 @@ FOR_EACH_TAG(ADD_TO_HASH_MAP)
     FOR_EACH_FOREIGN_OBJECT_TAG(macro) \
     FOR_EACH_USE_TAG(macro) \
     macro(a, A) \
+    macro(altGlyph, ALTGLYPH) \
     macro(circle, CIRCLE) \
     macro(clipPath, CLIPPATH) \
     macro(cursor, CURSOR) \
@@ -2231,6 +2284,7 @@ FOR_EACH_TAG(ADD_TO_HASH_MAP)
     macro(desc, DESC) \
     macro(ellipse, ELLIPSE) \
     macro(g, G) \
+    macro(glyph, GLYPH) \
     macro(image, IMAGE) \
     macro(linearGradient, LINEARGRADIENT) \
     macro(line, LINE) \
@@ -2286,24 +2340,37 @@ v8::Handle<v8::Value> V8Proxy::EventToV8Object(Event* event)
 
   V8ClassIndex::V8WrapperType type = V8ClassIndex::EVENT;
 
-  if (event->isKeyboardEvent())
-    type = V8ClassIndex::KEYBOARDEVENT;
-  else if (event->isMouseEvent())
-    type = V8ClassIndex::MOUSEEVENT;
-  else if (event->isMessageEvent())
-    type = V8ClassIndex::MESSAGEEVENT;
-  else if (event->isWheelEvent())
-    type = V8ClassIndex::WHEELEVENT;
-  else if (event->isTextEvent())
-    type = V8ClassIndex::TEXTEVENT;
-  else if (event->isUIEvent())
-    type = V8ClassIndex::UIEVENT;
-  else if (event->isMutationEvent())
+  if (event->isUIEvent()) {
+    if (event->isKeyboardEvent())
+      type = V8ClassIndex::KEYBOARDEVENT;
+    else if (event->isTextEvent())
+      type = V8ClassIndex::TEXTEVENT;
+    else if (event->isMouseEvent())
+      type = V8ClassIndex::MOUSEEVENT;
+    else if (event->isWheelEvent())
+      type = V8ClassIndex::WHEELEVENT;
+#if ENABLE(SVG)
+    else if (event->isSVGZoomEvent())
+      type = V8ClassIndex::SVGZOOMEVENT;
+#endif
+    else
+      type = V8ClassIndex::UIEVENT;
+  } else if (event->isMutationEvent())
     type = V8ClassIndex::MUTATIONEVENT;
   else if (event->isOverflowEvent())
     type = V8ClassIndex::OVERFLOWEVENT;
-  else if (event->isProgressEvent())
-    type = V8ClassIndex::PROGRESSEVENT;
+  else if (event->isMessageEvent())
+    type = V8ClassIndex::MESSAGEEVENT;
+  else if (event->isProgressEvent()) {
+    if (event->isXMLHttpRequestProgressEvent()) 
+      type = V8ClassIndex::XMLHTTPREQUESTPROGRESSEVENT;
+    else 
+      type = V8ClassIndex::PROGRESSEVENT;
+  } else if (event->isWebKitAnimationEvent()) 
+    type = V8ClassIndex::WEBKITANIMATIONEVENT;
+  else if (event->isWebKitTransitionEvent())
+    type = V8ClassIndex::WEBKITTRANSITIONEVENT;
+
 
   // Set the peer object for future access.
   v8::Handle<v8::Object> result =
@@ -2390,10 +2457,28 @@ v8::Handle<v8::Value> V8Proxy::NodeToV8Object(Node* node) {
       type = V8ClassIndex::NODE;
   }
 
+  // Find the context to which the node belongs and create the wrapper
+  // in that context.  If the node is not in a document, the current
+  // context is used.
+  v8::Local<v8::Context> context;
+  Document* doc = node->document();
+  if (doc) {
+    context = V8Proxy::GetContext(doc->frame());
+  }
+  if (!context.IsEmpty()) {
+    context->Enter();
+  }
+
   // Set the peer object for future access.
   // InstantiateV8Object automatically casts node to Peerable*.
   v8::Local<v8::Object> result =
       InstantiateV8Object(type, V8ClassIndex::NODE, node);
+
+  // Exit the node's context if it was entered.
+  if (!context.IsEmpty()) {
+    context->Exit();
+  }
+
   if (result.IsEmpty()) {
     // If instantiation failed it's important not to add the result
     // to the DOM node map. Instead we return an empty handle, which
@@ -2538,7 +2623,9 @@ v8::Handle<v8::Value> V8Proxy::CSSValueToV8Object(CSSValue* value) {
 
   V8ClassIndex::V8WrapperType type;
 
-  if (value->isValueList())
+  if (value->isWebKitCSSTransformValue()) 
+    type = V8ClassIndex::WEBKITCSSTRANSFORMVALUE;
+  else if (value->isValueList())
     type = V8ClassIndex::CSSVALUELIST;
   else if (value->isPrimitiveValue())
     type = V8ClassIndex::CSSPRIMITIVEVALUE;
@@ -2570,26 +2657,36 @@ v8::Handle<v8::Value> V8Proxy::CSSRuleToV8Object(CSSRule* rule) {
     V8ClassIndex::V8WrapperType type;
 
     switch (rule->type()) {
-    case CSSRule::STYLE_RULE:
-        type = V8ClassIndex::CSSSTYLERULE;
-        break;
-    case CSSRule::CHARSET_RULE:
-        type = V8ClassIndex::CSSCHARSETRULE;
-        break;
-    case CSSRule::IMPORT_RULE:
-        type = V8ClassIndex::CSSIMPORTRULE;
-        break;
-    case CSSRule::MEDIA_RULE:
-        type = V8ClassIndex::CSSMEDIARULE;
-        break;
-    case CSSRule::FONT_FACE_RULE:
-        type = V8ClassIndex::CSSFONTFACERULE;
-        break;
-    case CSSRule::PAGE_RULE:
-        type = V8ClassIndex::CSSPAGERULE;
-        break;
-    default:  // CSSRule::UNKNOWN_RULE
-        type = V8ClassIndex::CSSRULE;
+        case CSSRule::STYLE_RULE:
+            type = V8ClassIndex::CSSSTYLERULE;
+            break;
+        case CSSRule::CHARSET_RULE:
+            type = V8ClassIndex::CSSCHARSETRULE;
+            break;
+        case CSSRule::IMPORT_RULE:
+            type = V8ClassIndex::CSSIMPORTRULE;
+            break;
+        case CSSRule::MEDIA_RULE:
+            type = V8ClassIndex::CSSMEDIARULE;
+            break;
+        case CSSRule::FONT_FACE_RULE:
+            type = V8ClassIndex::CSSFONTFACERULE;
+            break;
+        case CSSRule::PAGE_RULE:
+            type = V8ClassIndex::CSSPAGERULE;
+            break;
+        case CSSRule::VARIABLES_RULE:
+            type = V8ClassIndex::CSSVARIABLESRULE;
+            break;
+        case CSSRule::WEBKIT_KEYFRAME_RULE:
+            type = V8ClassIndex::WEBKITCSSKEYFRAMERULE;
+            break;
+        case CSSRule::WEBKIT_KEYFRAMES_RULE:
+            type = V8ClassIndex::WEBKITCSSKEYFRAMESRULE;
+            break;
+        default:  // CSSRule::UNKNOWN_RULE
+            type = V8ClassIndex::CSSRULE;
+            break;
     }
 
     // Set the peer object for future access.

@@ -172,7 +172,8 @@ static void UnitTestAssertHandler(const std::string& str) {
 }
 
 // static
-void TestShell::InitLogging(bool suppress_error_dialogs) {
+void TestShell::InitLogging(bool suppress_error_dialogs,
+                            bool running_layout_tests) {
     if (!IsDebuggerPresent() && suppress_error_dialogs) {
         UINT new_flags = SEM_FAILCRITICALERRORS |
                          SEM_NOGPFAULTERRORBOX |
@@ -184,12 +185,19 @@ void TestShell::InitLogging(bool suppress_error_dialogs) {
         logging::SetLogAssertHandler(UnitTestAssertHandler);
     }
 
+    // Only log to a file if we're running layout tests. This prevents debugging
+    // output from disrupting whether or not we pass.
+    logging::LoggingDestination destination = 
+        logging::LOG_TO_BOTH_FILE_AND_SYSTEM_DEBUG_LOG;
+    if (running_layout_tests)
+      destination = logging::LOG_ONLY_TO_FILE;
+
     // We might have multiple test_shell processes going at once
     std::wstring log_filename;
     PathService::Get(base::DIR_EXE, &log_filename);
     file_util::AppendToPath(&log_filename, L"test_shell.log");
     logging::InitLogging(log_filename.c_str(),
-                         logging::LOG_TO_BOTH_FILE_AND_SYSTEM_DEBUG_LOG,
+                         destination,
                          logging::LOCK_LOG_FILE,
                          logging::DELETE_OLD_LOG_FILE);
 
@@ -234,8 +242,18 @@ void TestShell::ResetWebPreferences() {
         web_prefs_->fixed_font_family = L"Courier";
         web_prefs_->serif_font_family = L"Times";
         web_prefs_->sans_serif_font_family = L"Helvetica";
-        web_prefs_->cursive_font_family = L"Apple Chancery";
-        web_prefs_->fantasy_font_family = L"Papyrus";
+        // These two fonts are picked from the intersection of
+        // Win XP font list and Vista font list :
+        //   http://www.microsoft.com/typography/fonts/winxp.htm 
+        //   http://blogs.msdn.com/michkap/archive/2006/04/04/567881.aspx
+        // Some of them are installed only with CJK and complex script
+        // support enabled on Windows XP and are out of consideration here. 
+        // (although we enabled both on our buildbots.)
+        // They (especially Impact for fantasy) are not typical cursive
+        // and fantasy fonts, but it should not matter for layout tests
+        // as long as they're available.
+        web_prefs_->cursive_font_family = L"Comic Sans MS";
+        web_prefs_->fantasy_font_family = L"Impact";
         web_prefs_->default_encoding = L"ISO-8859-1";
         web_prefs_->default_font_size = 16;
         web_prefs_->default_fixed_font_size = 13;
@@ -994,7 +1012,7 @@ void AppendToLog(const char* file, int line, const char* msg) {
   logging::LogMessage(file, line).stream() << msg;
 }
 
-bool GetMimeTypeFromExtension(std::wstring &ext, std::string *mime_type) {
+bool GetMimeTypeFromExtension(const std::wstring &ext, std::string *mime_type) {
   return net::GetMimeTypeFromExtension(ext, mime_type);
 }
 

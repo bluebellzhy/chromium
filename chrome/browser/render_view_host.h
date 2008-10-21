@@ -11,6 +11,7 @@
 #include "base/scoped_handle.h"
 #include "chrome/browser/render_view_host_delegate.h"
 #include "chrome/browser/render_widget_host.h"
+#include "chrome/common/page_zoom.h"
 #ifdef CHROME_PERSONALIZATION
 #include "chrome/personalization/personalization.h"
 #endif
@@ -39,10 +40,6 @@ namespace net {
 enum LoadState;
 }
 
-namespace text_zoom {
-enum TextSize;
-}
-
 namespace webkit_glue {
 struct WebApplicationInfo;
 }
@@ -60,7 +57,7 @@ struct WebApplicationInfo;
 //
 //  The intent of this class is to provide a view-agnostic communication
 //  conduit with a renderer. This is so we can build HTML views not only as
-//  TabContents (see WebContents for an example) but also as ChromeViews, etc.
+//  TabContents (see WebContents for an example) but also as views, etc.
 //
 //  The exact API of this object needs to be more thoroughly designed. Right
 //  now it mimics what WebContents exposed, which is a fairly large API and may
@@ -188,8 +185,8 @@ class RenderViewHost : public RenderWidgetHost {
   // clear the selection on the focused frame.
   void StopFinding(bool clear_selection);
 
-  // Change the text size of the page.
-  void AlterTextSize(text_zoom::TextSize size);
+  // Change the zoom level of a page.
+  void Zoom(PageZoom::Function function);
 
   // Change the encoding of the page.
   void SetPageEncoding(const std::wstring& encoding_name);
@@ -385,12 +382,17 @@ class RenderViewHost : public RenderWidgetHost {
   void ForwardMessageFromExternalHost(const std::string& target,
                                       const std::string& message);
 
+  // Message the renderer that we should be counted as a new document and not
+  // as a popup.
+  void DisassociateFromPopupCount();
+
  protected:
   // Overridden from RenderWidgetHost:
   virtual void UnhandledInputEvent(const WebInputEvent& event);
+  virtual void ForwardKeyboardEvent(const WebKeyboardEvent& key_event);
 
   // IPC message handlers:
-  void OnMsgCreateView(int route_id, HANDLE modal_dialog_event);
+  void OnMsgCreateWindow(int route_id, HANDLE modal_dialog_event);
   void OnMsgCreateWidget(int route_id);
   void OnMsgShowView(int route_id,
                      WindowOpenDisposition disposition,
@@ -581,4 +583,3 @@ class RenderViewHostFactory {
 };
 
 #endif  // CHROME_BROWSER_RENDER_VIEW_HOST_H__
-

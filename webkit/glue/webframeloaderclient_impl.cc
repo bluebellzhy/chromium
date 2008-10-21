@@ -6,7 +6,9 @@
 #include <string>
 #include <vector>
 
-#pragma warning(push, 0)
+#include "base/compiler_specific.h"
+
+MSVC_PUSH_WARNING_LEVEL(0);
 #include "Chrome.h"
 #include "CString.h"
 #include "Document.h"
@@ -25,7 +27,7 @@
 #include "PluginInfoStore.h"
 #include "RefPtr.h"
 #include "WindowFeatures.h"
-#pragma warning(pop)
+MSVC_POP_WARNING();
 
 #undef LOG
 #include "base/basictypes.h"
@@ -1201,16 +1203,17 @@ void WebFrameLoaderClient::prepareForDataSourceReplacement() {
 PassRefPtr<DocumentLoader> WebFrameLoaderClient::createDocumentLoader(
     const ResourceRequest& request,
     const SubstituteData& data) {
-  WebDocumentLoaderImpl* loader = new WebDocumentLoaderImpl(request, data);
+  RefPtr<WebDocumentLoaderImpl> loader = WebDocumentLoaderImpl::create(request,
+                                                                       data);
 
   // Attach a datasource to the loader as a way of accessing requests.
   WebDataSourceImpl* datasource =
-      WebDataSourceImpl::CreateInstance(webframe_, loader);
+      WebDataSourceImpl::CreateInstance(webframe_, loader.get());
   loader->SetDataSource(datasource);
 
   webframe_->CacheCurrentRequestInfo(datasource);
 
-  return loader;
+  return loader.release();
 }
 
 void WebFrameLoaderClient::setTitle(const String& title, const KURL& url) {

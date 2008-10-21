@@ -9,6 +9,7 @@
 #include "net/http/http_network_session.h"
 #include "net/http/http_network_transaction.h"
 #include "net/proxy/proxy_resolver_fixed.h"
+#include "net/proxy/proxy_resolver_null.h"
 #if defined(OS_WIN)
 #include "net/http/http_transaction_winhttp.h"
 #include "net/proxy/proxy_resolver_winhttp.h"
@@ -20,7 +21,7 @@ namespace net {
 
 #if defined(OS_WIN)
 // static
-bool HttpNetworkLayer::use_winhttp_ = true;
+bool HttpNetworkLayer::use_winhttp_ = false;
 #endif
 
 // static
@@ -53,7 +54,7 @@ HttpNetworkLayer::HttpNetworkLayer(const ProxyInfo* pi)
     proxy_resolver = new ProxyResolverWinHttp();
 #else
     NOTIMPLEMENTED();
-    proxy_resolver = NULL;
+    proxy_resolver = new ProxyResolverNull();
 #endif
   }
   session_ = new HttpNetworkSession(proxy_resolver);

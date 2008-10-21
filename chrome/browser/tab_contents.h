@@ -14,11 +14,13 @@
 #include "chrome/browser/page_navigator.h"
 #include "chrome/browser/tab_contents_type.h"
 #include "chrome/common/navigation_types.h"
-#include "chrome/common/text_zoom.h"
 
 namespace gfx {
 class Rect;
 class Size;
+}
+namespace views {
+class WindowDelegate;
 }
 
 class DOMUIHost;
@@ -312,6 +314,9 @@ class TabContents : public PageNavigator,
   virtual void Copy() { }
   virtual void Paste() { }
 
+  // Called on a TabContents when it isn't a popup, but a new window.
+  virtual void DisassociateFromPopupCount() { }
+
   // Window management ---------------------------------------------------------
 
   // Create a new window constrained to this TabContents' clip and visibility.
@@ -320,8 +325,8 @@ class TabContents : public PageNavigator,
   // is sized according to the preferred size of the content_view, and centered
   // within the contents.
   ConstrainedWindow* CreateConstrainedDialog(
-      ChromeViews::WindowDelegate* window_delegate,
-      ChromeViews::View* contents_view);
+      views::WindowDelegate* window_delegate,
+      views::View* contents_view);
 
   // Adds a new tab or window with the given already-created contents
   void AddNewContents(TabContents* new_contents,
@@ -404,20 +409,12 @@ class TabContents : public PageNavigator,
   // this returns NULL, the TabContents is supposed to know how to process TAB
   // key events and is just sent the key messages.  If this returns a RootView,
   // the focus is passed to the RootView.
-  virtual ChromeViews::RootView* GetContentsRootView() { return NULL; }
+  virtual views::RootView* GetContentsRootView() { return NULL; }
 
   // Toolbars and such ---------------------------------------------------------
  
   // Returns whether the bookmark bar should be visible.
   virtual bool IsBookmarkBarAlwaysVisible() { return false; }
-
-  // Returns the View to display at the top of the tab.
-  virtual InfoBarView* GetInfoBarView() { return NULL; }
-
-  // Returns whether the info bar is visible.
-  // If the visibility dynamically changes, invoke ToolbarSizeChanged
-  // on the delegate. Which forces the frame to layout if size has changed.
-  virtual bool IsInfoBarVisible() { return false; }
 
   // Whether or not the shelf view is visible.
   virtual void SetDownloadShelfVisible(bool visible);

@@ -106,6 +106,7 @@ env = env.Clone(
         '$JAVASCRIPTCORE_DIR/bindings/jni',
         '$WEBKIT_DIR/pending',
         '$WEBKIT_DIR/pending/wtf',
+        '$JAVASCRIPTCORE_DIR/wtf',
         '$ICU38_DIR/public/common',
         '$ICU38_DIR/public/i18n',
         '$WEBKIT_DIR',
@@ -117,8 +118,11 @@ env.Append(
     CPPDEFINES = [
         '__STD_C',
         'U_STATIC_IMPLEMENTATION',
-        ]
-    )
+    ],
+    CPPPATH = [
+        '$WTF_DIR/unicode',
+    ],
+)
 
 if env['PLATFORM'] == 'win32':
     env.Append(
@@ -136,7 +140,6 @@ if env['PLATFORM'] == 'win32':
         CCFLAGS = [
                 '/TP',
 
-                '/WX',
                 '/Wp64',
 
                 '/wd4127',
@@ -150,10 +153,29 @@ if env['PLATFORM'] == 'win32':
 
 wtf_inputs = [
     '$WTF_DIR/Assertions.cpp',
-    '$WTF_DIR/unicode/UTF8.cpp',
-    '$WTF_DIR/TCSystemAlloc.cpp',
+    '$WTF_DIR/FastMalloc.cpp',
     '$WTF_DIR/HashTable.cpp',
+    '$WTF_DIR/MainThread.cpp',
+    '$WTF_DIR/RefCountedLeakCounter.cpp',
+    '$WTF_DIR/TCSystemAlloc.cpp',
+    '$WTF_DIR/unicode/UTF8.cpp',
+    '$WTF_DIR/unicode/icu/CollatorICU.cpp',
 ]
 
-env.ChromeStaticLibrary('WTF', wtf_inputs)
+if env['PLATFORM'] == 'win32':
+  wtf_inputs.extend([
+      '$WTF_DIR/win/MainThreadWin.cpp',
+      '$WTF_DIR/ThreadingWin.cpp',
+  ])
+elif env['PLATFORM'] == 'posix':
+  wtf_inputs.extend([
+      '$WTF_DIR/gtk/MainThreadGtk.cpp',
+      '$WTF_DIR/ThreadingPthreads.cpp',
+  ])
 
+  # Re-add the include path for glib.h because it got lost when cloning the
+  # environment.
+  env.ParseConfig('pkg-config --cflags --libs glib-2.0')
+
+
+env.ChromeStaticLibrary('WTF', wtf_inputs)

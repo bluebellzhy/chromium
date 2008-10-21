@@ -13,7 +13,6 @@
 #include "chrome/common/gfx/chrome_canvas.h"
 #include "chrome/common/resource_bundle.h"
 #include "chrome/views/background.h"
-#include "chrome/views/hwnd_view_container.h"
 #include "chrome/views/label.h"
 #include "skia/include/SkGradientShader.h"
 
@@ -93,54 +92,54 @@ FindInPageView::FindInPageView(FindInPageController* controller)
       active_match_ordinal_(-1) {
   ResourceBundle &rb = ResourceBundle::GetSharedInstance();
 
-  find_text_ = new ChromeViews::TextField();
+  find_text_ = new views::TextField();
   find_text_->SetFont(rb.GetFont(ResourceBundle::BaseFont));
   find_text_->set_default_width_in_chars(kDefaultCharWidth);
   AddChildView(find_text_);
 
-  match_count_text_ = new ChromeViews::Label();
+  match_count_text_ = new views::Label();
   match_count_text_->SetFont(rb.GetFont(ResourceBundle::BaseFont));
   match_count_text_->SetColor(kTextColorMatchCount);
-  match_count_text_->SetHorizontalAlignment(ChromeViews::Label::ALIGN_CENTER);
+  match_count_text_->SetHorizontalAlignment(views::Label::ALIGN_CENTER);
   AddChildView(match_count_text_);
 
   // Create a focus forwarder view which sends focus to find_text_.
   focus_forwarder_view_ = new FocusForwarderView(find_text_);
   AddChildView(focus_forwarder_view_);
 
-  find_previous_button_ = new ChromeViews::Button();
+  find_previous_button_ = new views::Button();
   find_previous_button_->SetEnabled(false);
   find_previous_button_->SetFocusable(true);
-  find_previous_button_->SetImage(ChromeViews::Button::BS_NORMAL,
+  find_previous_button_->SetImage(views::Button::BS_NORMAL,
       rb.GetBitmapNamed(IDR_FINDINPAGE_PREV));
-  find_previous_button_->SetImage(ChromeViews::Button::BS_HOT,
+  find_previous_button_->SetImage(views::Button::BS_HOT,
       rb.GetBitmapNamed(IDR_FINDINPAGE_PREV_H));
-  find_previous_button_->SetImage(ChromeViews::Button::BS_DISABLED,
+  find_previous_button_->SetImage(views::Button::BS_DISABLED,
       rb.GetBitmapNamed(IDR_FINDINPAGE_PREV_P));
   find_previous_button_->SetTooltipText(
       l10n_util::GetString(IDS_FIND_IN_PAGE_PREVIOUS_TOOLTIP));
   AddChildView(find_previous_button_);
 
-  find_next_button_ = new ChromeViews::Button();
+  find_next_button_ = new views::Button();
   find_next_button_->SetEnabled(false);
   find_next_button_->SetFocusable(true);
-  find_next_button_->SetImage(ChromeViews::Button::BS_NORMAL,
+  find_next_button_->SetImage(views::Button::BS_NORMAL,
       rb.GetBitmapNamed(IDR_FINDINPAGE_NEXT));
-  find_next_button_->SetImage(ChromeViews::Button::BS_HOT,
+  find_next_button_->SetImage(views::Button::BS_HOT,
       rb.GetBitmapNamed(IDR_FINDINPAGE_NEXT_H));
-  find_next_button_->SetImage(ChromeViews::Button::BS_DISABLED,
+  find_next_button_->SetImage(views::Button::BS_DISABLED,
       rb.GetBitmapNamed(IDR_FINDINPAGE_NEXT_P));
   find_next_button_->SetTooltipText(
       l10n_util::GetString(IDS_FIND_IN_PAGE_NEXT_TOOLTIP));
   AddChildView(find_next_button_);
 
-  close_button_ = new ChromeViews::Button();
+  close_button_ = new views::Button();
   close_button_->SetFocusable(true);
-  close_button_->SetImage(ChromeViews::Button::BS_NORMAL,
+  close_button_->SetImage(views::Button::BS_NORMAL,
       rb.GetBitmapNamed(IDR_CLOSE_BAR));
-  close_button_->SetImage(ChromeViews::Button::BS_HOT,
+  close_button_->SetImage(views::Button::BS_HOT,
       rb.GetBitmapNamed(IDR_CLOSE_BAR_H));
-  close_button_->SetImage(ChromeViews::Button::BS_PUSHED,
+  close_button_->SetImage(views::Button::BS_PUSHED,
       rb.GetBitmapNamed(IDR_CLOSE_BAR_P));
   close_button_->SetTooltipText(
       l10n_util::GetString(IDS_FIND_IN_PAGE_CLOSE_TOOLTIP));
@@ -177,7 +176,7 @@ void FindInPageView::ResetMatchCount() {
 
 void FindInPageView::ResetMatchCountBackground() {
   match_count_text_->SetBackground(
-      ChromeViews::Background::CreateSolidBackground(kBackgroundColorMatch));
+      views::Background::CreateSolidBackground(kBackgroundColorMatch));
   match_count_text_->SetColor(kTextColorMatchCount);
 }
 
@@ -203,7 +202,7 @@ void FindInPageView::UpdateMatchCount(int number_of_matches,
     ResetMatchCountBackground();
   } else {
     match_count_text_->SetBackground(
-      ChromeViews::Background::CreateSolidBackground(kBackgroundColorNoMatch));
+      views::Background::CreateSolidBackground(kBackgroundColorNoMatch));
     match_count_text_->SetColor(kTextColorNoMatch);
     MessageBeep(MB_OK);
   }
@@ -239,14 +238,13 @@ void FindInPageView::OnShow() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// FindInPageView, ChromeViews::View overrides:
+// FindInPageView, views::View overrides:
 
 void FindInPageView::Paint(ChromeCanvas* canvas) {
   SkPaint paint;
 
   // Get the local bounds so that we now how much to stretch the background.
-  CRect lb;
-  GetLocalBounds(&lb, true);
+  gfx::Rect lb = GetLocalBounds(true);
 
   // First, we draw the background image for the whole dialog (3 images: left,
   // middle and right). Note, that the window region has been set by the
@@ -271,41 +269,41 @@ void FindInPageView::Paint(ChromeCanvas* canvas) {
   canvas->TileImageInt(*bg_middle,
                         bg_left->width(),
                         0,
-                        lb.Width() -
+                        lb.width() -
                             bg_left->width() -
                             bg_right->width(),
                         bg_middle->height());
 
   canvas->TileImageInt(*bg_right,
-                        lb.right - bg_right->width(),
+                        lb.right() - bg_right->width(),
                         0,
                         bg_right->width(),
                         bg_right->height());
 
   // Then we draw the background image for the Find TextField. We start by
   // calculating the position of background images for the Find text box.
-  CRect find_text_rect;
-  CRect back_button_rect;
+  gfx::Rect find_text_rect;
+  gfx::Rect back_button_rect;
   int x = 0;   // x coordinate of the curved edge background image.
   int w = 0;   // width of the background image for the text field.
   if (UILayoutIsRightToLeft()) {
-    find_text_->GetBounds(&find_text_rect, APPLY_MIRRORING_TRANSFORMATION);
-    find_previous_button_->GetBounds(&back_button_rect,
-                                     APPLY_MIRRORING_TRANSFORMATION);
-    x = find_text_rect.right;
-    w = find_text_rect.right - back_button_rect.right;
+    find_text_rect = find_text_->GetBounds(APPLY_MIRRORING_TRANSFORMATION);
+    back_button_rect =
+        find_previous_button_->GetBounds(APPLY_MIRRORING_TRANSFORMATION);
+    x = find_text_rect.right();
+    w = find_text_rect.right() - back_button_rect.right();
   } else {
-    find_text_->GetBounds(&find_text_rect);
-    find_previous_button_->GetBounds(&back_button_rect);
-    x = find_text_rect.left - kBackground_left->width();
-    w = back_button_rect.left - find_text_rect.left;
+    find_text_rect = find_text_->bounds();
+    back_button_rect = find_previous_button_->bounds();
+    x = find_text_rect.x() - kBackground_left->width();
+    w = back_button_rect.x() - find_text_rect.x();
   }
 
   // Draw the image to the left that creates a curved left edge for the box
   // (drawn on the right for RTL languages).
   canvas->TileImageInt(*kBackground_left,
                        x,
-                       back_button_rect.top,
+                       back_button_rect.y(),
                        kBackground_left->width(),
                        kBackground_left->height());
 
@@ -314,8 +312,8 @@ void FindInPageView::Paint(ChromeCanvas* canvas) {
   int background_height = kBackground->height();
   canvas->TileImageInt(*kBackground,
                        UILayoutIsRightToLeft() ?
-                           back_button_rect.right : find_text_rect.left,
-                       back_button_rect.top,
+                           back_button_rect.right() : find_text_rect.x(),
+                       back_button_rect.y(),
                        w,
                        background_height);
 
@@ -323,12 +321,12 @@ void FindInPageView::Paint(ChromeCanvas* canvas) {
     // While animating we draw the curved edges at the point where the
     // controller told us the top of the window is: |animation_offset_|.
     canvas->TileImageInt(*bg_left,
-                         lb.TopLeft().x,
+                         lb.x(),
                          animation_offset_,
                          bg_left->width(),
                          kAnimatingEdgeHeight);
     canvas->TileImageInt(*bg_right,
-                         lb.BottomRight().x - bg_right->width(),
+                         lb.right() - bg_right->width(),
                          animation_offset_,
                          bg_right->width(),
                          kAnimatingEdgeHeight);
@@ -336,56 +334,56 @@ void FindInPageView::Paint(ChromeCanvas* canvas) {
 }
 
 void FindInPageView::Layout() {
-  CSize panel_size, sz;
-  GetPreferredSize(&panel_size);
+  gfx::Size panel_size = GetPreferredSize();
 
   // First we draw the close button on the far right.
-  close_button_->GetPreferredSize(&sz);
-  close_button_->SetBounds(panel_size.cx - sz.cx - kMarginRightOfCloseButton,
-                           (height() - sz.cy) / 2,
-                           sz.cx,
-                           sz.cy);
+  gfx::Size sz = close_button_->GetPreferredSize();
+  close_button_->SetBounds(panel_size.width() - sz.width() -
+                               kMarginRightOfCloseButton,
+                           (height() - sz.height()) / 2,
+                           sz.width(),
+                           sz.height());
   close_button_->SetListener(this, CLOSE_TAG);
 
   // Next, the FindNext button to the left the close button.
-  find_next_button_->GetPreferredSize(&sz);
+  sz = find_next_button_->GetPreferredSize();
   find_next_button_->SetBounds(close_button_->x() -
                                    find_next_button_->width() -
                                    kMarginLeftOfCloseButton,
-                               (height() - sz.cy) / 2,
-                                sz.cx,
-                                sz.cy);
+                               (height() - sz.height()) / 2,
+                                sz.width(),
+                                sz.height());
   find_next_button_->SetListener(this, FIND_NEXT_TAG);
 
   // Then, the FindPrevious button to the left the FindNext button.
-  find_previous_button_->GetPreferredSize(&sz);
+  sz = find_previous_button_->GetPreferredSize();
   find_previous_button_->SetBounds(find_next_button_->x() -
                                        find_previous_button_->width(),
-                                   (height() - sz.cy) / 2,
-                                   sz.cx,
-                                   sz.cy);
+                                   (height() - sz.height()) / 2,
+                                   sz.width(),
+                                   sz.height());
   find_previous_button_->SetListener(this, FIND_PREVIOUS_TAG);
 
   // Then the label showing the match count number.
-  match_count_text_->GetPreferredSize(&sz);
+  sz = match_count_text_->GetPreferredSize();
   // We extend the label bounds a bit to give the background highlighting a bit
   // of breathing room (margins around the text).
-  sz.cx += kMatchCountExtraWidth;
-  sz.cx = std::max(kMatchCountMinWidth, static_cast<int>(sz.cx));
+  sz.Enlarge(kMatchCountExtraWidth, 0);
+  sz.set_width(std::max(kMatchCountMinWidth, static_cast<int>(sz.width())));
   match_count_text_->SetBounds(find_previous_button_->x() -
                                    kWhiteSpaceAfterMatchCountLabel -
-                                   sz.cx,
-                               (height() - sz.cy) / 2 + 1,
-                               sz.cx,
-                               sz.cy);
+                                   sz.width(),
+                               (height() - sz.height()) / 2 + 1,
+                               sz.width(),
+                               sz.height());
 
   // And whatever space is left in between, gets filled up by the find edit box.
-  find_text_->GetPreferredSize(&sz);
-  sz.cx = match_count_text_->x() - kMarginLeftOfFindTextField;
-  find_text_->SetBounds(match_count_text_->x() - sz.cx,
-                        (height() - sz.cy) / 2 + 1,
-                        sz.cx,
-                        sz.cy);
+  sz = find_text_->GetPreferredSize();
+  sz.set_width(match_count_text_->x() - kMarginLeftOfFindTextField);
+  find_text_->SetBounds(match_count_text_->x() - sz.width(),
+                        (height() - sz.height()) / 2 + 1,
+                        sz.width(),
+                        sz.height());
   find_text_->SetController(this);
   find_text_->RequestFocus();
 
@@ -400,11 +398,6 @@ void FindInPageView::Layout() {
                                    find_previous_button_->height());
 }
 
-void FindInPageView::DidChangeBounds(const CRect& old_bounds,
-                                     const CRect& new_bounds) {
-  Layout();
-}
-
 void FindInPageView::ViewHierarchyChanged(bool is_add,
                                           View *parent,
                                           View *child) {
@@ -414,28 +407,24 @@ void FindInPageView::ViewHierarchyChanged(bool is_add,
   }
 }
 
-void FindInPageView::GetPreferredSize(CSize* out) {
-  DCHECK(out);
-
-  find_text_->GetPreferredSize(out);
-  out->cy = kDlgBackground_middle->height();
+gfx::Size FindInPageView::GetPreferredSize() {
+  gfx::Size prefsize = find_text_->GetPreferredSize();
+  prefsize.set_height(kDlgBackground_middle->height());
 
   // Add up all the preferred sizes and margins of the rest of the controls.
-  out->cx += kMarginLeftOfCloseButton + kMarginRightOfCloseButton +
-             kMarginLeftOfFindTextField;
-  CSize sz;
-  find_previous_button_->GetPreferredSize(&sz);
-  out->cx += sz.cx;
-  find_next_button_->GetPreferredSize(&sz);
-  out->cx += sz.cx;
-  close_button_->GetPreferredSize(&sz);
-  out->cx += sz.cx;
+  prefsize.Enlarge(kMarginLeftOfCloseButton + kMarginRightOfCloseButton +
+                       kMarginLeftOfFindTextField,
+                   0);
+  prefsize.Enlarge(find_previous_button_->GetPreferredSize().width(), 0);
+  prefsize.Enlarge(find_next_button_->GetPreferredSize().width(), 0);
+  prefsize.Enlarge(close_button_->GetPreferredSize().width(), 0);
+  return prefsize;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FindInPageView, ChromeViews::BaseButton::ButtonListener implementation:
+// FindInPageView, views::BaseButton::ButtonListener implementation:
 
-void FindInPageView::ButtonPressed(ChromeViews::BaseButton* sender) {
+void FindInPageView::ButtonPressed(views::BaseButton* sender) {
   switch (sender->GetTag()) {
     case FIND_PREVIOUS_TAG:
     case FIND_NEXT_TAG:
@@ -454,9 +443,9 @@ void FindInPageView::ButtonPressed(ChromeViews::BaseButton* sender) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FindInPageView, ChromeViews::TextField::Controller implementation:
+// FindInPageView, views::TextField::Controller implementation:
 
-void FindInPageView::ContentsChanged(ChromeViews::TextField* sender,
+void FindInPageView::ContentsChanged(views::TextField* sender,
                                      const std::wstring& new_contents) {
   // When the user changes something in the text box we check the contents and
   // if the textbox contains something we set it as the new search string and
@@ -473,7 +462,7 @@ void FindInPageView::ContentsChanged(ChromeViews::TextField* sender,
   }
 }
 
-void FindInPageView::HandleKeystroke(ChromeViews::TextField* sender,
+void FindInPageView::HandleKeystroke(views::TextField* sender,
                                      UINT message, TCHAR key, UINT repeat_count,
                                      UINT flags) {
   // If the dialog is not visible, there is no reason to process keyboard input.
@@ -495,7 +484,7 @@ void FindInPageView::HandleKeystroke(ChromeViews::TextField* sender,
 }
 
 bool FindInPageView::FocusForwarderView::OnMousePressed(
-    const ChromeViews::MouseEvent& event) {
+    const views::MouseEvent& event) {
   if (view_to_focus_on_mousedown_) {
     view_to_focus_on_mousedown_->ClearSelection();
     view_to_focus_on_mousedown_->RequestFocus();

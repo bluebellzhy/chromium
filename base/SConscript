@@ -35,6 +35,8 @@ input_files = [
     'bzip2_error_handler.cc',
     'command_line.cc',
     'debug_util.cc',
+    'field_trial.cc',
+    'file_path.cc',
     'file_util.cc',
     'histogram.cc',
     'icu_util.cc',
@@ -87,10 +89,7 @@ if env['PLATFORM'] == 'win32':
     # This group all depends on MessageLoop.
     'idle_timer.cc',
     'object_watcher.cc',
-    'shared_event.cc',   # Is this used?
     'watchdog.cc',
-
-    'process.cc',
 
     'resource_util.cc',  # Uses HMODULE, but may be abstractable.
   ])
@@ -105,6 +104,7 @@ if env['PLATFORM'] == 'win32':
       'cpu.cc',
       'debug_on_start.cc',
       'debug_util_win.cc',
+      'directory_watcher_win.cc',
       'file_util_win.cc',
       'hmac_win.cc',
       'iat_patch.cc',
@@ -114,6 +114,7 @@ if env['PLATFORM'] == 'win32':
       'pe_image.cc',
       'platform_thread_win.cc',
       'process_util_win.cc',
+      'process_win.cc',
       'rand_util_win.cc',
       'registry.cc',
       'shared_memory_win.cc',
@@ -158,7 +159,7 @@ if env['PLATFORM'] == 'darwin':
       'message_pump_mac.mm',
       'platform_thread_mac.mm',
       'scoped_nsautorelease_pool.mm',
-      'sys_string_conversions_mac.cc',
+      'sys_string_conversions_mac.mm',
       'worker_pool_mac.mm',
   ])
 
@@ -166,9 +167,13 @@ if env['PLATFORM'] == 'posix':
   input_files.extend([
       'atomicops_internals_x86_gcc.cc',
       'base_paths_linux.cc',
+      'clipboard_linux.cc',
       'file_util_linux.cc',
       'hmac_nss.cc',
+      'message_pump_glib.cc',
       'nss_init.cc',
+      'process_posix.cc',
+      'process_util_linux.cc',
       'sys_string_conversions_linux.cc',
       'worker_pool.cc',
   ])
@@ -250,8 +255,11 @@ if env['PLATFORM'] in ('posix', 'darwin'):
 test_files = [
     'at_exit_unittest.cc',
     'atomicops_unittest.cc',
+    'clipboard_unittest.cc',
     'command_line_unittest.cc',
     'condition_variable_unittest.cc',
+    'field_trial_unittest.cc',
+    'file_path_unittest.cc',
     'file_util_unittest.cc',
     'hmac_unittest.cc',
     'histogram_unittest.cc',
@@ -301,10 +309,9 @@ if env['PLATFORM'] == 'win32':
   env_tests.ChromeTestProgram('debug_message', ['debug_message.cc'])
 
   test_files.extend([
-    'clipboard_unittest.cc',
+    'directory_watcher_unittest.cc',
     'idletimer_unittest.cc',
     'process_util_unittest.cc',
-    'shared_event_unittest.cc',
     'stats_table_unittest.cc',
     'watchdog_unittest.cc',
     'gfx/native_theme_unittest.cc',
@@ -351,4 +358,3 @@ env_tests.StaticObject('perftimer.cc')
 
 # Since run_all_perftests supplies a main, we cannot have it in base.lib
 env_tests.StaticObject('run_all_perftests.cc')
-

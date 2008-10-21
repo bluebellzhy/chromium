@@ -33,6 +33,7 @@
 #include <vssym32.h>
 #include "AffineTransform.h"
 #include "BitmapImage.h"
+#include "BitmapImageSingleFrameSkia.h"
 #include "FloatRect.h"
 #include "GraphicsContext.h"
 #include "Logging.h"
@@ -44,7 +45,7 @@
 #include "SkiaUtils.h"
 #include "SkShader.h"
 
-#include "base/gfx/bitmap_header.h"
+#include "base/gfx/gdi_util.h"
 #include "base/gfx/image_operations.h"
 #include "base/gfx/native_theme.h"
 #include "base/gfx/platform_canvas_win.h"
@@ -86,8 +87,6 @@ void TransformDimensions(const SkMatrix& matrix,
 // WebCore/rendering/RenderLayer.cpp).
 static PassRefPtr<Image> GetTextAreaResizeCorner()
 {
-    RefPtr<Image> image = BitmapImage::create();
-
     // Get the size of the resizer.
     const int width = PlatformScrollbar::verticalScrollbarWidth();
     const int height = PlatformScrollbar::horizontalScrollbarHeight();
@@ -103,8 +102,7 @@ static PassRefPtr<Image> GetTextAreaResizeCorner()
     gfx::NativeTheme::instance()->PaintStatusGripper(hdc, SP_GRIPPER, 0, 0,
                                                      &widgetRect);
     device.postProcessGDI(0, 0, width, height);
-    image->setData(SerializeSkBitmap(device.accessBitmap(false)), true);
-    return image.release();
+    return BitmapImageSingleFrameSkia::create(device.accessBitmap(false));
 }
 
 }  // namespace
@@ -275,36 +273,6 @@ void BitmapImage::checkForSolidColor()
 {
 }
 
-bool BitmapImage::getHBITMAP(HBITMAP bmp)
-{
-    NativeImageSkia* bm = nativeImageForCurrentFrame();
-    if (!bm)
-      return false;
-
-    // |bmp| is already allocated and sized correctly, we just need to draw
-    // into it.
-    BITMAPINFOHEADER hdr;
-    gfx::CreateBitmapHeader(bm->width(), bm->height(), &hdr);
-    SkAutoLockPixels bm_lock(*bm); 
-    return SetDIBits(0, bmp, 0, bm->height(), bm->getPixels(),
-                     reinterpret_cast<BITMAPINFO*>(&hdr), DIB_RGB_COLORS) ==
-        bm->height();
-}
-
-bool BitmapImage::getHBITMAPOfSize(HBITMAP bmp, LPSIZE size)
-{
-    notImplemented();
-    return false;
-}
-
-void BitmapImage::drawFrameMatchingSourceSize(GraphicsContext*,
-                                              const FloatRect& dstRect,
-                                              const IntSize& srcSize,
-                                              CompositeOperator)
-{
-    notImplemented();
-}
-
 void BitmapImage::draw(GraphicsContext* ctxt, const FloatRect& dstRect,
                        const FloatRect& srcRect, CompositeOperator compositeOp)
 {
@@ -322,6 +290,30 @@ void BitmapImage::draw(GraphicsContext* ctxt, const FloatRect& dstRect,
         enclosingIntRect(dstRect), WebCoreCompositeToSkiaComposite(compositeOp));
 
     startAnimation();
+}
+
+void BitmapImageSingleFrameSkia::draw(GraphicsContext* ctxt,
+                                      const FloatRect& dstRect,
+                                      const FloatRect& srcRect,
+                                      CompositeOperator compositeOp)
+{
+    if (srcRect.isEmpty() || dstRect.isEmpty())
+        return;  // Nothing to draw.
+
+    ctxt->platformContext()->paintSkBitmap(
+        m_nativeImage,
+        enclosingIntRect(srcRect),
+        enclosingIntRect(dstRect),
+        WebCoreCompositeToSkiaComposite(compositeOp));
+}
+
+PassRefPtr<BitmapImageSingleFrameSkia> BitmapImageSingleFrameSkia::create(
+    const SkBitmap& bitmap)
+{
+    RefPtr<BitmapImageSingleFrameSkia> image(new BitmapImageSingleFrameSkia());
+    if (!bitmap.copyTo(&image->m_nativeImage, bitmap.config()))
+        return 0;
+    return image.release();
 }
 
 } // namespace WebCore

@@ -29,6 +29,7 @@
 #include "chrome/browser/tabs/tab_strip_model.h"
 #include "chrome/browser/url_fixer_upper.h"
 #include "chrome/browser/web_app_launcher.h"
+#include "chrome/browser/web_contents_view.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/common/chrome_paths.h"
 #include "chrome/common/chrome_switches.h"
@@ -554,9 +555,11 @@ void BrowserInit::LaunchWithProfile::AddCrashedInfoBarIfNecessary(
   if (!profile_->DidLastSessionExitCleanly() && web_contents) {
     // The last session didn't exit cleanly. Show an infobar to the user
     // so that they can restore if they want.
-    web_contents->GetInfoBarView()->
+    // TODO(brettw) this should be done more cleanly, by adding a message to
+    // the view and not getting the info bar from inside it directly.
+    web_contents->view()->GetInfoBarView()->
         AddChildView(new SessionCrashedView(profile_));
-    web_contents->SetInfoBarVisible(true);
+    web_contents->view()->SetInfoBarVisible(true);
   }
 }
 
@@ -667,6 +670,10 @@ bool BrowserInit::LaunchBrowser(const CommandLine& parsed_command_line,
                                 int show_command, const std::wstring& cur_dir,
                                 bool process_startup, int* return_code) {
   DCHECK(profile);
+
+  // Continue with the off-the-record profile from here on if --incognito
+  if (parsed_command_line.HasSwitch(switches::kIncognito))
+    profile = profile->GetOffTheRecordProfile();
 
   // Are we starting an application?
   std::wstring app_url = parsed_command_line.GetSwitchValue(switches::kApp);

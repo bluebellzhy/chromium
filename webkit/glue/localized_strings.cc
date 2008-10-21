@@ -123,14 +123,6 @@ String WebCore::unknownFileSizeText() {
   return String();
 }
 
-// These two are used in FileChooserWin.cpp.
-String WebCore::uploadFileText() {
-  return String();
-}
-String WebCore::allFilesText() {
-  return String();
-}
-
 // The following two functions are not declared in LocalizedStrings.h.
 // They are used by the menu for the HTML keygen tag.
 namespace WebCore {
@@ -142,7 +134,7 @@ String keygenMenuMediumGradeKeySize() {
 }
 
 // Used in ImageDocument.cpp as the title for pages when that page is an image.
-String WebCore::imageTitle(const String& filename, const IntSize& size) {
+String imageTitle(const String& filename, const IntSize& size) {
   // C3 97 is UTF-8 for U+00D7 (multiplication sign).
   std::string size_str = StringPrintf(" (%d\xC3\x97%d)",
                                       size.width(), size.height());

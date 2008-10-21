@@ -13,7 +13,11 @@
 #include "base/shared_memory.h"
 
 #if defined(OS_MACOSX)
+#if defined(__OBJC__)
 @class NSString;
+#else
+class NSString;
+#endif
 #endif
 
 class Clipboard {
@@ -22,8 +26,11 @@ class Clipboard {
   typedef unsigned int FormatType;
 #elif defined(OS_MACOSX)
   typedef NSString *FormatType;
+#elif defined(OS_LINUX)
+  typedef struct _GdkAtom* FormatType;
+  typedef struct _GtkClipboard GtkClipboard;
 #endif
-  
+
   Clipboard();
   ~Clipboard();
 
@@ -91,6 +98,26 @@ class Clipboard {
   // out parameter.
   void ReadFile(std::wstring* file) const;
   void ReadFiles(std::vector<std::wstring>* files) const;
+  
+  // Get format Identifiers for various types.
+  static FormatType GetUrlFormatType();
+  static FormatType GetUrlWFormatType();
+  static FormatType GetMozUrlFormatType();
+  static FormatType GetPlainTextFormatType();
+  static FormatType GetPlainTextWFormatType();
+  static FormatType GetFilenameFormatType();
+  static FormatType GetFilenameWFormatType();
+  // Win: MS HTML Format, Other: Generic HTML format
+  static FormatType GetHtmlFormatType();
+#if defined(OS_WIN)
+  static FormatType GetBitmapFormatType();
+  // Firefox text/html
+  static FormatType GetTextHtmlFormatType();
+  static FormatType GetCFHDropFormatType();
+  static FormatType GetFileDescriptorFormatType();
+  static FormatType GetFileContentFormatZeroType();
+  static FormatType GetWebKitSmartPasteFormatType();
+#endif
 
  private:
 #if defined(OS_WIN)
@@ -107,6 +134,8 @@ class Clipboard {
                                            std::string* url);
 
   HWND clipboard_owner_;
+#elif defined(OS_LINUX)
+  GtkClipboard* clipboard_;
 #endif
 
   DISALLOW_EVIL_CONSTRUCTORS(Clipboard);

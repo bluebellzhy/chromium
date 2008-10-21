@@ -18,7 +18,7 @@
 #include "chrome/browser/debugger/debugger_window.h"
 #include "chrome/browser/views/download_tab_view.h"
 #include "chrome/browser/history_tab_ui.h"
-#include "chrome/browser/interstitial_page_delegate.h"
+#include "chrome/browser/interstitial_page.h"
 #include "chrome/browser/navigation_entry.h"
 #include "chrome/browser/options_window.h"
 #include "chrome/browser/tab_restore_service.h"
@@ -54,7 +54,7 @@ void Browser::InitCommandState() {
                                    GetType() == BrowserType::TABBED_BROWSER);
   controller_.UpdateCommandEnabled(IDC_GO, true);
   controller_.UpdateCommandEnabled(IDC_NEWTAB, true);
-  controller_.UpdateCommandEnabled(IDC_CLOSETAB, !IsApplication());
+  controller_.UpdateCommandEnabled(IDC_CLOSETAB, true);
   controller_.UpdateCommandEnabled(IDC_NEWWINDOW, true);
   controller_.UpdateCommandEnabled(IDC_CLOSEWINDOW, true);
   controller_.UpdateCommandEnabled(IDC_FOCUS_LOCATION, true);
@@ -104,6 +104,7 @@ void Browser::InitCommandState() {
   controller_.UpdateCommandEnabled(IDC_SHOW_HISTORY, true);
   controller_.UpdateCommandEnabled(IDC_SHOW_BOOKMARKS_BAR, true);
   controller_.UpdateCommandEnabled(IDC_SHOW_DOWNLOADS, true);
+  controller_.UpdateCommandEnabled(IDC_ENCODING, true);
   controller_.UpdateCommandEnabled(IDC_ENCODING_AUTO_DETECT, true);
   controller_.UpdateCommandEnabled(IDC_ENCODING_UTF8, true);
   controller_.UpdateCommandEnabled(IDC_ENCODING_UTF16LE, true);
@@ -232,9 +233,6 @@ bool Browser::IsCommandEnabled(int id) const {
       TabContents* current_tab = GetSelectedTabContents();
       return (current_tab && current_tab->is_loading());
     }
-    case IDC_CLOSETAB: {
-      return !IsApplication();
-    }
     default:
       return controller_.IsCommandEnabled(id);
   }
@@ -336,7 +334,7 @@ void Browser::ExecuteCommand(int id) {
         LocationBarView* lbv = GetLocationBarView();
         if (lbv) {
           AutocompleteEditView* aev = lbv->location_entry();
-          aev->model()->SetUserText(L"?");
+          aev->SetUserText(L"?");
           aev->SetFocus();
         }
       }
@@ -498,7 +496,7 @@ void Browser::ExecuteCommand(int id) {
 
     case IDC_ABOUT: {
       UserMetrics::RecordAction(L"AboutChrome", profile_);
-      ChromeViews::Window::CreateChromeWindow(
+      views::Window::CreateChromeWindow(
           GetTopLevelHWND(),
           gfx::Rect(),
           new AboutChromeView(profile_))->Show();
@@ -515,8 +513,8 @@ void Browser::ExecuteCommand(int id) {
       UserMetrics::RecordAction(L"ZoomPlus", profile_);
       TabContents* current_tab = GetSelectedTabContents();
       if (current_tab->AsWebContents()) {
-        current_tab->AsWebContents()->render_view_host()->AlterTextSize(
-          text_zoom::TEXT_LARGER);
+        current_tab->AsWebContents()->render_view_host()->Zoom(
+            PageZoom::LARGER);
       }
       break;
     }
@@ -525,8 +523,8 @@ void Browser::ExecuteCommand(int id) {
       UserMetrics::RecordAction(L"ZoomMinus", profile_);
       TabContents* current_tab = GetSelectedTabContents();
       if (current_tab->AsWebContents()) {
-        current_tab->AsWebContents()->render_view_host()->AlterTextSize(
-          text_zoom::TEXT_SMALLER);
+        current_tab->AsWebContents()->render_view_host()->Zoom(
+            PageZoom::SMALLER);
       }
       break;
     }
@@ -535,8 +533,8 @@ void Browser::ExecuteCommand(int id) {
       UserMetrics::RecordAction(L"ZoomNormal", profile_);
       TabContents* current_tab = GetSelectedTabContents();
       if (current_tab->AsWebContents()) {
-        current_tab->AsWebContents()->render_view_host()->AlterTextSize(
-          text_zoom::TEXT_STANDARD);
+        current_tab->AsWebContents()->render_view_host()->Zoom(
+            PageZoom::STANDARD);
       }
       break;
     }
@@ -735,35 +733,10 @@ void Browser::GoBack() {
   TabContents* current_tab = GetSelectedTabContents();
   if (current_tab) {
     WebContents* web_contents = current_tab->AsWebContents();
-    // If we are showing an interstitial page, we don't need to navigate back
-    // to the previous page as it is already available in a render view host
-    // of the WebContents.  This makes the back more snappy and avoids potential
-    // reloading of POST pages.
     if (web_contents && web_contents->showing_interstitial_page()) {
-      // Let the delegate decide (if any) if it wants to handle the back
-      // navigation (it may have extra things to do).
-     if (web_contents->interstitial_page_delegate() &&
-         web_contents->interstitial_page_delegate()->GoBack()) {
-       return;
-     }
-     // TODO(jcampan): #1283764 once we refactored and only use the
-     //                interstitial delegate, the code below should go away.
-      NavigationEntry* prev_nav_entry = web_contents->controller()->
-          GetEntryAtOffset(-1);
-      DCHECK(prev_nav_entry);
-      // We do a normal back if:
-      // - the page is not a WebContents, its TabContents might have to be
-      //   recreated.
-      // - we have not yet visited that navigation entry (typically session
-      //   restore), in which case the page is not already available.
-      if (prev_nav_entry->tab_type() == TAB_CONTENTS_WEB &&
-          !prev_nav_entry->restored()) {
-        // It is the job of the code that shows the interstitial to listen for
-        // notifications of the interstitial getting hidden and appropriately
-        // dealing with the navigation entries.
-        web_contents->HideInterstitialPage(false, false);
-        return;
-      }
+      // Pressing back on an interstitial page means "don't proceed".
+      web_contents->interstitial_page()->DontProceed();
+      return;
     }
   }
   NavigationController* nc = GetSelectedNavigationController();
@@ -890,8 +863,8 @@ void Browser::OpenKeywordEditor() {
 }
 
 void Browser::OpenImportSettingsDialog() {
-  ChromeViews::Window::CreateChromeWindow(GetTopLevelHWND(), gfx::Rect(),
-                                          new ImporterView(profile_))->Show();
+  views::Window::CreateChromeWindow(GetTopLevelHWND(), gfx::Rect(),
+                                    new ImporterView(profile_))->Show();
 }
 
 void Browser::OpenBugReportDialog() {
@@ -930,18 +903,18 @@ void Browser::OpenBugReportDialog() {
   bug_report_view->set_png_data(screenshot_png);
 
   // Create and show the dialog
-  ChromeViews::Window::CreateChromeWindow(GetTopLevelHWND(), gfx::Rect(),
-                                          bug_report_view)->Show();
+  views::Window::CreateChromeWindow(GetTopLevelHWND(), gfx::Rect(),
+                                    bug_report_view)->Show();
 }
 
 void Browser::OpenClearBrowsingDataDialog() {
-    ChromeViews::Window::CreateChromeWindow(
+    views::Window::CreateChromeWindow(
         GetTopLevelHWND(),
         gfx::Rect(),
         new ClearBrowsingDataView(profile_))->Show();
 }
 
-void Browser::RunSimpleFrameMenu(const CPoint& pt, HWND hwnd) {
+void Browser::RunSimpleFrameMenu(const gfx::Point& pt, HWND hwnd) {
   bool for_popup = !IsApplication();
   EncodingMenuControllerDelegate d(this, &controller_);
 
@@ -996,7 +969,7 @@ void Browser::RunSimpleFrameMenu(const CPoint& pt, HWND hwnd) {
 
   m.AppendSeparator();
   m.AppendMenuItemWithLabel(IDC_CLOSE_WEB_APP, l10n_util::GetString(IDS_CLOSE));
-  m.RunMenuAt(pt.x, pt.y);
+  m.RunMenuAt(pt.x(), pt.y());
 }
 
 void Browser::CopyCurrentURLToClipBoard() {
@@ -1055,8 +1028,8 @@ void Browser::DuplicateContentsAt(int index) {
     Browser* new_browser = new Browser(gfx::Rect(), SW_SHOWNORMAL, profile(),
                                        BrowserType::APPLICATION, app_name_);
 
-    // We need to show the browser now. Otherwise HWNDViewContainer assumes
-    // the tab contents is invisible and won't size it.
+    // We need to show the browser now. Otherwise ContainerWin assumes the
+    // TabContents is invisible and won't size it.
     new_browser->Show();
 
     // The page transition below is only for the purpose of inserting the tab.

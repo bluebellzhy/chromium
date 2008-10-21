@@ -40,6 +40,7 @@
 #include "chrome/browser/views/status_bubble.h"
 #include "chrome/browser/views/tabs/tab_strip.h"
 #include "chrome/browser/views/toolbar_star_toggle.h"
+#include "chrome/browser/web_contents_view.h"
 #include "chrome/browser/window_sizer.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/common/chrome_switches.h"
@@ -827,8 +828,7 @@ void Browser::ShowHtmlDialog(HtmlDialogContentsDelegate* delegate,
                              HWND parent_hwnd) {
   parent_hwnd = parent_hwnd ? parent_hwnd : GetTopLevelHWND();
   HtmlDialogView* html_view = new HtmlDialogView(this, profile_, delegate);
-  ChromeViews::Window::CreateChromeWindow(parent_hwnd, gfx::Rect(),
-                                          html_view);
+  views::Window::CreateChromeWindow(parent_hwnd, gfx::Rect(), html_view);
   html_view->InitDialog();
   html_view->window()->Show();
 }
@@ -1347,15 +1347,12 @@ TabContents* Browser::CreateTabContentsForURL(
   return contents;
 }
 
-void Browser::ShowApplicationMenu(const gfx::Point p) {
+void Browser::ShowApplicationMenu(const gfx::Point& p) {
   if (!window_)
     return;
 
   HWND hwnd = reinterpret_cast<HWND>(window_->GetPlatformID());
-  CPoint t;
-  t.x = p.x();
-  t.y = p.y();
-  RunSimpleFrameMenu(t, hwnd);
+  RunSimpleFrameMenu(p, hwnd);
 }
 
 void Browser::ValidateLoadingAnimations() {
@@ -1534,13 +1531,16 @@ void Browser::TabStripEmpty() {
 void Browser::RemoveShelvesForTabContents(TabContents* contents) {
   DCHECK(!g_browser_process->IsUsingNewFrames());
 
-  ChromeViews::View* shelf = contents->GetDownloadShelfView();
+  views::View* shelf = contents->GetDownloadShelfView();
   if (shelf && shelf->GetParent() != NULL)
     shelf->GetParent()->RemoveChildView(shelf);
 
-  ChromeViews::View* info_bar = contents->GetInfoBarView();
-  if (info_bar && info_bar->GetParent() != NULL)
-    info_bar->GetParent()->RemoveChildView(info_bar);
+  if (contents->AsWebContents()) {
+    views::View* info_bar =
+        contents->AsWebContents()->view()->GetInfoBarView();
+    if (info_bar && info_bar->GetParent() != NULL)
+      info_bar->GetParent()->RemoveChildView(info_bar);
+  }
 }
 
 BrowserType::Type Browser::GetType() const {

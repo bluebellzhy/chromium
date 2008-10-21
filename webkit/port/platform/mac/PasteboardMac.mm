@@ -32,9 +32,11 @@
 #import "DocumentFragment.h"
 #import "Editor.h"
 #import "EditorClient.h"
+#import "Frame.h"
 #import "HitTestResult.h"
 #import "Image.h"
 #import "KURL.h"
+#import "LegacyWebArchive.h"
 #import "LoaderNSURLExtras.h"
 #import "MIMETypeRegistry.h"
 #import "RenderImage.h"
@@ -137,6 +139,15 @@ static NSAttributedString *stripAttachmentCharacters(NSAttributedString *string)
 
 void Pasteboard::writeSelection(NSPasteboard* pasteboard, Range* selectedRange, bool canSmartCopyOrDelete, Frame* frame)
 {
+#if 0
+// TODO(pinkerton): We need to figure out how to get copy/paste info back
+// to the main process and let it manage the pasteboard. One major problem is
+// that we can't rely on -[NSAttributedString initWithHTML] since it calls
+// the system WebKit and that wrecks havoc with ObjC's single-level 
+// namespace. That will cause some big problems getting rtf strings
+// onto the pasteboard since we have no other way of creating that data
+// ourselves. Punt for now.
+
     if (WebArchivePboardType == nil)
         Pasteboard::generalPasteboard(); //Initialises pasteboard types
     ASSERT(selectedRange);
@@ -173,7 +184,9 @@ void Pasteboard::writeSelection(NSPasteboard* pasteboard, Range* selectedRange, 
     
     // Put HTML on the pasteboard.
     if ([types containsObject:WebArchivePboardType]) {
-        [pasteboard setData:frame->editor()->client()->dataForArchivedSelection(frame) forType:WebArchivePboardType];
+        RefPtr<LegacyWebArchive> archive = LegacyWebArchive::createFromSelection(frame);
+        RetainPtr<CFDataRef> data = archive ? archive->rawDataRepresentation() : 0;
+        [pasteboard setData:(NSData *)data.get() forType:WebArchivePboardType];
     }
     
     // Put the attributed string on the pasteboard (RTF/RTFD format).
@@ -205,6 +218,7 @@ void Pasteboard::writeSelection(NSPasteboard* pasteboard, Range* selectedRange, 
     if ([types containsObject:WebSmartPastePboardType]) {
         [pasteboard setData:nil forType:WebSmartPastePboardType];
     }
+#endif
 }
     
 void Pasteboard::writeSelection(Range* selectedRange, bool canSmartCopyOrDelete, Frame* frame)
@@ -224,7 +238,7 @@ void Pasteboard::writeURL(NSPasteboard* pasteboard, NSArray* types, const KURL& 
     
     ASSERT(!url.isEmpty());
     
-    NSURL *cocoaURL = url.getNSURL();
+    NSURL *cocoaURL = url;
     NSString *userVisibleString = frame->editor()->client()->userVisibleString(cocoaURL);
     
     NSString *title = (NSString*)titleStr;
@@ -284,7 +298,7 @@ void Pasteboard::writeImage(Node* node, const KURL& url, const String& title)
     ASSERT(node);
     Frame* frame = node->document()->frame();
 
-    NSURL *cocoaURL = url.getNSURL();
+    NSURL *cocoaURL = url;
     ASSERT(cocoaURL);
 
     NSArray* types = writableTypesForImage();
