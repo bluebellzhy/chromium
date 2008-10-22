@@ -13,7 +13,7 @@ env.Prepend(
     'corecg',
     'sgl',
     'picture',
-    '#..',
+    '$CHROME_SRC_DIR',
   ],
 )
 

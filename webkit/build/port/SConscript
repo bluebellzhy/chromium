@@ -16,7 +16,6 @@ cygwin_posix = cygwin.abspath.replace('\\', '/')
 pending = env.Dir('#../webkit/pending')
 portroot = env.Dir('#../webkit/port')
 webkit_build = env.Dir('#../webkit/build')
-bindings_output_dir = env.Dir('#/../webkit/$BUILD_TYPE/scons/V8Bindings')
 
 
 def PosixIncludes(env, prefix, files, suffix):
@@ -43,7 +42,7 @@ env = env.Clone(
     BINDINGS_SCRIPT = '$BINDINGS_SCRIPTS_DIR/generate-bindings.pl',
 
     PERL_INCLUDE_PATH = ['$BINDINGS_SCRIPTS_DIR', 
-                         '#/../third_party/WebKit/WebCore/bindings/scripts'],
+                         '$CHROME_SRC_DIR/third_party/WebKit/WebCore/bindings/scripts'],
 
     WEBKIT_PORT_DIR = '$WEBKIT_DIR/port',
 
@@ -482,11 +481,11 @@ idl_files = [
 ]
 
 for subdir in set([os.path.dirname(n) for n in idl_files]):
-  dir = env.Dir('#/$BUILD_TYPE/webkit/port/' + subdir)
+  dir = env.Dir('$OBJ_ROOT/webkit/port/' + subdir)
 
-  dir.addRepository(env.Dir('#/../webkit/pending'))
-  dir.addRepository(env.Dir('#/../webkit/port/' + subdir))
-  dir.addRepository(env.Dir('#/../third_party/WebKit/WebCore/' + subdir))
+  dir.addRepository(env.Dir('$CHROME_SRC_DIR/webkit/pending'))
+  dir.addRepository(env.Dir('$CHROME_SRC_DIR/webkit/port/' + subdir))
+  dir.addRepository(env.Dir('$CHROME_SRC_DIR/third_party/WebKit/WebCore/' + subdir))
 
 for name in idl_files:
   env.Bindings('$WEBKIT_DIR/port/' + name)

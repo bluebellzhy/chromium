@@ -56,11 +56,10 @@ HttpNetworkTransaction::HttpNetworkTransaction(HttpNetworkSession* session,
       read_buf_(NULL),
       read_buf_len_(0),
       next_state_(STATE_NONE) {
-  // TODO(wtc): Initialize ssl_config_with SSL settings (bug 3003).
-}
-
-void HttpNetworkTransaction::Destroy() {
-  delete this;
+#if defined(OS_WIN)
+  // TODO(port): Port the SSLConfigService class to Linux and Mac OS X.
+  session->ssl_config_service()->GetSSLConfig(&ssl_config_);
+#endif
 }
 
 int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,

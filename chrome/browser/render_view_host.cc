@@ -923,12 +923,11 @@ void RenderViewHost::OnMsgFindReply(int request_id,
                                     const gfx::Rect& selection_rect,
                                     int active_match_ordinal,
                                     bool final_update) {
-  RenderViewHostDelegate::FindInPage* delegate =
-      delegate_->GetFindInPageDelegate();
-  if (!delegate)
+  RenderViewHostDelegate::View* view = delegate_->GetViewDelegate();
+  if (!view)
     return;
-  delegate->FindReply(request_id, number_of_matches, selection_rect,
-                      active_match_ordinal, final_update);
+  view->OnFindReply(request_id, number_of_matches, selection_rect,
+                        active_match_ordinal, final_update);
 
   // Send a notification to the renderer that we are ready to receive more
   // results from the scoping effort of the Find operation. The FindInPage
@@ -1135,7 +1134,7 @@ void RenderViewHost::UnhandledInputEvent(const WebInputEvent& event) {
 
 void RenderViewHost::ForwardKeyboardEvent(const WebKeyboardEvent& key_event) {
   if (key_event.type == WebKeyboardEvent::CHAR &&
-      (key_event.key_data == '\n' || key_event.key_data == ' ')) {
+      (key_event.key_code == VK_RETURN || key_event.key_code == VK_SPACE)) {
     delegate_->OnEnterOrSpace();
   }
   RenderWidgetHost::ForwardKeyboardEvent(key_event);

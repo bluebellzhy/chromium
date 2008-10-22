@@ -25,14 +25,6 @@
 
 namespace views {
 
-// When the user presses the mouse down in the non-client area of the window,
-// Windows sends WM_SYSCOMMAND with one of these notification codes. They
-// represent frame size/move operations initiated by the user's direct mouse
-// gesture-driven manipulation of the frame, as opposed to SC_SIZE/SC_MOVE
-// which are the result of system menu operations.
-static const int SC_FRAMESIZE = 0xF002;
-static const int SC_FRAMEMOVE = 0xF012;
-
 // A scoping class that prevents a window from being able to redraw in response
 // to invalidations that may occur within it for the lifetime of the object.
 //
@@ -247,6 +239,7 @@ class DefaultNonClientView : public NonClientView,
   virtual int NonClientHitTest(const gfx::Point& point);
   virtual void GetWindowMask(const gfx::Size& size, gfx::Path* window_mask);
   virtual void EnableClose(bool enable);
+  virtual void ResetWindowControls();
 
   // View overrides:
   virtual void Paint(ChromeCanvas* canvas);
@@ -494,6 +487,13 @@ void DefaultNonClientView::GetWindowMask(const gfx::Size& size,
 
 void DefaultNonClientView::EnableClose(bool enable) {
   close_button_->SetEnabled(enable);
+}
+
+void DefaultNonClientView::ResetWindowControls() {
+  restore_button_->SetState(Button::BS_NORMAL);
+  minimize_button_->SetState(Button::BS_NORMAL);
+  maximize_button_->SetState(Button::BS_NORMAL);
+  // The close button isn't affected by this constraint.
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1300,7 +1300,15 @@ void CustomFrameWindow::OnSize(UINT param, const CSize& size) {
 }
 
 void CustomFrameWindow::OnSysCommand(UINT notification_code, CPoint click) {
-  if (notification_code == SC_FRAMEMOVE || notification_code == SC_FRAMESIZE) {
+  // Windows uses the 4 lower order bits of |notification_code| for type-
+  // specific information so we must exclude this when comparing.
+  static const int sc_mask = 0xFFF0;
+  if ((notification_code & sc_mask) == SC_MINIMIZE ||
+      (notification_code & sc_mask) == SC_MAXIMIZE ||
+      (notification_code & sc_mask) == SC_RESTORE) {
+    non_client_view_->ResetWindowControls();
+  } else if ((notification_code & sc_mask) == SC_MOVE ||
+             (notification_code & sc_mask) == SC_SIZE) {
     if (lock_updates_) {
       // We were locked, before entering a resize or move modal loop. Now that
       // we've begun to move the window, we need to unlock updates so that the
